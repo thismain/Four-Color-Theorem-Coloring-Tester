@@ -1,0 +1,1606 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
+
+<style>
+.b{
+font-size:40px;
+font-family:monospace;
+visibility:visible;
+position:relative;
+background-color:#ffffff;
+padding:40px;
+border:1px solid #000000;
+}
+</style>
+</head>
+<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
+<script>
+var usePHP=false;
+var serverAddress='http://0.0.0.0:45267/';
+var EPSILON=1.0e-6;
+var Vertex;
+var Triangle;
+var Edge;
+var triangulate;
+var edges;
+var vertices;
+var triangles;
+var vertPairs;
+var pairString='';
+var fourColor=["red","gold","MediumSeaGreen","DeepSkyBlue","white"];
+var fourColorShort=['R','Y','G','B','W'];
+var savedData=[];
+var triColors=[];
+var dragging=false;
+var altKey=false;
+var inset=125;
+var vertexToEdit=-1;
+var backgroundColor='#f5f5f5';
+var dataFileName="default.txt";
+var numSavedGraphs=0;
+var graphFileNames=[];
+var dataSend='';
+var dataReceive=null;
+var getDataInterval=0;
+var stringArr=[];
+var pairArr=[];
+var setRandomVerts=true;
+var sortedVerts=[];
+var counter=0;
+var colorSavedGraph=false;
+var xray=false;
+var sameColorVerts=[];
+var highlightSame=true;
+var sortString='';
+var searcher=[];
+var lastSearcher=[];
+var nonNeighbor=[];
+var numSolves=0;
+var solveCounter=0;
+var chunkSolveString='';
+var allSolvesString='';
+var nIndexString='';
+var loopingDetected=false;
+var solveRemainingPass=0;
+var loopCounter=0;
+var tripleCheck=false;
+var framesPerSecond=30;
+var pauser=false;
+var showSolving=false;
+var stillSearching=false;
+var animId=0;
+var rColorGraphDone=false;
+var animSV=0;
+var stepping=false;
+var solved=false;
+var showNumNeigh=false;
+var solving=false;
+var timeToSolve=0;
+var startTime=Date.now();
+var endTime=Date.now();
+var deltaTime=endTime-startTime;
+var lastButton='buildRandomGraph';
+var messageTimer=0;
+var building=false;
+var flexibles=[];
+var showFlexibles=true;
+var flexibleColor='#db37d9';
+var numSolvesCounter=0;
+
+var gettingLinkStart=false;
+var addingVert=false;
+var linkStart=-1;
+var linkEnd=-1;
+var startConnecting=false;
+var endConnecting=false;
+var delaunay=true;
+
+var numPoints=60;//50,70,160,300
+var vertSize=30;//30,30,27,24
+var diam=110;//120,110,80,60
+var maxVertSize=31;
+var minVertSize=24;
+var maxDiam=120;
+var minDiam=56;
+var moveRaw=false;
+
+
+
+function clamp(a,min,max){
+if(a<min){a=min;}else if(a>max){a=max;}
+return a;
+}//end clamp
+
+
+function graphRenderScaleFactors(){
+diam=maxDiam-(numPoints-50)*.38;
+diam=clamp(diam,minDiam,maxDiam);
+vertSize=maxVertSize-(numPoints-50)*.027;
+vertSize=clamp(vertSize,minVertSize,maxVertSize);
+}//graphRenderScaleFactors
+
+graphRenderScaleFactors();
+
+
+function getDeltaTime(){
+deltaTime=endTime-startTime;
+}//end getDeltaTime
+
+function zoom(elm,scale,w,h){
+elm.style.transform="scale("+scale+")";
+elm.style.transformOrigin="top left";
+elm.style.width=(w/scale)+"%";
+elm.style.height=(h/scale)+"%";
+}//end zoom
+
+
+
+</script>
+
+</div>
+
+
+<div id="tester"  style="color:white;background-color:black;position:absolute;left:70px;top:800px;z-index:10000;font-size:40px;padding:6px;border:6px solid white;display:none;width:1200px;height:600px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:0px;overflow:scroll;"></div>
+
+<div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:90px;border:12px solid black;display:none;z-index:1000000;background-color:white;">
+
+<div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:60px;">
+</div>
+</div>
+
+
+<iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
+</iframe>
+
+
+<canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
+
+
+
+
+
+<select id="selectGraph" onchange="setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;visibility:hidden;position:absolute;top:100px;left:250px;padding:30px;">
+<option disabled selected id="label">Load Graph</option>
+</select>
+
+
+
+<div id="filenameInputDiv" style="z-index:10000000;position:fixed;left:50px;bottom:1000px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:40px">
+
+
+Filename:
+<input id="enterGraphName" type="text"  value="" style="display:inline-block;font-family:monospace;color:black;font-size:30px;border:1px solid black;" size="30">
+
+<br>
+
+<input value="save" type="button" ontouchstart="dataFileName=el('enterGraphName').value+'.txt';el('filenameInputDiv').style.visibility='hidden';saveGraphData();"  style="display:inline-block;font-size:30px;margin-top:12px;">
+
+<input value="cancel" type="button" ontouchstart="el('filenameInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:30px;margin-top:12px;">
+
+</div>
+
+
+
+
+
+
+<div id="expander" ontouchstart="controlPanelOpenClose();" style="text-align:center;right:0px;position:fixed;font-weight:bold;font-size:65px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:20px;border:1px solid #000000;bottom:0px;z-index:10000000000;visibility:visible;width:120px">  -  
+</div>
+
+<div id="buttonHolder" style="text-align:justify;white-space:nowrap;z-index:1000;position:fixed;background-color:#ffffff;padding:10px;
+;overflow:hidden;">
+
+<input id="buildRandomGraph" type="button" value="Build Random Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};showBools(this.id);" class="b">
+
+<input id="showSolving" type="button" value="Show Solving" 
+ontouchstart="event.preventDefault();activeButton(this.id);showSolvingButton();showBools(this.id);" class="b">
+
+<input id="solve" type="button" value="Solve" 
+ontouchstart="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b">
+
+<input id="step" type="button" value="Step" ontouchstart="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();showBools(this.id);" class="b">
+
+
+
+<br>
+
+<input id="addVertex" type="button" value="Add Vertex" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){mouseAdd_Vertex(e);solved=false;}"    
+class="b">
+
+
+
+<input id="moveVertex" type="button" value="Move Vertex" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
+
+<input id="deleteVertex" type="button" value="Delete Vertex" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
+class="b">
+
+
+<input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
+
+<br>
+
+<input id="numberOfVerts" type="button" value="Number of Vertices" ontouchstart="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
+
+<input id="fpsId" type="button" value="FPS" ontouchstart=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
+
+<input id="timeToSolveId" type="button" value="TimeToSolve" ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
+
+<input id="neighs" type="button" value="Neighs" 
+ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b">
+
+<br>
+
+<input type="button" value="Tester" id="testerButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
+
+<input type="button" value="loadGraph" id="loadGraphButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b">
+
+
+<input type="button" value="saveGraph" id="saveGraphButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b">
+
+
+<input type="button" value="Flexibles" id="flexiblesButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
+
+<input type="button" value="Console" id="consoleButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
+
+<div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:10px;font-size:40px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:450px;overflow:scroll;">
+
+<input id="consoleInput" type="text"  value="pairArr" style="font-family:monospace;color:black;font-size:25px;border:1px solid black;zoom:4;word-wrap:break-word;wifth:200px" size="20">
+<br>
+<input value="Enter" type="button" ontouchstart="da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="position:absolute;display:block;font-size:60px;padding:30px;margin-top:12px;bottom:0px;right:0px;">
+
+<div id="consoler"  style="width:100px;height:300px;display:block;font-size:60px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
+
+</div>
+
+
+<!--daa('tester','numPoints:'+numPoints+' --- diam:'+diam+' --- vertSize:'+vertSize+'<br><br>');-->
+
+<br>
+
+<input type="button" value="add" id="addButton"
+ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
+
+<input type="button" value="addLinked" id="addVertButton"
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.ontouchstart=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+
+<input type="button" value="Link" id="linkVertsButton"
+ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.ontouchstart=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+
+
+
+<input id="moveVertButton" type="button" value="Move" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
+
+<input id="deleteVertButton" type="button" value="Delete" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+class="b">
+
+</div><!--end buttonHolder-->
+
+<div id="numVertsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
+
+Number of Vertices:
+<input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;color:caret-color:white;font-family:monospace;color:white;font-size:70px;padding:10px"
+ontouchstart="">
+
+<input id="numVertsApply" value="Apply" type="button" ontouchstart="activeButton(this.id);flexibles=[];showFlexibles=false;numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
+
+<input value="cancel" type="button" ontouchstart="el('numVertsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
+
+</div>
+
+
+<div id="fpsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
+
+
+FPS (1-60):
+<input id="enterFPS" type="text"  size="3" value="" style="font-family:monospace;color:black;font-size:50px;padding:10px">
+
+<input value="Apply" type="button" ontouchstart="framesPerSecond=parseInt(el('enterFPS').value);if(framesPerSecond<1){framesPerSecond=1;}else if(framesPerSecond>120){framesPerSecond=120;}el('fpsInputDiv').style.visibility='hidden';"  style="display:inline-block;font-size:50px;padding:10px;">
+
+<input value="cancel" type="button" ontouchstart="el('fpsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
+
+</div>
+<script>
+
+
+function el(a){return document.getElementById(a);}
+function da(a,b){if(el(a)){el(a).innerHTML=b;
+//el(a).style.display='block';
+}}
+function daa(a,b){if(el(a)){el(a).innerHTML+=b;
+//el(a).style.display='block';
+}}
+function randRange(min, max){return Math.floor(Math.random() * (max - min + 1)) + min;}
+function degToRad(a){return a*Math.PI/180;}
+function isThere(a){return(typeof a!=="undefined"&&typeof a!==null&&(a||a==0));}
+function els(a){return document.getElementById(a).style;}
+function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(a).display='block'}}
+
+function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
+
+var ww=window.innerWidth;
+var hh=window.innerHeight;
+var canv=document.getElementById("canvas");
+var ctx=canv.getContext('2d');
+canv.width=window.innerWidth;
+canv.height=window.innerHeight;
+var cW=canv.width;
+var cH=canv.height;
+canv.style.width=cW+"px";
+canv.style.height=cH+"px";
+canv.style.left=(ww/2-cW/2)+'px';
+
+
+function activeButton(buttonId){
+el(lastButton).style.backgroundColor='white';
+el(buttonId).style.backgroundColor='#dbedff';
+lastButton=buttonId;
+}//activeButton
+
+
+
+el('messageHolder').style.left=ww*.3+'px';
+el('messageHolder').style.top=hh*.3+'px';
+
+
+var bhStyle=getComputedStyle(el('buttonHolder'));var bhHeight=bhStyle.height;
+var cpClosedPos=parseInt(window.innerHeight*2)+'px';
+var cpOpenPos='10px';
+
+
+el('buttonHolder').style.width=ww+'px';
+el('buttonHolder').style.bottom=cpOpenPos;
+//el('expander').style.bottom=parseInt(bhHeight)+30+'px';
+
+
+function controlPanelOpenClose(){
+if(el('buttonHolder').style.bottom==cpClosedPos){
+el('buttonHolder').style.bottom=cpOpenPos;
+da('expander','-');
+}else{
+el('buttonHolder').style.bottom=cpClosedPos;
+da('expander','+');
+}
+}//end controlPanelOpenClose
+
+
+
+el('fpsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
+el('numVertsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
+
+var showBoolCounter=1;
+function showBools(buttonValue, marker){
+if(!marker){marker=showBoolCounter;}
+daa('tester',buttonValue+' '+marker+': <br>stepping:'+stepping+'<br> solving:'+solving+' <br> solved:'+solved+' <br>  rColorGraphDone:'+rColorGraphDone+' <br>showSolving: '+showSolving+'<br>-----------------<br>');
+el('tester').scrollTop=el('tester').scrollHeight;
+showBoolCounter++;
+}//end showBools
+
+
+function getGraphFilenames(){
+if(usePHP){
+el('ifr').src=serverAddress+'filenameReader.php';
+setTimeout(function(){
+graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
+
+numSavedGraphs=graphFileNames.length;
+initSelectGraph();
+},500);
+}//if usePHP
+}//end get graph filenames
+
+function initSelectGraph(){
+for(let i=0;i<numSavedGraphs;i++){
+let op=document.createElement("option");
+op.id='op'+i;
+op.value=i;
+op.text=graphFileNames[i];
+el('selectGraph').appendChild(op);
+}//end i loop
+//el('op0').selected="selected";
+}//end init select graph
+
+function getGraphData(){
+if(usePHP){
+el('ifr').src=serverAddress+"saver.php?loading=1&dataFileName="+dataFileName;
+setTimeout("loadGraphData();",500);
+}//usePHP
+}//end getGraphData
+
+function loadGraphData(){
+dataReceive=el('ifr').contentWindow.dataSend;
+if(!isThere(dataReceive)){
+getGraphData();
+}else{
+
+if(dataReceive.indexOf('[')>=0){
+delaunay=false;
+}
+
+if(!delaunay){
+let pairArrString=
+dataReceive.substring(0,dataReceive.lastIndexOf(']')+1.);
+
+pairArr=JSON.parse(pairArrString);
+dataReceive=
+dataReceive.replace(pairArrString+' ','');
+}//end if !delaunay
+
+stringArr=dataReceive.split(" ");
+
+for(let i=0;i<stringArr.length;i+=4){
+vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
+if(delaunay){
+triangles=triangulate(vertices);
+}
+}//end i loop
+
+if(delaunay){
+sortByNeighborCount();
+}
+//if(colorSavedGraph){colorGraph();}
+render();
+dataReceive='';
+}//end isThere
+}//end loadGraphData
+
+
+function saveGraphData(){
+if(usePHP){
+let graphData='';
+for(let i=0;i<vertices.length;i++){
+graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
+}//end i loop
+
+if(!delaunay){
+graphData=
+JSON.stringify(pairArr)+' '+graphData;
+}
+
+/*
+let pairArr=[[675,89],[98,2],[8,7]];
+let dataSaved=JSON.stringify(pairArr);
+pairArr=JSON.parse(dataSaved);
+*/
+
+
+if(!el('op'+numSavedGraphs)){
+graphFileNames.push(dataFileName);
+el('ifr').src=serverAddress+"saver.php?graphData="+graphData+"&saving=1&dataFileName="+dataFileName;
+let op=document.createElement("option");
+op.id='op'+numSavedGraphs;
+op.value=numSavedGraphs;
+op.text=dataFileName;
+el('selectGraph').appendChild(op);
+numSavedGraphs++;
+}//end if(!el
+}//usePHP
+}//end saveGraphData
+
+
+function changeVertexColor(e){
+if(isThere(vertices[vertexToEdit])){
+vertices[vertexToEdit].c++;
+if(vertices[vertexToEdit].c>3){
+vertices[vertexToEdit].c=0;
+}
+render();
+}//is There
+}// end changeVertexColor
+
+
+canv.ontouchend=function(e){
+dragging=false;
+el('expander').style.visibility='visible';
+render();
+vertexToEdit=-1;
+}//end ontouchend
+
+
+
+canv.ontouchmove=function(e){
+if(dragging){
+el('expander').style.visibility='hidden';
+if(moveRaw){
+moveVertex(e,delaunay=false);
+}else{
+moveVertex(e,delaunay=true);
+}
+sortByNeighborCount();
+render();
+}
+}//end ontouchmove
+
+
+canv.ontouchstart=function(e){
+setRandomVerts=true;buildAndRender();
+}
+
+
+
+function moveVertex(e,delaunay){
+if(vertexToEdit>=0){
+vertices[vertexToEdit].x=e.touches[0].pageX;
+vertices[vertexToEdit].y=e.touches[0].pageY;
+ctx.clearRect(0,0,cW,cH);
+if(delaunay){
+triangles=triangulate(vertices);
+}
+render();
+}
+}//end moveVertex
+
+
+function mouseAdd_Vertex(e){
+ctx.clearRect(0,0,cW,cH);
+vertices.push(new Vertex(e.touches[0].pageX,e.touches[0].pageY,4,vertices.length+1));
+if(delaunay){
+triangles=triangulate(vertices);
+}
+sortByNeighborCount();
+render();
+}//end mouseAdd_Vertex
+
+
+
+function getVertexToEdit(e){
+vertexToEdit=-1;
+for(let i=0;i<vertices.length;i++){
+ctx.beginPath();
+ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
+if(ctx.isPointInPath(e.touches[0].pageX, e.touches[0].pageY)){
+vertexToEdit=i;
+
+if(!delaunay){
+if(gettingLinkStart){
+linkStart=vertexToEdit;
+addingVert=true;
+//gettingLinkStart=false;
+canv.ontouchstart=function(e){
+el('expander').style.visibility='hidden';
+if(addingVert){
+ctx.clearRect(0,0,cW,cH);
+vertices.push(new Vertex(e.touches[0].pageX,e.touches[0].pageY,4,vertices.length));
+linkEnd=vertices.length-1;
+if(linkStart>=0&&linkEnd>=0){
+pairArr.push([linkStart,linkEnd]);
+linkStart=linkEnd;
+}
+sortByNeighborCount();
+render();
+//addingVert=false;
+}
+}//end function(e)
+
+}else if(startConnecting){
+addingVert=false;
+linkStart=vertexToEdit;
+startConnecting=false;
+endConnecting=true;
+
+}else if(endConnecting){
+addingVert=false;
+delaunay=false;
+linkEnd=vertexToEdit;
+if(linkStart>=0&&linkEnd>=0){
+pairArr.push([linkStart,linkEnd]);
+removeDuplicatePairs();
+linkStart=linkEnd;
+}
+sortByNeighborCount();
+render();
+//endConnecting=false;
+}
+}//if(!delaunay
+
+ctx.lineWidth='240';
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+if(!endConnecting){
+ctx.stroke();
+}
+}//ctx.isPointInPath
+}//i loop
+ctx.closePath();
+}//end getVertexToEdit
+
+
+
+function deleteVertex(e,delaunay){
+if(vertexToEdit>=0){
+vertices.splice(vertexToEdit,1);
+for(let v=0;v<vertices.length;v++){
+vertices[v].i=v;}
+
+if(!delaunay){
+for(let i=pairArr.length-1;i>=0;i--){
+if(vertexToEdit==pairArr[i][0]||vertexToEdit==pairArr[i][1]){
+pairArr.splice(i,1);
+}
+}//i loop
+delaunay=false;
+}//!delaunay
+
+//ctx.clearRect(0,0,cW,cH);
+if(delaunay){
+triangles=triangulate(vertices);
+}
+
+
+for(let j=0;j<pairArr.length;j++){
+if(pairArr[j][0]>vertexToEdit){
+pairArr[j][0]--;}
+if(pairArr[j][1]>vertexToEdit){
+pairArr[j][1]--;}
+}//j loop
+
+
+sortByNeighborCount();
+render();
+}//>=0
+}//end deleteVertex
+
+
+
+
+function getVertexPairs(){
+if(delaunay){
+pairArr=[];
+for(let i=0;i<triangles.length;i++){
+pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
+pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
+pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
+}//i loop
+
+}
+/*
+else if(!delaunay){
+if(linkStart>=0&&linkEnd>=0){
+pairArr.push([linkStart,linkEnd]);
+}//if(linkStart
+}//end if !delaunay
+
+*/
+
+removeDuplicatePairs();
+
+}//end getVertexPairs
+
+
+//remove duplicate pairs
+function removeDuplicatePairs(){
+for(let i=pairArr.length-1;i>=1;i--){
+for(let j=i-1;j>=0;j--){
+if(isThere(pairArr[i])
+&&
+isThere(pairArr[j])){
+if(
+(pairArr[i][0]==pairArr[j][0]
+&&
+pairArr[i][1]==pairArr[j][1])
+||
+(pairArr[i][0]==pairArr[j][1]
+&&
+pairArr[i][1]==pairArr[j][0])
+){
+pairArr.splice(i,1);
+}
+}//end isThere
+}//end j loop
+}//end i loop
+}//removeDuplicatePairs
+
+
+
+function getNeighbors(){
+getVertexPairs();
+for(let v=0;v<vertices.length;v++){
+vertices[v].n=[];
+for(let i=0;i<pairArr.length;i++){
+if(
+v==pairArr[i][0]
+){
+vertices[v].n.push(pairArr[i][1]);
+}else if(
+v==pairArr[i][1]
+){
+vertices[v].n.push(pairArr[i][0]);
+}
+if(i==pairArr.length-1){
+vertices[v].nCount=vertices[v].n.length;
+}
+}//end i loop
+}//end v loop
+}//end get neighbors
+
+
+
+function sortByNeighborCount(){
+startTime=Date.now();
+getNeighbors();
+sortedVerts=[];
+for(let v=0;v<vertices.length;v++){
+sortedVerts[v]={nCount:vertices[v].nCount,i:vertices[v].i,n:vertices[v].n};
+}
+sortedVerts.sort((a,b)=>b.nCount-a.nCount);
+}//end sortByNeighborCount
+
+
+
+function colorGraph(){
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+
+for(let v=0;v<sortedVerts.length;v++){
+for(let c=0;c<4;c++){
+let colorAvailable=true;
+for(let n=0;n<sortedVerts[v].nCount;n++){
+if(isThere(vertices[vertices[sortedVerts[v].i].n[n]])){
+if(vertices[vertices[sortedVerts[v].i].n[n]].c==c){
+colorAvailable=false;break;
+}
+}//isThere
+}//end n loop
+if(colorAvailable){vertices[sortedVerts[v].i].c=c;break;}
+}//end c loop
+}//end v loop
+}//end colorGraph
+
+
+
+function rColorGraph(sv){
+if(!isThere(sortedVerts[sv])){
+//alert('sortedVerts.length:'+sortedVerts.length+'---sv:'+sv);
+sv=sortedVerts.length;
+}else{
+
+if(solved||stepping){
+if(sv==0){
+rColorGraphDone=false;
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;
+}
+}//if sv==0
+solved=false;
+}//if solved
+
+for(let c=0;c<4;c++){
+let colorAvailable=true;
+for(let n=0;n<sortedVerts[sv].nCount;n++){
+if(isThere(vertices[vertices[sortedVerts[sv].i].n[n]])){
+if(vertices[vertices[sortedVerts[sv].i].n[n]].c==c){
+colorAvailable=false;
+break;
+}
+}//isThere
+}//end n loop
+if(colorAvailable){
+vertices[sortedVerts[sv].i].c=c;
+
+if(sv==sortedVerts.length-1){
+rColorGraphDone=true;
+animSV=0;
+}
+break;
+}//if colorAvailable
+}//end c loop
+}//isThere(sortedVerts[sv]
+}//end rColorGraph
+
+
+function solveButton(){
+if(solving&&el('solve').value=='Solve'){
+el('solve').value='Solving...';
+el('solve').style.backgroundColor='#ffd7d4';
+}else if(!solving&&el('solve').value=='Solving...'){
+el('solve').value='Solve';
+el('solve').style.backgroundColor='#dbedff';
+}
+}//end solveButton
+
+
+
+function buildRandomGraphButton(){
+if(building&&el('buildRandomGraph').value=='Build Random Graph'){
+el('buildRandomGraph').value='Building..........';
+el('buildRandomGraph').style.backgroundColor='#ffd7d4';
+}else if(!building&&el('buildRandomGraph').value=='Building..........'){
+el('buildRandomGraph').value='Build Random Graph';
+el('buildRandomGraph').style.backgroundColor='#dbedff';
+}
+}//end buildRandomGraphButton
+
+
+
+
+function showSolvingButton(){
+if((el('showSolving').value=='Solving...||'||el('showSolving').value=='Paused...\ > ')&&showSolving&&!stepping){
+pauser=!pauser;}stepping=false;
+solving=false;
+showSolving=true;
+showSolvingStatus();
+if(pauser){
+el('showSolving').value='Paused...\ > ';
+el('showSolving').style.backgroundColor='#ffd7d4';
+}else{el('showSolving').value='Solving...||';}
+}//end showSolvingButton
+
+
+
+
+function showSolvingStatus(){
+if(showSolving){
+el('showSolving').style.backgroundColor='#dbedff';
+el('showSolving').value='Solving...||';
+}else{
+el('showSolving').style.backgroundColor='white';
+el('showSolving').value='Show Solving';
+}
+}//end showSolvingStatus
+
+
+//called once onload
+
+function animInit(){
+cancelAnimationFrame(animId);
+animId=0;
+stepping=false;
+rColorGraphDone=false;
+solved=false;
+showSolvingStatus();
+pauser=false;
+animSV=0;
+animate();
+}//end animInit
+
+
+
+function animate(){
+setTimeout(function(){
+animId=requestAnimationFrame(animate);
+
+if(showSolving&&!pauser&&!stepping){
+
+if(!rColorGraphDone){
+rColorGraph(animSV);
+animSV++;
+if(animSV>sortedVerts.length-1){animSV=sortedVerts.length-1;}
+}else if(rColorGraphDone){
+recursiveNeighborSolver();
+}
+render();
+}//end!&&pauser
+},1000/framesPerSecond);//end setTimeout
+}//end animate
+
+
+
+
+function stepper(){
+showSolving=false;
+
+if(!rColorGraphDone){
+rColorGraph(animSV);
+animSV++;
+if(animSV>sortedVerts.length-1){animSV=sortedVerts.length-1;}
+}else if(rColorGraphDone){
+recursiveNeighborSolver();
+}
+render();
+}//end stepper
+
+
+
+function recursiveNeighborSolver(){
+numSolves++; numSolvesCounter=numSolves;
+//daa('tester','<br><br>'+numSolves+'  -----------------<br>');
+
+stillSearching=false;
+let stringer='';
+let errorString='';
+let checkCounter=0;
+
+nonNeighbor=[];
+for(let s=0;s<lastSearcher.length;s++){
+nonNeighbor[s]=lastSearcher[s];
+}
+searcher=[];
+lastSearcher=[];
+
+
+nextVertex:
+for(let v=0;v<vertices.length;v++){
+let neighArray=[];
+let neighColorCount=[];
+let colorAvailable=[true,true,true,true];
+
+if(vertices[v].c==4||vertices[v].searching){
+stillSearching=true;
+
+for(let n=0;n<vertices[v].nCount;n++){
+if(isThere(vertices[vertices[v].n[n]])){
+let nColor=vertices[vertices[v].n[n]].c;
+neighArray.push({
+i:vertices[v].n[n],
+color:nColor
+});
+
+colorAvailable[nColor]=false;
+}//isThere
+}//end n loop
+
+for(let c=0;c<4;c++){
+if(colorAvailable[c]&&c!=vertices[v].c){
+//alert('solved');
+vertices[v].c=c;
+vertices[v].searching=false;
+continue nextVertex;
+}
+}//end c loop
+
+let colorCounter=[];
+for(let c=0;c<4;c++){
+colorCounter[c]= neighArray.filter((obj)=>obj.color==c).length;
+
+let nIndex=neighArray.filter(x=>x.color===c).map(x=>x.i);
+
+
+let isNeigh=true;
+for(let nn=0;nn<nonNeighbor.length;nn++){
+for(let j=0;j<nIndex.length;j++){
+if(nonNeighbor[nn]==nIndex[j]){isNeigh=false;}
+
+}//end j loop
+}//end nn loop
+
+if(isNeigh){
+neighColorCount.push({
+nIndex:nIndex,
+color:c, 
+count:colorCounter[c]
+});
+}//isNeigh
+}//end c loop
+
+neighColorCount.sort((a,b)=>
+a.count-b.count
+||
+a.color-b.color);
+
+let ind=0;
+if(loopingDetected){ind=randRange(1,2);
+loopCounter++;
+if(loopCounter>2){
+loopingDetected=false;
+}
+}
+
+if(isThere(neighColorCount[ind])&&isThere(neighColorCount[ind].nIndex[0])){
+
+vertices[v].c=vertices[neighColorCount[ind].nIndex[0]].c;
+
+
+for(let j=0;j<neighColorCount[ind].nIndex.length;j++){
+searcher.push(neighColorCount[ind].nIndex[j]);
+
+}//end j loop
+
+lastSearcher.push(vertices[v].i);
+
+//daa('tester','<br>vertex index: '+vertices[v].i+' --- neighColorCount[0].nIndex: '+JSON.stringify(neighColorCount[0].nIndex)+'<br><br>');
+
+
+//for looping detection
+for(let i=0;i<neighColorCount[0].nIndex.length;i++){
+nIndexString+=neighColorCount[0].nIndex[i]+' ';
+}//i loop
+
+chunkSolveString+=vertices[v].i+' '+nIndexString;
+allSolvesString+=vertices[v].i+' '+nIndexString;
+
+
+solveCounter++;
+if(solveCounter==2){
+solveCounter=0;
+
+
+let regEx=new RegExp(chunkSolveString,'g');
+let matchCount=(allSolvesString.match(regEx)||[]).length;
+
+if(matchCount>1){
+loopingDetected=true;
+if(numSolves%13==0){
+//alert('looping detected');
+}
+//daa('tester','looping detected '+numSolves);
+}
+
+chunkSolveString='';
+nIndexString='';
+}//end if solveCounter greater than
+//end looping detection
+
+
+stringer+='<br>vertex index: '+vertices[v].i+' --- '+JSON.stringify(neighColorCount)+' -  .nIndex.length: '+neighColorCount[0].nIndex.length+'<br><br>';
+
+}//isThere neighColorCount
+}//end if .c==4
+
+//solve remaining same colored pairs
+if(v==vertices.length-1&&(!stillSearching||tripleCheck)){
+
+lastSearcher=[];
+let foundUnsolved=false;
+
+for(let i=0;i<pairArr.length;i++){
+if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
+if(
+vertices[pairArr[i][0]].c==
+vertices[pairArr[i][1]].c
+){
+
+vertices[pairArr[i][0]].searching=true;
+vertices[pairArr[i][1]].searching=true;
+lastSearcher.push(vertices[pairArr[i][0]].i);
+lastSearcher.push(vertices[pairArr[i][1]].i);
+vertices[pairArr[i][0]].c=0;
+vertices[pairArr[i][1]].c=0;
+
+//alert('pairArr same color: '+vertices[pairArr[i][0]].i+'---'+vertices[pairArr[i][1]].i+' -- solveRemainingPass: '+solveRemainingPass+' -- numSolves: '+numSolves);
+
+//daa('tester','verts: '+vertices[pairArr[i][0]].i+'---'+vertices[pairArr[i][1]].i+' -- '+solveRemainingPass+' -- numSolves: '+numSolves+'<br>');
+
+solveRemainingPass++;
+foundUnsolved=true;
+
+}//if same color
+}//isThere
+}//end i loop
+
+if(foundUnsolved){v=0;
+}else if(!tripleCheck){
+v=0;
+checkCounter++;
+if(checkCounter>3){
+//alert('tripleCheck=true');
+tripleCheck=true;}
+}//if !tripleCheck
+}//if v==vertices.length-1
+//end solve remaining same colored pairs
+
+}//end v loop
+
+
+for(let v=0;v<vertices.length;v++){
+vertices[v].searching=false;
+for(let s=0;s<searcher.length;s++){
+if(searcher[s]==vertices[v].i){
+vertices[v].searching=true;
+}
+}//end s loop
+
+if(v==vertices.length-1){
+
+el('tester').scrollTop=el('tester').scrollHeight;
+
+if(stillSearching==false){
+endTime=Date.now();
+deltaTime=endTime-startTime;
+//alert('all solved');
+if(showSolving||stepping){showMessage('All Solved',2000);}
+if(solving){
+showMessage('Solved in: '+deltaTime+' ms',2000);
+solving=false;solveButton();
+}
+rColorGraphDone=false;
+solved=true;
+animSV=0;
+showSolving=false;
+showSolvingStatus();
+pairString='';
+//da('tester','');
+numSolves=0;
+solveCounter=0;
+chunkSolveString='';
+//allSolvesString='';
+loopingDetected=false;
+nIndexString='';
+solveRemainingPass=0;
+tripleCheck=false;
+
+//da('tester','canvw '+canv.width+'<br>innerw '+window.innerWidth+'<br>screenw '+screen.width);
+render();
+return;
+}else if(stillSearching==true){
+
+
+if(numSolves==40){
+animSV=0;
+rColorGraph(animSV);
+}else if(numSolves==100){
+
+//alert('still solving after numSolves:'+numSolves);
+
+tripleCheck=false;
+checkCounter=0;
+}else if(numSolves==500){
+
+//daa('tester','stillSearching: '+stillSearching);
+
+alert('still solving after numSolves:'+numSolves+' so...returning.');
+//alert('still running after 500 solves so --- returning');
+return;
+}
+
+if(!showSolving&&!pauser&&!stepping){
+recursiveNeighborSolver();
+}
+}//if stillSearching
+
+}//if(v==vertices.length-1){
+
+
+}//end v loop
+}//end recursiveNeighborSolver
+
+
+function showMessage(messageString,time){
+el('messageHolder').style.display='block';
+da('message',messageString);
+messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
+}//end show message
+
+function hideMessage(timerId){
+clearTimeout(timerId);
+el('messageHolder').style.display='none';
+}//hide message
+
+
+function reSolverReset(){
+pairString='';
+da('tester','');
+numSolves=0;
+solveCounter=0;
+chunkSolveString='';
+allSolvesString='';
+loopingDetected=false;
+nIndexString='';
+solveRemainingPass=0;
+tripleCheck=false;
+rColorGraphDone=false;
+solved=false;
+}//end resolver reset
+
+
+function getFlexibles(){
+flexibles=[];
+
+for(let v=0;v<vertices.length;v++){
+flexibles[v]={
+avail:false,
+i: vertices[v].i,
+colorsAvailable:[]
+};
+if(vertices[vertices[v].i].c!=4){
+let colorAvailable=[true,true,true,true];
+for(let c=0;c<4;c++){
+for(let n=0;n<vertices[v].nCount;n++){
+if(isThere(vertices[vertices[v].n[n]])){
+if(
+(vertices[v].c==c)||
+(vertices[vertices[v].n[n]].c==c)){
+colorAvailable[c]=false;
+break;//next color
+}
+}//isThere
+}//end n loop
+
+if(colorAvailable[c]){
+flexibles[v].avail=true;
+flexibles[v].colorsAvailable.push(fourColorShort[c]);
+}
+
+}//end c loop
+}//!=4
+}//end v loop
+}//end getFlexibles
+
+
+
+function buildAndRender(){
+vertices=[];
+triangles=[];
+pairArr=[];
+pairString='';
+//da('tester','');
+numSolves=0;
+solveCounter=0;
+chunkSolveString='';
+allSolvesString='';
+loopingDetected=false;
+nIndexString='';
+solveRemainingPass=0;
+tripleCheck=false;
+rColorGraphDone=false;
+solved=false;
+solving=false;
+showSolving=false;
+linkStart=-1;
+linkEnd=-1;
+delaunay=true;
+
+let radius=diam*.5;
+let offset=.5*radius;
+let onlySome=0;
+let pointCounter=0;
+
+if(setRandomVerts){
+for(let y=diam;y<cH-radius;y+=diam){
+if(pointCounter>=numPoints){break;}
+for(let x=radius*1.7;x<cW-radius;x+=diam){
+let randOffX=randRange(-offset,offset);
+let randOffY=randRange(-offset,offset);
+onlySome=randRange(1,30);
+if(onlySome>20){
+vertices.push(new Vertex(x+randOffX,y+randOffY,4,pointCounter,0,[],false));
+pointCounter++;
+triangles=triangulate(vertices);
+
+if(pointCounter>=numPoints){break;}
+}//onlySome
+}//end x loop
+}//end y loop
+
+
+sortByNeighborCount();
+if(!showSolving){
+render();
+}
+
+}else if(!setRandomVerts){
+getGraphData();
+}
+
+building=false;
+activeButton('buildRandomGraph');
+buildRandomGraphButton();
+}// end buildAndRender
+
+
+
+
+
+var renderCount=0;
+
+function render(){
+for(let v=0;v<vertices.length;v++){
+vertices[v].i=v;}
+
+
+if(showFlexibles){getFlexibles();}
+
+//drawBackground
+ctx.beginPath();
+ctx.globalAlpha=1;
+ctx.fillStyle='white';
+ctx.fillRect(0, 0, cW, cH);
+ctx.globalAlpha=1;
+ctx.fillStyle=backgroundColor;//d6d651
+ctx.fillRect(0, 0, cW, cH);
+ctx.closePath();
+
+//drawFrame that saves to image
+ctx.globalAlpha=.4;
+ctx.lineWidth=4;
+ctx.strokeStyle='black';
+ctx.strokeRect(0, 0, cW, cH);
+ctx.lineWidth=2;
+//end drawFrame
+
+
+if(delaunay){
+//draw triangles
+ctx.globalAlpha=1;
+let i=0;
+triangles.forEach(function(triangle){
+ctx.beginPath();
+ctx.moveTo(triangle.v0.x, triangle.v0.y);
+ctx.lineTo(triangle.v1.x, triangle.v1.y);
+ctx.lineTo(triangle.v2.x, triangle.v2.y);
+ctx.closePath();
+ctx.strokeStyle="black";
+ctx.lineWidth=1;
+ctx.stroke();
+//ctx.fillStyle='transparent';//triColors[i];
+//ctx.fill();
+i++;
+});//end triangles foreach
+
+}//!custom
+
+if(!delaunay){
+ctx.globalAlpha=1;
+
+
+
+for(let i=0;i<pairArr.length;i++){
+if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
+
+ctx.beginPath();
+
+ctx.moveTo(
+vertices[pairArr[i][0]].x, 
+vertices[pairArr[i][0]].y);
+
+
+ctx.lineTo(
+vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
+
+ctx.closePath();
+ctx.strokeStyle='black';
+ctx.lineWidth=1;
+ctx.stroke();
+}//isThere
+}//end i loop
+}//if !delaunay
+
+
+
+//highlight same color vertices link
+
+
+if(highlightSame){
+
+sameColorVerts=[];
+for(let i=0;i<pairArr.length;i++){
+sameColorVerts[i]=false;
+}
+
+for(let i=0;i<pairArr.length;i++){
+if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
+if(vertices[pairArr[i][0]].c==vertices[pairArr[i][1]].c){
+sameColorVerts[i]=true;
+}//end if
+}//isThere
+}//end i loop
+
+
+for(let i=0;i<pairArr.length;i++){
+
+if(sameColorVerts[i]){
+
+ctx.beginPath();
+ctx.moveTo(vertices[pairArr[i][0]].x, vertices[pairArr[i][0]].y);
+ctx.lineTo(vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
+ctx.closePath();
+ctx.strokeStyle="black";
+ctx.lineWidth=5;
+ctx.stroke();
+
+}//end if same color
+
+}//end i loop
+
+}//end if highlightSame
+
+    
+
+//draw vertices as circles
+let ci=0;
+this.vertices.forEach(function(vertex){
+ctx.beginPath();
+ctx.arc(vertex.x, vertex.y, vertSize, 0, Math.PI * 2, true);
+ctx.closePath();
+
+if(xray){
+ctx.fillStyle='transparent';
+}else{
+ctx.fillStyle=fourColor[vertices[ci].c];
+}
+ctx.fill();
+
+if(vertices[ci].c==4){
+ctx.fillStyle='black';
+}else{
+ctx.fillStyle='white';
+}
+ctx.font="26px Monospace";
+let xOff=12;
+if(vertex.i>99){xOff=24;}
+if(showNumNeigh){
+ctx.fillText(vertex.nCount,vertex.x-12,vertex.y+8);
+}else{
+ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+8);
+}
+
+if(showFlexibles&&flexibles[ci].avail){
+ctx.fillStyle='black';
+for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
+ctx.fillText(flexibles[ci
+].colorsAvailable[c],vertex.x+12,vertex.y+58);
+}//end c loop
+ctx.strokeStyle='black';
+ctx.lineWidth=14;
+}else{
+ctx.strokeStyle='black';
+ctx.lineWidth=1;
+}
+ctx.stroke();
+
+ci++;
+});//end vertices foreach
+
+renderCount++;
+}//end render
+
+
+
+
+//Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
+
+function Vertex(x,y,c,i,n,nCount,searching){ 
+this.x=x;
+this.y=y;
+this.c=c;//color
+this.i=i;//index
+this.n=n;//neighbors
+this.nCount=nCount;//neighbors count
+this.searching=searching;
+}//end Vertex
+
+      
+//Triangle object constructor
+//returns {v0:Vertex, v1:Vertex, v2:Vertex, center:Vertex, radius:number, radius_squared:number}
+
+function Triangle(v0, v1, v2){ 
+this.v0=v0;
+this.v1=v1;
+this.v2=v2;
+//calculate circumcircle;we always do this when we build a new triangle object, so why not put it here in the constructor, instead of putting it somewhere else and calling it from here?
+let A=this.v1.x - this.v0.x;
+let B=this.v1.y - this.v0.y;
+let C=this.v2.x - this.v0.x;
+let D=this.v2.y - this.v0.y;
+let E=A * (this.v0.x + this.v1.x) + B * (this.v0.y + this.v1.y);
+let F=C * (this.v0.x + this.v2.x) + D * (this.v0.y + this.v2.y);
+let G=2.0 * (A * (this.v2.y - this.v1.y) - B * (this.v2.x - this.v1.x));
+let dx, dy;
+if(Math.abs(G)<EPSILON){
+let minx=Math.min(this.v0.x, this.v1.x, this.v2.x);
+let miny=Math.min(this.v0.y, this.v1.y, this.v2.y);
+let maxx=Math.max(this.v0.x, this.v1.x, this.v2.x);
+let maxy=Math.max(this.v0.y, this.v1.y, this.v2.y);
+this.center=new Vertex((minx + maxx) / 2, (miny + maxy) / 2, 4);
+dx=this.center.x - minx;
+dy=this.center.y - miny;
+}else{
+let cx=(D * E - B * F) / G;
+let cy=(A * F - C * E) / G;
+this.center=new Vertex(cx, cy, 4);
+dx=this.center.x - this.v0.x;
+dy=this.center.y - this.v0.y;
+}
+this.radius_squared=dx * dx + dy * dy;
+this.radius=Math.sqrt(this.radius_squared);
+//end calculate circumcircle;
+}//end Triangle
+
+//Edge object constructor; 
+//returns {v0:Vertex,v1:vertex,equals:function,inverse:function}
+function Edge(v0, v1){ 
+this.v0=v0;
+this.v1=v1;
+this.equals=function(other){return (this.v0 === other.v0 && this.v1 === other.v1);};
+this.inverse=function(){return new Edge(this.v1, this.v0);};
+}//end edge
+
+
+function triangulate(vertices){
+pairString='';
+let triangles=[];
+let minx, miny, maxx, maxy;
+vertices.forEach(function(vertex){
+if(minx === undefined || vertex.x<minx){ minx=vertex.x;}
+if(miny === undefined || vertex.y<miny){ miny=vertex.y;}
+if(maxx === undefined || vertex.x > maxx){ maxx=vertex.x;}
+if(maxy === undefined || vertex.y > maxy){ maxy=vertex.y;}
+});
+let dx=(maxx - minx) * 10;
+let dy=(maxy - miny) * 10;
+let stv0=new Vertex(minx - dx, miny - dy * 3, 4);
+let stv1=new Vertex(minx - dx, maxy + dy, 4);
+let stv2=new Vertex(maxx + dx * 3, maxy + dy, 4);
+let st=new Triangle(stv0, stv1, stv2);
+triangles.push(st);
+
+let ci=0;
+vertices.forEach(function(vertex){
+vertex.i=ci;
+ci++;
+
+edges=[];
+triangles=triangles.filter(function(triangle){
+let dx=triangle.center.x - vertex.x;
+let dy=triangle.center.y - vertex.y;
+let dist_squared=dx * dx + dy * dy;
+let inCirc=(dist_squared <= triangle.radius_squared);
+if(inCirc){
+edges.push(new Edge(triangle.v0, triangle.v1));
+edges.push(new Edge(triangle.v1, triangle.v2));
+edges.push(new Edge(triangle.v2, triangle.v0));
+return false;
+}else{
+return true;
+}
+});
+
+let uniqueEdgesArray=[];
+
+
+for(let i=0;i<edges.length;++i){
+let edge1=edges[i];
+
+let unique=true;
+for(let j=0;j<edges.length;++j){
+if(i === j){continue;}
+let edge2=edges[j];
+if(edge1.equals(edge2) || edge1.inverse().equals(edge2)){unique=false;break;}
+} //end j loop
+if(unique){
+uniqueEdgesArray.push(edge1);
+}
+}//end i loop
+edges=uniqueEdgesArray;
+
+edges.forEach(function(edge){
+triangles.push(new Triangle(edge.v0, edge.v1, vertex));
+});//end foreach edges
+});//end foreach vertices
+
+
+triangles=triangles.filter(function(triangle){
+return !(triangle.v0 == st.v0 || triangle.v0 == st.v1 || triangle.v0 == st.v2 ||
+triangle.v1 == st.v0 || triangle.v1 == st.v1 || triangle.v1 == st.v2 ||
+triangle.v2 == st.v0 || triangle.v2 == st.v1 || triangle.v2 == st.v2);
+});
+
+
+return triangles;
+}//end triangulate
+
+
+
+
+
+
+
+
+document.body.onload=function(){
+cancelAnimationFrame(animId);
+buildAndRender();
+animInit();
+getGraphFilenames();
+}//end onload
+
+zoom(el('filenameInputDiv'),2,80,20);
+zoom(el('numVertsInputDiv'),2,80,20);
+zoom(el('fpsInputDiv'),2,80,20);
+//zoom(el('buttonHolder'),.25,100,100);
+//zoom(el('bodyer'),.25,100,100);
+
+
+
+
+</script>
+
+</body>
+</html>
