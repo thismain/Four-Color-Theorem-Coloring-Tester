@@ -1,7 +1,7 @@
 The live demo is here:
 http://moygen.rf.gd/graph2/index.html
 
-![Screenshot of Graph Four-Coloring](http://moygen.rf.gd/graph2/Screenshot_47.png)
+[![Screenshot of Graph Four-Coloring](http://moygen.rf.gd/graph2/Screenshot_47.png)](http://moygen.rf.gd/graph2/index.html)
 
 This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 300 or fewer vertices. I use delaunay triangulation, from [Joshua Bell's code](https://travellermap.com/tmp/delaunay.js), to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. php is used for saving and loading graphs to and from a text file. To use these functions, set the usePHP variable in index.html to true, chmod the data folder to 777, and change the paths to point to your server.
 
