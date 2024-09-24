@@ -846,11 +846,12 @@ animId=0;
 stepping=false;
 rColorGraphDone=false;
 solved=false;
-showSolvingStatus();
 pauser=false;
 animSV=0;
 animate();
-setTimeout("activeButton('showSolving');showSolvingButton();",500);
+showSolving=true;
+activeButton('showSolving');
+showSolvingStatus();
 }//end animInit
 
 
@@ -859,7 +860,7 @@ setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
 if(playOpening&&solved){solved=false;
-setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
+setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",3000);
 }
 
 
