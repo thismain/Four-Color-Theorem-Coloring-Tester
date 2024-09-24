@@ -122,8 +122,11 @@ elm.style.height=(h/scale)+"%";
 
 </div>
 
-
-<div id="tester"  style="color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000;font-size:30px;border:6px solid white;display:none;width:1000px;height:400px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:20px;overflow:auto;"></div>
+<div id="testerHolder" style="background-color:black;position:absolute;left:40px;top:40px;z-index:10000;border:6px solid white;display:none;width:1000px;height:400px;">
+<div id="tester" style="color:#00ff00;font-size:30px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:20px;overflow:auto;">
+</div>
+<div onmousedown="showHide('testerHolder');" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
+</div>
 
 <div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:60px;border:12px solid black;display:none;z-index:1000000;background-color:white;">
 
@@ -163,12 +166,11 @@ Filename:
 </div>
 
 
+<div id="fullscreen" onmousedown="toggleFullScreen();" style="color:#bbbbbb;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;right:0px;bottom:40px;z-index:10000000000;visibility:visible;width:25px;height:25px;">[]</div>
 
 
 
-
-<div id="expander" onmousedown="controlPanelOpenClose();" style="text-align:center;right:0px;position:fixed;font-weight:bold;font-size:25px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:10000000000;visibility:visible;width:40px">  -  
-</div>
+<div id="expander" onmousedown="controlPanelOpenClose();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:10000000000;visibility:visible;width:25px;height:25px;">-</div>
 
 <div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;">
 
@@ -216,7 +218,7 @@ onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showN
 <!--<br>-->
 
 <input type="button" value="Tester" id="testerButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
 
 <input type="button" value="loadGraph" id="loadGraphButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b">
@@ -238,6 +240,7 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 
 <div id="consoler"  style="width:100%;height:200px;display:block;font-size:30px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
 
+<div onmousedown="showHideV('consoleInputDiv');" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
 
 
@@ -341,7 +344,7 @@ el('buttonHolder').style.width=ww+'px';
 el('fpsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
 el('numVertsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
 
-el('tester').style.width=ww*.8+'px';
+el('testerHolder').style.width=ww*.9+'px';
 el('consoleInputDiv').style.width=ww*.9+'px';
 
 cancelAnimationFrame(animId);
@@ -1254,9 +1257,9 @@ let onlySome=0;
 let pointCounter=0;
 
 if(setRandomVerts){
-for(let y=radius*1;y<cH-radius;y+=diam){
+for(let y=radius*1.7;y<cH-radius;y+=diam){
 if(pointCounter>=numPoints){break;}
-for(let x=radius*1.5;x<cW-radius;x+=diam){
+for(let x=radius*1.5;x<cW-radius*1.5;x+=diam){
 let randOffX=randRange(-offset,offset);
 let randOffY=randRange(-offset,offset);
 onlySome=randRange(1,30);
@@ -1286,11 +1289,6 @@ buildRandomGraphButton();
 
 da('tester',ww+'----'+hh+'----'+vertSize+'---'+Math.sqrt(cW*cH/numPoints*.29));
 }// end buildAndRender
-
-/*
-numPoints=(cW*cH)/(100*100)*.33;
-
-*/
 
 
 
@@ -1610,6 +1608,37 @@ document.body.onload=function(){
 init();
 }//end onload
 
+
+
+function isFullScreen(){
+return (document.fullScreenElement && document.fullScreenElement !== null)
+|| document.mozFullScreen
+|| document.webkitIsFullScreen;
+}//end is full screen
+
+function requestFullScreen(){
+var el=document.documentElement;
+var rfs=el.requestFullscreen
+|| el.webkitRequestFullScreen
+|| el.mozRequestFullScreen
+|| el.msRequestFullscreen;
+rfs.call(el);
+}//end request full screen 
+
+function exitFullScreen(){
+var d=document;
+var rfs=d.exitFullscreen
+|| d.webkitExitFullscreen
+|| d.mozCancelFullScreen
+|| d.msExitFullscreen ;
+rfs.call(d);
+}//end exit fullscreen
+
+function toggleFullScreen(){
+if(isFullScreen()){exitFullScreen();
+}else{requestFullScreen();
+}
+}//end toggle full screen
 </script>
 
 </body>
