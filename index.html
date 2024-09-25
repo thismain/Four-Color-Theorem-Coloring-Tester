@@ -16,6 +16,7 @@ border:1px solid #000000;
 </head>
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
+var playOpening=true;
 var usePHP=false;
 var serverAddress='http://0.0.0.0:45267/';
 var EPSILON=1.0e-6;
@@ -104,8 +105,7 @@ var minVertSize=24;
 var maxDiam=120;
 var minDiam=56;
 var moveRaw=false;
-
-
+var randOnlySome=.29;
 
 function clamp(a,min,max){
 if(a<min){a=min;}else if(a>max){a=max;}
@@ -114,10 +114,8 @@ return a;
 
 
 function graphRenderScaleFactors(){
-diam=maxDiam-(numPoints-50)*.38;
-diam=clamp(diam,minDiam,maxDiam);
-vertSize=maxVertSize-(numPoints-50)*.027;
-vertSize=clamp(vertSize,minVertSize,maxVertSize);
+diam=Math.sqrt(cW*cH/numPoints*randOnlySome);
+vertSize=clamp(.25*diam,minVertSize,maxVertSize);
 }//graphRenderScaleFactors
 
 graphRenderScaleFactors();
@@ -194,7 +192,7 @@ Filename:
 <input id="buildRandomGraph" type="button" value="Build Random Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};showBools(this.id);" class="b">
 
 <input id="showSolving" type="button" value="Show Solving" 
-ontouchstart="event.preventDefault();activeButton(this.id);showSolvingButton();showBools(this.id);" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);showSolvingButton();showBools(this.id);playOpening=false;" class="b">
 
 <input id="solve" type="button" value="Solve" 
 ontouchstart="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b">
@@ -292,7 +290,7 @@ Number of Vertices:
 <input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;color:caret-color:white;font-family:monospace;color:white;font-size:70px;padding:10px"
 ontouchstart="">
 
-<input id="numVertsApply" value="Apply" type="button" ontouchstart="activeButton(this.id);flexibles=[];showFlexibles=false;numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
+<input id="numVertsApply" value="Apply" type="button" ontouchstart="activeButton(this.id);flexibles=[];numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
 
 <input value="cancel" type="button" ontouchstart="el('numVertsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
 
@@ -520,6 +518,7 @@ sortByNeighborCount();
 render();
 }
 }//end ontouchmove
+
 
 
 canv.ontouchstart=function(e){
@@ -824,14 +823,15 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 function showSolvingButton(){
 if((el('showSolving').value=='Solving...||'||el('showSolving').value=='Paused...\ > ')&&showSolving&&!stepping){
-pauser=!pauser;}stepping=false;
+pauser=!pauser;}
+stepping=false;
 solving=false;
 showSolving=true;
 showSolvingStatus();
 if(pauser){
 el('showSolving').value='Paused...\ > ';
 el('showSolving').style.backgroundColor='#ffd7d4';
-}else{el('showSolving').value='Solving...||';}
+}else if(!pauser||playOpening){el('showSolving').value='Solving...||';}
 }//end showSolvingButton
 
 
@@ -860,28 +860,36 @@ showSolvingStatus();
 pauser=false;
 animSV=0;
 animate();
+setTimeout("activeButton('showSolving');showSolvingButton();",500);
 }//end animInit
-
 
 
 function animate(){
 setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
+if(playOpening&&solved){solved=false;
+setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
+}
+
+
 if(showSolving&&!pauser&&!stepping){
 
 if(!rColorGraphDone){
 rColorGraph(animSV);
 animSV++;
-if(animSV>sortedVerts.length-1){animSV=sortedVerts.length-1;}
-}else if(rColorGraphDone){
+if(animSV>=sortedVerts.length-1){
+rColorGraphDone=true;
+}
+}//if(!rColorGraphDone){
+
+if(rColorGraphDone){
 recursiveNeighborSolver();
 }
 render();
 }//end!&&pauser
 },1000/framesPerSecond);//end setTimeout
 }//end animate
-
 
 
 
@@ -1425,8 +1433,9 @@ ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+8);
 if(showFlexibles&&flexibles[ci].avail){
 ctx.fillStyle='black';
 for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
+let coff=c*15;
 ctx.fillText(flexibles[ci
-].colorsAvailable[c],vertex.x+12,vertex.y+58);
+].colorsAvailable[c],vertex.x+12+coff,vertex.y+58);
 }//end c loop
 ctx.strokeStyle='black';
 ctx.lineWidth=14;
