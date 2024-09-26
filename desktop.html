@@ -168,6 +168,8 @@ elm.style.height=(h/scale)+"%";
 <div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
 <div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;">
 <b>Shortcut Keys:</b>
+
+<div onmousedown="showHide('shortcutKeys');" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-bottom:8px;padding-left:8px;padding-right:8px;height:18px;width:18px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
 <div style="background-color:#ffffff;font-family:monospace;padding:10px;">
 <br><br>
@@ -192,6 +194,7 @@ elm.style.height=(h/scale)+"%";
 <tr><td class="t">[2] Add a Linked Vertex<br>(no delaunay)</td><td class="t2">Click a starting vertex and then a free space to add a linked vertex without delaunay triangulation
 <tr><td class="t">[3] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
 <tr><td class="t">[4] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
+<tr><td class="t">[W] Toggle Fullscreen</td><td class="t2">Toggle Fullscreen
 <tr><td class="t">[T] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
 <tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
 </td></tr></table>
@@ -1685,6 +1688,9 @@ onKeyDowner=function(event){
 if(!typing){
 if(event.key=='z'){altKey=true;}
 switch(event.key){
+case 'w':
+toggleFullScreen();
+break;
 case 'k':
 showHide('shortcutKeys');
 break;
