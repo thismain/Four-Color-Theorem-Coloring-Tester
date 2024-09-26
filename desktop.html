@@ -18,6 +18,23 @@ margin-right:-4px;
 margin-left:-4px;
 display:inline-block;
 }
+.t{
+width:30%;
+border-bottom:1px solid #cdcdcd;
+margin:0px;
+
+}
+.t2{
+width:70%;
+border-bottom:1px solid #cdcdcd;
+margin:0px;
+padding:4px;
+
+}
+
+.container::-webkit-scrollbar{display:none;}/* Safari and Chrome */
+.container{-ms-overflow-style:none; /* Internet Explorer 10+ */
+scrollbar-width: none;  /* Firefox */}
 </style>
 </head>
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
@@ -102,12 +119,13 @@ var startConnecting=false;
 var endConnecting=false;
 var delaunay=true;
 var moveRaw=false;
-var playOpening=true;
+var playOpening=false;
 var buildTimer=0;clearTimeout(buildTimer);
 var solveTimer=0;clearTimeout(solveTimer);
 var numVertsTimer=0;clearTimeout(numVertsTimer);
 var playOpeningTimer=0;clearTimeout(playOpeningTimer);
 var animateTimer=0;clearTimeout(animateTimer);
+var typing=false;
 
 function getDeltaTime(){
 deltaTime=endTime-startTime;
@@ -147,6 +165,39 @@ elm.style.height=(h/scale)+"%";
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
 
 
+<div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+<div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;">
+<b>Shortcut Keys:</b>
+</div>
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;">
+<br><br>
+<table>
+<tr><td class="t">
+    [P]: Show Solving </td><td class="t2">Renders each step of the 4-coloring algorithm as it solves the graph
+<tr><td class="t">[S]: Solve </td><td class="t2">Renders result of solve and displays time in milliseconds
+<tr><td class="t">[V]: Step </td><td class="t2">Advance one step of algorithm solving at a time 
+<tr><td class="t">[B]: Build Random Graph </td><td class="t2">Build a random graph with delaunay triangulation
+<tr><td class="t">[H]: Show/Hide Buttons </td><td class="t2">Show/Hide buttons for all functions
+<tr><td class="t">[A]: Add Vertex </td><td class="t2">Click on graph to add a vertex with delaunay triangulation connecting it to surrounding Vertices
+<tr><td class="t">[M]: Move Vertex </td><td class="t2">Click on a vertex and drag it to move it with delaunay triangulation adjusting connections 
+<tr><td class="t">[D]: Delete Vertex </td><td class="t2">Click on a vertex to delete it with delaunay triangulation modifying surrounding connections
+<tr><td class="t">[C] Color Vertex </td><td class="t2">Click on a vertex to change the color in cycles of red, yellow, green and blue
+<tr><td class="t">[N] Number of Vertices</td><td class="t2">Set number of vertices
+<tr><td class="t">[F] Frames Per Second</td><td class="t2">Set frames per second of animation when showing Solving
+<tr><td class="t">[Y] Time to Solve</td><td class="t2">Display time to solve in milliseconds and number of steps
+<tr><td class="t">[G] Number of Neighbors</td><td class="t2">Display numbers of neighbors on each vertex
+<tr><td class="t">[X] Flexibles</td><td class="t2">Highlight the vertices which can be another color and list possible colors
+<tr><td class="t">[O] Console</td><td class="t2">Enter a variable and hit enter to see the value of a global variable
+<tr><td class="t">[1] Add Vertex<br>(no delaunay)</td><td class="t2">Click the graph to add a vertex without delaunay triangulation
+<tr><td class="t">[2] Add a Linked Vertex<br>(no delaunay)</td><td class="t2">Click a starting vertex and then a free space to add a linked vertex without delaunay triangulation
+<tr><td class="t">[3] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
+<tr><td class="t">[4] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
+<tr><td class="t">[T] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
+<tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
+</td></tr></table>
+</div>
+
+</div>
 
 
 
@@ -171,23 +222,22 @@ Filename:
 </div>
 
 
-<input type="button" value="[]" id="fullscreen" onmousedown="toggleFullScreen();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;right:0px;bottom:36px;z-index:10000000000;visibility:visible;width:40px;height:40px;margin:0px;" >
 
 
 
-<input type="button" value="-" id="expander" onmousedown="controlPanelOpenClose();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:10000000000;visibility:visible;width:40px;height:35px;margin:0px;">
 
-<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;">
 
-<input id="buildRandomGraph" type="button" value="Build Random Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};showBools(this.id);" class="b">
+<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;">
+
+<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b">
 
 <input id="showSolving" type="button" value="Show Solving" 
-onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();showBools(this.id);" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b">
 
 <input id="solve" type="button" value="Solve" 
 onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b">
 
-<input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();showBools(this.id);" class="b">
+<input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b">
 
 
 
@@ -211,7 +261,7 @@ class="b">
 
 <!--<br>-->
 
-<input id="numberOfVerts" type="button" value="Number of Vertices" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
+<input id="numberOfVerts" type="button" value="Number of Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
 
 <input id="fpsId" type="button" value="FPS" onmousedown=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
 
@@ -241,11 +291,13 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 
 <div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:20px;width:90%;font-size:40px;font-family:monospace;background-color:#ffffff;padding:15px;border:1px solid black;visibility:hidden;height:450px;overflow:auto;">
 
-<input id="consoleInput" type="text"  value="pairArr" style="font-family:monospace;color:black;font-size:40px;border:1px solid black;display:inline-block;padding:15px;" size="35"><input value="Enter" type="button" onmousedown="da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="display:inline-block;font-size:45px;padding:15px;">
+<input id="consoleInput" type="text"  value="pairArr" style="font-family:monospace;color:black;font-size:40px;border:1px solid black;display:inline-block;padding:15px;" size="35" onmousedown="typing=true;">
+
+<input value="Enter" type="button" onmousedown="typing=false;da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="display:inline-block;font-size:45px;padding:15px;">
 
 <div id="consoler"  style="width:100%;height:200px;display:block;font-size:30px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
 
-<div onmousedown="showHideV('consoleInputDiv');" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
+<div onmousedown="typing=false;showHideV('consoleInputDiv');" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
 
 
@@ -256,7 +308,7 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 <input type="button" value="add" id="addButton"
 onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
 
-<input type="button" value="addLinked" id="addVertButton"
+<input type="button" value="addLinked" id="addLinkedButton"
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
 <input type="button" value="Link" id="linkVertsButton"
@@ -271,17 +323,30 @@ onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=funct
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
 
+</div>
+<div style="width:44px;">
+
+
+
+</div>
 </div><!--end buttonHolder-->
+
+<input type="button" value="K" id="shortcuts" onmousedown="showHide('shortcutKeys');" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:72px;z-index:1000000000;visibility:visible;width:40px;height:34px;margin:0px;">
+
+<input type="button" value="[]" id="fullscreen" onmousedown="toggleFullScreen();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:16px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;right:0px;bottom:34px;z-index:1000000000;visibility:visible;width:40px;height:36px;margin:0px;vertical-align:top;" >
+
+<input type="button" value="-" id="expander" onmousedown="controlPanelOpenClose();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:100000000000;visibility:visible;width:40px;height:32px;margin:0px;">
+
 
 <div id="numVertsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
 
 Number of Vertices:
 <input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;color:caret-color:white;font-family:monospace;color:white;font-size:70px;padding:10px"
-onmousedown="">
+onmousedown="typing=true;">
 
-<input id="numVertsApply" value="Apply" type="button" onmousedown="activeButton(this.id);flexibles=[];numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(numVertsTimer);numVertsTimer=setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
+<input id="numVertsApply" value="Apply" type="button" onmousedown="typing=false;activeButton(this.id);flexibles=[];numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(numVertsTimer);numVertsTimer=setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
 
-<input value="cancel" type="button" onmousedown="el('numVertsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
+<input value="cancel" type="button" onmousedown="typing=false;el('numVertsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
 
 </div>
 
@@ -290,11 +355,11 @@ onmousedown="">
 
 
 FPS (1-60):
-<input id="enterFPS" type="text"  size="3" value="" style="font-family:monospace;color:black;font-size:50px;padding:10px">
+<input id="enterFPS" type="text"  size="3" value="" style="font-family:monospace;color:black;font-size:50px;padding:10px" onmousedown="typing=true;">
 
-<input value="Apply" type="button" onmousedown="framesPerSecond=parseInt(el('enterFPS').value);if(framesPerSecond<1){framesPerSecond=1;}else if(framesPerSecond>120){framesPerSecond=120;}el('fpsInputDiv').style.visibility='hidden';"  style="display:inline-block;font-size:50px;padding:10px;">
+<input value="Apply" type="button" onmousedown="typing=false;framesPerSecond=parseInt(el('enterFPS').value);if(framesPerSecond<1){framesPerSecond=1;}else if(framesPerSecond>120){framesPerSecond=120;}el('fpsInputDiv').style.visibility='hidden';"  style="display:inline-block;font-size:50px;padding:10px;">
 
-<input value="cancel" type="button" onmousedown="el('fpsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
+<input value="cancel" type="button" onmousedown="typing=false;el('fpsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
 
 </div>
 <script>
@@ -338,12 +403,16 @@ canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
 
+el('shortcutKeys').style.width=ww*.93+'px';
+el('shortcutKeysHeading').style.width=ww*.93+'px';
+
 el('messageHolder').style.left=ww*.5-200+'px';
 el('messageHolder').style.top=hh*.23+'px';
 
 let bhStyle=getComputedStyle(el('buttonHolder'));
 let bhHeight=bhStyle.height;
 el('buttonHolder').style.width=ww+'px';
+el('buttonHolderInner').style.width=ww-48+'px';
 //el('expander').style.bottom=parseInt(bhHeight)+20+'px';
 
 el('fpsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
@@ -1134,7 +1203,7 @@ rColorGraph(animSV);
 //alert('still solving after numSolves:'+numSolves);
 tripleCheck=false;
 checkCounter=0;
-}else if(numSolves>300){
+}else if(numSolves>1000){
 alert('still solving after numSolves:'+numSolves+' so...returning.');
 return;
 }
@@ -1607,10 +1676,80 @@ return triangles;
 
 
 
-document.body.onload=function(){
-init();
-}//end onload
+document.body.onload=function(){init();}
 
+document.body.onkeydown=function(){onKeyDowner(event);}
+
+
+onKeyDowner=function(event){
+if(!typing){
+if(event.key=='z'){altKey=true;}
+switch(event.key){
+case 'k':
+showHide('shortcutKeys');
+break;
+case 'p':
+activeButton('showSolving');playOpening=false;showSolvingButton();
+break;
+case 's':
+activeButton('solve');stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);
+break;
+case 'v': 
+activeButton('step');solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();
+break;
+case 'b':
+activeButton('buildRandomGraph');building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};
+break;
+case 'h':controlPanelOpenClose();
+break;
+case 'a':
+activeButton('addVertex');canv.onmousedown=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}
+break;
+case 'm':
+activeButton('moveVertex');canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}
+break;
+case 'd':
+activeButton('deleteVertex');canv.onmousedown=function(e){getVertexToEdit(e);deleteVertex(e,true);solved=false;}
+break;
+case 'c':
+activeButton('colorVerts');canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}
+break;
+case 't':
+activeButton('testerButton');showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;
+break;
+case 'n':
+activeButton('numberOfVerts');el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');
+break;
+case 'f':
+activeButton('fpsId');el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');
+break;
+case 'y':
+activeButton('timeToSolveId');showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);
+break;
+case 'g':
+activeButton('neighs');if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();
+break;
+case 'x':
+activeButton('flexiblesButton');showFlexibles=!showFlexibles;render();
+break;j
+case 'o':
+activeButton('consoleButton');showHideV('consoleInputDiv');render();
+break;
+case '1':
+activeButton('addButton');gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}
+break;
+case '2':
+activeButton('addLinkedButton');delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}
+break;
+case '3':
+activeButton('moveVertButton');canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}
+break;
+case '4':
+activeButton('deleteVertButton');canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}
+break;
+}//end switch
+}//end if(!typing){
+}//end onKeyDowner
 
 
 function isFullScreen(){
