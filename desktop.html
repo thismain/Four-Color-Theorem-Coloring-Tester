@@ -236,7 +236,7 @@ Filename:
 <input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
 
 <input id="showSolving" type="button" value="Show Solving" 
-onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b" title="[P]">
+onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b" title="[P] or spacebar">
 
 <input id="solve" type="button" value="Solve" 
 onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b" title="[S]">
@@ -1686,7 +1686,6 @@ document.body.onkeydown=function(){onKeyDowner(event);}
 
 onKeyDowner=function(event){
 if(!typing){
-if(event.key=='z'){altKey=true;}
 switch(event.key){
 case 'w':
 toggleFullScreen();
@@ -1695,6 +1694,7 @@ case 'k':
 showHide('shortcutKeys');
 break;
 case 'p':
+case ' ':
 activeButton('showSolving');playOpening=false;showSolvingButton();
 break;
 case 's':
