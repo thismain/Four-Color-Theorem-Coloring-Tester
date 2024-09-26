@@ -186,16 +186,17 @@ elm.style.height=(h/scale)+"%";
 <tr><td class="t">[C] Color Vertex </td><td class="t2">Click on a vertex to change the color in cycles of red, yellow, green and blue
 <tr><td class="t">[N] Number of Vertices</td><td class="t2">Set number of vertices
 <tr><td class="t">[F] Frames Per Second</td><td class="t2">Set frames per second of animation when showing Solving
-<tr><td class="t">[Y] Time to Solve</td><td class="t2">Display time to solve in milliseconds and number of steps
+<tr><td class="t">[T] Time to Solve</td><td class="t2">Display time to solve in milliseconds and number of steps
 <tr><td class="t">[G] Number of Neighbors</td><td class="t2">Display numbers of neighbors on each vertex
 <tr><td class="t">[X] Flexibles</td><td class="t2">Highlight the vertices which can be another color and list possible colors
 <tr><td class="t">[O] Console</td><td class="t2">Enter a variable and hit enter to see the value of a global variable
 <tr><td class="t">[1] Add Vertex<br>(no delaunay)</td><td class="t2">Click the graph to add a vertex without delaunay triangulation
 <tr><td class="t">[2] Add a Linked Vertex<br>(no delaunay)</td><td class="t2">Click a starting vertex and then a free space to add a linked vertex without delaunay triangulation
-<tr><td class="t">[3] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
-<tr><td class="t">[4] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
+<tr><td class="t">[3] Link Vertices<br>(no delaunay)</td><td class="t2">Click a vertex to which to link, and then another vertex to link them, without delaunay triangulation
+<tr><td class="t">[4] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
+<tr><td class="t">[5] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
 <tr><td class="t">[W] Toggle Fullscreen</td><td class="t2">Toggle Fullscreen
-<tr><td class="t">[T] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
+<tr><td class="t">[Y] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
 <tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
 </td></tr></table>
 </div>
@@ -232,15 +233,15 @@ Filename:
 
 <div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;" onmousedown="playOpening=false;">
 
-<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b">
+<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
 
 <input id="showSolving" type="button" value="Show Solving" 
-onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b" title="[P]">
 
 <input id="solve" type="button" value="Solve" 
-onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b" title="[S]">
 
-<input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b">
+<input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b" title="[ V ]">
 
 
 
@@ -248,35 +249,35 @@ onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=
 
 <input id="addVertex" type="button" value="Add Vertex" 
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
-class="b">
+class="b" title="[A]">
 
 
 
 <input id="moveVertex" type="button" value="Move Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
 <input id="deleteVertex" type="button" value="Delete Vertex" 
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
-class="b">
+class="b" title="[D]">
 
 
-<input id="colorVerts" type="button" value="ColorVerts" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
+<input id="colorVerts" type="button" value="ColorVerts" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
 
 <!--<br>-->
 
-<input id="numberOfVerts" type="button" value="Number of Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
+<input id="numberOfVerts" type="button" value="Number of Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
 
-<input id="fpsId" type="button" value="FPS" onmousedown=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
+<input id="fpsId" type="button" value="FPS" onmousedown=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b" title="[F]">
 
-<input id="timeToSolveId" type="button" value="TimeToSolve" onmousedown="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
+<input id="timeToSolveId" type="button" value="TimeToSolve" onmousedown="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b" title="[T]">
 
 <input id="neighs" type="button" value="Neighs" 
-onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b" title="[G]">
 
 <!--<br>-->
 
 <input type="button" value="Tester" id="testerButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]">
 
 <input type="button" value="loadGraph" id="loadGraphButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b">
@@ -287,10 +288,10 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('filenameInp
 
 
 <input type="button" value="Flexibles" id="flexiblesButton"
-onmousedown="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b" title="[X]">
 
 <input type="button" value="Console" id="consoleButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]">
 
 <div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:20px;width:90%;font-size:40px;font-family:monospace;background-color:#ffffff;padding:15px;border:1px solid black;visibility:hidden;height:450px;overflow:auto;">
 
@@ -309,22 +310,21 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 <!--<br>-->
 
 <input type="button" value="add" id="addButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b" title="[1]">
 
 <input type="button" value="addLinked" id="addLinkedButton"
-onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[2]">
 
 <input type="button" value="Link" id="linkVertsButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
-
+onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[3]">
 
 
 <input id="moveVertButton" type="button" value="Move" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b" title="[4]">
 
 <input id="deleteVertButton" type="button" value="Delete" 
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
-class="b">
+class="b" title="[5]">
 
 </div>
 <div style="width:44px;">
@@ -334,11 +334,11 @@ class="b">
 </div>
 </div><!--end buttonHolder-->
 
-<input type="button" value="K" id="shortcuts" onmousedown="showHide('shortcutKeys');" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:72px;z-index:1000000000;visibility:visible;width:40px;height:34px;margin:0px;">
+<input type="button" value="K" id="shortcuts" onmousedown="showHide('shortcutKeys');" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:72px;z-index:1000000000;visibility:visible;width:40px;height:34px;margin:0px;" title="[K]">
 
-<input type="button" value="[]" id="fullscreen" onmousedown="toggleFullScreen();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:16px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;right:0px;bottom:34px;z-index:1000000000;visibility:visible;width:40px;height:36px;margin:0px;vertical-align:top;" >
+<input type="button" value="[]" id="fullscreen" onmousedown="toggleFullScreen();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:16px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;right:0px;bottom:34px;z-index:1000000000;visibility:visible;width:40px;height:36px;margin:0px;vertical-align:top;" title="[W]">
 
-<input type="button" value="-" id="expander" onmousedown="controlPanelOpenClose();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:100000000000;visibility:visible;width:40px;height:32px;margin:0px;">
+<input type="button" value="-" id="expander" onmousedown="controlPanelOpenClose();" style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:100000000000;visibility:visible;width:40px;height:32px;margin:0px;" title="[H]">
 
 
 <div id="numVertsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
@@ -1720,7 +1720,7 @@ break;
 case 'c':
 activeButton('colorVerts');canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}
 break;
-case 't':
+case 'y':
 activeButton('testerButton');showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;
 break;
 case 'n':
@@ -1729,7 +1729,7 @@ break;
 case 'f':
 activeButton('fpsId');el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');
 break;
-case 'y':
+case 't':
 activeButton('timeToSolveId');showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);
 break;
 case 'g':
@@ -1748,9 +1748,12 @@ case '2':
 activeButton('addLinkedButton');delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}
 break;
 case '3':
-activeButton('moveVertButton');canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}
+activeButton('linkVertsButton');gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}
 break;
 case '4':
+activeButton('moveVertButton');canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}
+break;
+case '5':
 activeButton('deleteVertButton');canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}
 break;
 }//end switch
@@ -1787,6 +1790,8 @@ if(isFullScreen()){exitFullScreen();
 }else{requestFullScreen();
 }
 }//end toggle full screen
+
+
 </script>
 
 </body>
