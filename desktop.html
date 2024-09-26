@@ -230,7 +230,7 @@ Filename:
 
 
 
-<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;">
+<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;" onmousedown="playOpening=false;">
 
 <input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b">
 
@@ -300,7 +300,7 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 
 <div id="consoler"  style="width:100%;height:200px;display:block;font-size:30px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
 
-<div onmousedown="typing=false;showHideV('consoleInputDiv');" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
+<div onmousedown="typing=false;showHideV('consoleInputDiv');" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-right:8px;padding-left:8px;padding-bottom:8px;height:20px;width:20px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
 
 
