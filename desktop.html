@@ -254,7 +254,7 @@ class="b" title="[A]">
 
 
 <input id="moveVertex" type="button" value="Move Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
+onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
 <input id="deleteVertex" type="button" value="Delete Vertex" 
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
