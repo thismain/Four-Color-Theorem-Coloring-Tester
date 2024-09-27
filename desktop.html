@@ -257,7 +257,7 @@ class="b" title="[A]">
 onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
 <input id="deleteVertex" type="button" value="Delete Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
+onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b" title="[D]">
 
 
@@ -409,7 +409,7 @@ canv.style.left=(ww/2-cW/2)+'px';
 el('shortcutKeys').style.width=ww*.93+'px';
 el('shortcutKeysHeading').style.width=ww*.93+'px';
 
-el('messageHolder').style.left=ww*.5-200+'px';
+el('messageHolder').style.left=ww*.5-220+'px';
 el('messageHolder').style.top=hh*.23+'px';
 
 let bhStyle=getComputedStyle(el('buttonHolder'));
@@ -723,19 +723,9 @@ pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
 pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
 pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
 }//i loop
-
-}
-/*
-else if(!delaunay){
-if(linkStart>=0&&linkEnd>=0){
-pairArr.push([linkStart,linkEnd]);
-}//if(linkStart
-}//end if !delaunay
-
-*/
+}//if(delaunay){
 
 removeDuplicatePairs();
-
 }//end getVertexPairs
 
 
@@ -807,8 +797,8 @@ for(let v=0;v<sortedVerts.length;v++){
 for(let c=0;c<4;c++){
 let colorAvailable=true;
 for(let n=0;n<sortedVerts[v].nCount;n++){
-if(isThere(vertices[vertices[sortedVerts[v].i].n[n]])){
-if(vertices[vertices[sortedVerts[v].i].n[n]].c==c){
+if(isThere(vertices[sortedVerts[v].n[n]])){
+if(vertices[sortedVerts[v].n[n]].c==c){
 colorAvailable=false;break;
 }
 }//isThere
@@ -1693,8 +1683,10 @@ break;
 case 'k':
 showHide('shortcutKeys');
 break;
-case 'p':
 case ' ':
+buildAndRender();
+activeButton('showSolving');playOpening=false;showSolvingButton();showSolvingButton();
+case 'p':
 activeButton('showSolving');playOpening=false;showSolvingButton();
 break;
 case 's':
