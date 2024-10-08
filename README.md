@@ -12,4 +12,24 @@ The best part of this program, I think, is watching the animation of the algorit
 
 The reason I made this program is because I wanted to find out why the 4CT is true, and I reasoned that the best way to find that out would be to see why the algorithms that work do work, and how they can be made to work less well and broken. I wonder whether a neural network can learn from billions of correctly colored graphs to recognize patterns in strings of permutations of numbers of neighbors and immediately know what colors the vertices can be. So it would solve the graph the way a rubik's cube is solved, rather than searching for the correct solution in real time.
 
+----------
+
+As I've said, I'm interested in the reason the four color theorem is true, but I often wonder what a sufficient reason would require? Obviously, it would need to explain why five colors are never necessary, but it would also need to show why three colors are sometimes not possible, and what are the conditions that must occur for a three-colorable graph to become a four-colorable one. An analysis of how a graph can, or must, be modified to go from requiring only three colors, to requiring four colors, and also from two to three, and from one to two, would be useful. I'd love to identify and parameterize some property or properties of planar graphs that results in the flexibility we find in assigning colors. But for such a property to be proven to be the operative four-coloring mechanism one would need to show that only the coloring algorithms that exploit this property work, and algorithms that do not exploit this property do not work, and those that only partly make use of this property only partly work. Which task would require that one had first set up the environment for testing several and various algorithms, so as to compare and rate their performance. To this end I imagine identifying the complete set of discrete components which comprise every four coloring algorithm, and from this set of modules choosing, and their parameters adjusting in turn, so as to evaluate the change in effectiveness wrought thereby.
+
+In reality my code is very messy, but still I dream.
+
+What might those modules be? Let's number them:
+
+1) Sorting nodes by numbers of neighbors
+2) Assigning the four colors levels of priority
+3) Sorting neighbors by number of a color
+4) Behavior when no color is available
+5) Color transfer from neighbor to uncolored node, or to a conflicted node
+6) Loop detection and breaking
+7) Self checking the result
+8) Order of coloring
+9) ...
+
+It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
+
 
