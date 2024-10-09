@@ -10,31 +10,6 @@ This is a javascript program for four coloring any graph. Although it would be d
 
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 
--    
-   
-   
-    
-
-
-     
- A javascript program for four coloring any graph
-
-
-The github files are here:
-https://github.com/thismain/Four-Color-Theorem-Coloring-Tester
-
-The live Desktop demo is here:
-http://moygen.rf.gd/graph2/desktop.html
-
-The live Mobile demo is here:
-http://moygen.rf.gd/graph2/index.html
-
-
-
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 300 or fewer vertices. I use delaunay triangulation, from Joshua Bell's code, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. php is used for saving and loading graphs to and from a text file. To use these functions, set the usePHP variable to true, chmod the data folder to 777, and change the paths to point to your server.
-
-The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed.
-
 The algorithm:
 I recently found a faster way. I had been sorting the vertices by number of neighbors, and using high priority colors on vertices of high degree of connectivity, which would get colored first, and low priority colors on vertices of low degree of connectivity, which would get colored last. However, It turns out, it's faster to just go through the vertices as they were set down when building the graph, from the top of the screen to the bottom, applying colors, in the same order each time, when they can be applied without conflict.
 
