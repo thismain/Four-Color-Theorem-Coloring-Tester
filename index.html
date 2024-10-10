@@ -369,7 +369,7 @@ The live Mobile demo is here:<br>
 <br><br>
 <img src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 300 or fewer vertices. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. php is used for saving and loading graphs to and from a text file. To use these functions, set the usePHP variable to true, chmod the data folder to 777, and change the paths to point to your server.
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 53ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. php is used for saving and loading graphs to and from a text file. To use these functions, set the usePHP variable to true, chmod the data folder to 777, and change the paths to point to your server.
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -1038,8 +1038,10 @@ for(let c=0;c<4;c++){
 if(colorAvailable[c]&&c!=vertices[v].c){
 vertices[v].c=c;
 vertices[v].searching=false;
+if(showSolving){render();return;}else{
 continue nextVertex;
 }
+}//if(colorAvailable[c]
 }//end c loop
 
 let colorCounter=[];
@@ -1191,7 +1193,7 @@ if(solving){
 showMessage('Solved in: '+deltaTime+' ms',2000);
 solving=false;solveButton();
 }
-//rColorGraphDone=false;
+rColorGraphDone=false;
 solved=true;
 animSV=0;
 showSolving=false;
