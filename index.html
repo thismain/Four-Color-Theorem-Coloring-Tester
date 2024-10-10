@@ -40,6 +40,7 @@ scrollbar-width: none;  /* Firefox */}
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
 var playOpening=true;
+var streamSolving=false;
 var usePHP=false;
 var serverAddress='http://0.0.0.0:45267/';
 var EPSILON=1.0e-6;
@@ -209,7 +210,7 @@ Filename:
 </div>
 
 <div id="buttonHolder" style="text-align:justify;white-space:nowrap;z-index:1000;position:fixed;background-color:#ffffff;padding:10px;
-;overflow:hidden;" ontouchstart="playOpening=false;">
+;overflow:hidden;" ontouchstart="if(!streamSolving){playOpening=false;}">
  
 
 
@@ -220,7 +221,7 @@ Filename:
 <input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};" class="b">
 
 <input id="showSolving" type="button" value="Show Solving" 
-ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();playOpening=false;" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();if(!streamSolving){playOpening=false;}" class="b">
 
 
 
@@ -267,18 +268,27 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){show
 ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
 
 <input type="button" value="loadGraph" id="loadGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
 
 
 <input type="button" value="saveGraph" id="saveGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b">
-
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
 
 <input type="button" value="Flexibles" id="flexiblesButton"
 ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
 
 <input type="button" value="Console" id="consoleButton"
 ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
+
+<input id="dropRandom" type="button" value="Random" 
+ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
+class="b">
+
+
+<input id="streamSolve" type="button" value="stream" 
+ontouchstart="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){playOpening=true;solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}else{playOpening=false;} showSolvingButton();"    
+class="b">
+
 
 <div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:10px;font-size:40px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:450px;overflow:scroll;">
 
@@ -287,6 +297,9 @@ ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInp
 <input value="Enter" type="button" ontouchstart="da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="position:absolute;display:block;font-size:60px;padding:30px;margin-top:12px;bottom:0px;right:0px;">
 
 <div id="consoler"  style="width:100px;height:300px;display:block;font-size:60px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
+
+
+
 
 </div>
 
@@ -313,9 +326,7 @@ ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;canv.o
 ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
 
-<input id="dropRandom" type="button" value="Random" 
-ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
-class="b">
+
 
 
 </div><!--end buttonHolder-->
@@ -369,12 +380,12 @@ The live Mobile demo is here:<br>
 <br><br>
 <img src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 53ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. php is used for saving and loading graphs to and from a text file. To use these functions, set the usePHP variable to true, chmod the data folder to 777, and change the paths to point to your server.
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 39ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
 <b>The algorithm:</b><br>
-I recently found a faster way. I had been sorting the vertices by number of neighbors, and using high priority colors on vertices of high degree of connectivity, which would get colored first, and low priority colors on vertices of low degree of connectivity, which would get colored last. However, It turns out, it's faster to just go through the vertices as they were set down when building the graph, from the top of the screen to the bottom, applying colors, in the same order each time, when they can be applied without conflict.
+I recently found a faster way. I had been sorting the vertices by number of neighbors, and using high priority colors on vertices of high degree of connectivity, which would get colored first, and low priority colors on vertices of low degree of connectivity, which would get colored last. However, It turns out, it's faster to just go through the vertices as they were set down when building the graph, from the top of the screen to the bottom, applying colors in the same order each time, when they can be applied without conflict.
 <br><br>
 After the algorithm has gone through the whole graph this way, it then goes back to the vertices for which no color was available. It searches the neighbors of the uncolored vertex for the neighbors with the fewest fellows of their own color. If there are more than one neighbors with only one fellow of the same color, the algorithm chooses the neighbor of the highest priority color. The algorithm assigns the color of that neighbor to the uncolored vertex and then repeats the same process for that neighbor, excluding the vertex which just took its color. 
 <br><br>
@@ -459,6 +470,8 @@ canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
 
+//showHide('loadGraphButton');
+//showHide('saveGraphButton');
 
 
 el('data').style.width=ww*.93+'px';
@@ -949,6 +962,14 @@ el('showSolving').value='Solving...||';
 }else{
 el('showSolving').style.backgroundColor='white';
 el('showSolving').value='Show Solving';
+}
+
+if(streamSolving){
+el('streamSolve').value='streaming';
+el('streamSolve').style.backgroundColor='#ffd7d4';
+}else{
+el('streamSolve').value='streaming';
+el('streamSolve').style.backgroundColor='#ffffff';
 }
 }//end showSolvingStatus
 
