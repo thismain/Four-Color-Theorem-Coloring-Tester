@@ -220,7 +220,7 @@ Filename:
 <input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};" class="b">
 
 <input id="showSolving" type="button" value="Show Solving" 
-ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();playOpening=false;" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();playOpening=false;" class="b">
 
 
 
@@ -228,7 +228,7 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving){;reS
 ontouchstart="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();for(let v=0;v<vertices.length;v++){vertices[v].c=4;} startTime=Date.now();recursiveNeighborSolver();" class="b">
 
 
-<input id="step" type="button" value="Step" ontouchstart="event.preventDefault();activeButton(this.id);if(!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b">
+<input id="step" type="button" value="Step" ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b">
 
 
 
@@ -1038,7 +1038,7 @@ for(let c=0;c<4;c++){
 if(colorAvailable[c]&&c!=vertices[v].c){
 vertices[v].c=c;
 vertices[v].searching=false;
-if(showSolving){render();return;}else{
+if(showSolving||stepping){render();return;}else{
 continue nextVertex;
 }
 }//if(colorAvailable[c]
