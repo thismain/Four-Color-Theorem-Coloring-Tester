@@ -1,10 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
-<script>
-(function(a,b){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))){window.location=b;}})(navigator.userAgent||navigator.vendor||window.opera,'http://moygen.rf.gd/graph2/index.html');
-</script>
-
+<!--<script src="redirectToMobile.js"></script>-->
 <style>
 .b{
 font-size:18px;
@@ -18,23 +15,28 @@ margin-right:-4px;
 margin-left:-4px;
 display:inline-block;
 }
+
+
+
 .t{
-width:30%;
+width:25%;
 border-bottom:1px solid #cdcdcd;
 margin:0px;
-
+font-size:22px;
 }
 .t2{
-width:70%;
+width:75%;
 border-bottom:1px solid #cdcdcd;
 margin:0px;
 padding:4px;
-
+padding-left:50px;
+font-size:22px;
 }
 
 .container::-webkit-scrollbar{display:none;}/* Safari and Chrome */
 .container{-ms-overflow-style:none; /* Internet Explorer 10+ */
 scrollbar-width: none;  /* Firefox */}
+
 </style>
 </head>
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
@@ -110,6 +112,9 @@ var flexibles=[];
 var showFlexibles=true;
 var flexibleColor='#db37d9';
 var numSolvesCounter=0;
+var flexiblesCount=0;
+var diffColorPairsCount=0;
+var sameColorPairsCount=0;
 
 var gettingLinkStart=false;
 var addingVert=false;
@@ -120,6 +125,7 @@ var endConnecting=false;
 var delaunay=true;
 var moveRaw=false;
 var playOpening=true;
+var streamSolving=false;
 var buildTimer=0;clearTimeout(buildTimer);
 var solveTimer=0;clearTimeout(solveTimer);
 var numVertsTimer=0;clearTimeout(numVertsTimer);
@@ -166,13 +172,13 @@ elm.style.height=(h/scale)+"%";
 
 
 <div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
-<div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;">
+<div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:40px;">
 <b>Shortcut Keys:</b>
 
 <div onmousedown="showHide('shortcutKeys');" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-bottom:8px;padding-left:8px;padding-right:8px;height:18px;width:18px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;">
-<br><br>
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;display:block;">
+<br><br><br><br>
 <table>
 <tr><td class="t">
     [P]: Show Solving </td><td class="t2">Renders each step of the 4-coloring algorithm as it solves the graph
@@ -180,9 +186,9 @@ elm.style.height=(h/scale)+"%";
 <tr><td class="t">[V]: Step </td><td class="t2">Advance one step of algorithm solving at a time 
 <tr><td class="t">[B]: Build Random Graph </td><td class="t2">Build a random graph with delaunay triangulation
 <tr><td class="t">[H]: Show/Hide Buttons </td><td class="t2">Show/Hide buttons for all functions
-<tr><td class="t">[A]: Add Vertex<br>(with delaunay)</td><td class="t2">Click on graph to add a vertex with delaunay triangulation connecting it to surrounding Vertices
-<tr><td class="t">[M]: Move Vertex<br>(with delaunay)</td><td class="t2">Click on a vertex and drag it to move it with delaunay triangulation adjusting connections 
-<tr><td class="t">[D]: Delete Vertex<br>(with delaunay)</td><td class="t2">Click on a vertex to delete it with delaunay triangulation modifying surrounding connections
+<tr><td class="t">[A]: Add Vertex </td><td class="t2">Click on graph to add a vertex with delaunay triangulation connecting it to surrounding Vertices
+<tr><td class="t">[M]: Move Vertex </td><td class="t2">Click on a vertex and drag it to move it with delaunay triangulation adjusting connections 
+<tr><td class="t">[D]: Delete Vertex </td><td class="t2">Click on a vertex to delete it with delaunay triangulation modifying surrounding connections
 <tr><td class="t">[C] Color Vertex </td><td class="t2">Click on a vertex to change the color in cycles of red, yellow, green and blue
 <tr><td class="t">[N] Number of Vertices</td><td class="t2">Set number of vertices
 <tr><td class="t">[F] Frames Per Second</td><td class="t2">Set frames per second of animation when showing Solving
@@ -231,15 +237,17 @@ Filename:
 
 
 
-<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;" onmousedown="playOpening=false;">
+<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;" onmousedown="if(!streamSolving){playOpening=false;}">
+ 
+<input id="about" type="button" value="About" onmousedown="event.preventDefault();activeButton(this.id);showHide('aboutDiv');" class="b">
 
-<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
+<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);el('showSolving').value='Show Solving';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
 
 <input id="showSolving" type="button" value="Show Solving" 
-onmousedown="event.preventDefault();activeButton(this.id);playOpening=false;showSolvingButton();" class="b" title="[P] or spacebar">
+onmousedown="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();if(!streamSolving){playOpening=false;}" class="b" title="[P] or spacebar">
 
 <input id="solve" type="button" value="Solve" 
-onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);" class="b" title="[S]">
+onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();for(let v=0;v<vertices.length;v++){vertices[v].c=4;} startTime=Date.now();recursiveNeighborSolver();" class="b" title="[S]">
 
 <input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b" title="[ V ]">
 
@@ -248,16 +256,16 @@ onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=
 <!--<br>-->
 
 <input id="addVertex" type="button" value="Add Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
 class="b" title="[A]">
 
 
 
 <input id="moveVertex" type="button" value="Move Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
 <input id="deleteVertex" type="button" value="Delete Vertex" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b" title="[D]">
 
 
@@ -280,11 +288,11 @@ onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showN
 onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]">
 
 <input type="button" value="loadGraph" id="loadGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
 
 
 <input type="button" value="saveGraph" id="saveGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
 
 
 <input type="button" value="Flexibles" id="flexiblesButton"
@@ -292,6 +300,22 @@ onmousedown="event.preventDefault();activeButton(this.id);showFlexibles=!showFle
 
 <input type="button" value="Console" id="consoleButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]">
+
+
+
+<input id="dropRandom" type="button" value="Random" 
+onmousedown="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
+class="b">
+
+
+
+<input id="streamSolve" type="button" value="stream" 
+onmousedown="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){playOpening=true;solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}else{playOpening=false;} showSolvingButton();"    
+class="b">
+
+
+
+
 
 <div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:20px;width:90%;font-size:40px;font-family:monospace;background-color:#ffffff;padding:15px;border:1px solid black;visibility:hidden;height:450px;overflow:auto;">
 
@@ -310,20 +334,20 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 <!--<br>-->
 
 <input type="button" value="add" id="addButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b" title="[1]">
+onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b" title="[1]">
 
 <input type="button" value="addLinked" id="addLinkedButton"
-onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[2]">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[2]">
 
 <input type="button" value="Link" id="linkVertsButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[3]">
+onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[3]">
 
 
 <input id="moveVertButton" type="button" value="Move" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b" title="[4]">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b" title="[4]">
 
 <input id="deleteVertButton" type="button" value="Delete" 
-onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b" title="[5]">
 
 </div>
@@ -365,6 +389,91 @@ FPS (1-60):
 <input value="cancel" type="button" onmousedown="typing=false;el('fpsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
 
 </div>
+
+
+
+
+<div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+<div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;padding-left30px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
+<b>&nbsp;A javascript program for four coloring any graph</b>
+
+</div>
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;font-size:10px;text-align:justify;line-height:12px">
+<br><br><br>
+The github files are here:<br>
+<a href="https://github.com/thismain/Four-Color-Theorem-Coloring-Tester" target="_blank">https://github.com/thismain/Four-Color-Theorem-Coloring-Tester</a>
+<br><br>
+The live Desktop demo is here:<br>
+<a href="http://moygen.rf.gd/graph2/desktop.html" target="_blank">http://moygen.rf.gd/graph2/desktop.html</a>
+<br><br>
+The live Mobile demo is here:<br>
+<a href="http://moygen.rf.gd/graph2/index.html" target="_blank">http://moygen.rf.gd/graph2/index.html</a>
+<br><br>
+<img src="http://moygen.rf.gd/graph2/screenshotter.png">
+<br><br>
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 39ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+<br><br>
+The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
+<br><br>
+<b>The algorithm:</b><br>
+I recently found a faster way. I had been sorting the vertices by number of neighbors, and using high priority colors on vertices of high degree of connectivity, which would get colored first, and low priority colors on vertices of low degree of connectivity, which would get colored last. However, It turns out, it's faster to just go through the vertices as they were set down when building the graph, from the top of the screen to the bottom, applying colors in the same order each time, when they can be applied without conflict.
+<br><br>
+After the algorithm has gone through the whole graph this way, it then goes back to the vertices for which no color was available. It searches the neighbors of the uncolored vertex for the neighbors with the fewest fellows of their own color. If there are more than one neighbors with only one fellow of the same color, the algorithm chooses the neighbor of the highest priority color. The algorithm assigns the color of that neighbor to the uncolored vertex and then repeats the same process for that neighbor, excluding the vertex which just took its color. 
+<br><br>
+When the algorithm goes into a loop of following the same circuit over and over, it kicks itself out of the loop with a random choice of either the second or third choice of neighbors from which to take a color, where the neighbors have been sorted by the number of fellows of the same color. 
+<br><br>
+Finally, the algorithm triple checks the graph for any neighboring vertices of the same color and proceeds in the same manner to fix them.
+<br><br>
+The reason I made this program is because I wanted to find out why the 4CT is true, and I reasoned that the best way to find that out would be to see why the algorithms that work do work, and how they can be made to work less well and broken. 
+<br><br>
+I wonder whether a neural network can learn from billions of correctly colored graphs to recognize patterns in strings of permutations of numbers of neighbors and immediately know what colors the vertices can be. So it would solve the graph the way a rubik's cube is solved, rather than searching for the correct solution in real time.
+<br><br>
+<hr>
+<br>
+What would a sufficient reason require? Obviously, it would need to explain why five colors are never necessary, but it would also need to show why three colors are sometimes not possible, and what are the conditions that must occur for a three-colorable graph to become a four-colorable one. An analysis of how a graph can, or must, be modified to go from requiring only three colors, to requiring four colors, and also from two to three, and from one to two, would be useful. I'd love to identify and parameterize some property or properties of planar graphs that results in the flexibility we find in assigning colors. But for such a property to be proven to be the operative four-coloring mechanism one would need to show that only the coloring algorithms that exploit this property work, and algorithms that do not exploit this property do not work, and those that only partly make use of this property only partly work. Which task would require that one had first set up the environment for testing several and various algorithms, so as to compare and rate their performance. To this end I imagine identifying the complete set of discrete components which comprise every four coloring algorithm, and from this set of modules choosing, and their parameters adjusting in turn, so as to evaluate the change in effectiveness wrought thereby.
+<br><br>
+In reality my code is very messy, but still I dream.
+<br><br>
+What might those modules be? Let's number them:
+<br><br>
+1) Sorting nodes by numbers of neighbors<br>
+2) Assigning the four colors levels of priority<br>
+3) Sorting neighbors by number of a color<br>
+4) Behavior when no color is available<br>
+5) Color transfer from neighbor to uncolored<br> node, or to a conflicted node<br>
+6) Loop detection and breaking<br>
+7) Self checking the result<br>
+8) Order of coloring<br>
+9) ...
+<br><br>
+It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
+<br><br>
+
+
+</div>
+
+</div>
+
+
+
+<div class="container" id="data" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+<div id="dataHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:40px;">
+<b>Random Drop of Colors: Data for Analysis:</b>
+
+</div>
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;">
+<br><br><br><br>
+<table id="tableId" style="width:100%;"></table>
+</div>
+
+</div>
+
+<div id="dataShowHideButton" onmousedown="showHide('data');" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:12px;font-size:35px;color:black;padding-top:5px;padding-bottom:4px;padding-left:8px;padding-right:8px;height:45px;width:245px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:10002;">show/hide</div>
+
+
+
+
+
 <script>
 
 
@@ -387,6 +496,8 @@ function activeButton(buttonId){
 el(lastButton).style.backgroundColor='white';
 el(buttonId).style.backgroundColor='#dbedff';
 lastButton=buttonId;
+if(lastButton!='dropRandom'){el('dataShowHideButton').style.display='none';el('data').style.display='none';}
+if(lastButton!='about'){el('aboutDiv').style.display='none';}
 }//activeButton
 
 window.onresize=function(){init();};
@@ -405,6 +516,23 @@ cH=canv.height;
 canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
+
+
+el('data').style.width=ww*.93+'px';
+el('dataHeading').style.width=ww*.93+'px';
+el('aboutDiv').style.width=ww*.93+'px';
+el('aboutDivHeading').style.width=ww*.93+'px';
+
+
+function setDataShowHideButton(){
+let dataRect=el('data').getBoundingClientRect();
+el('dataShowHideButton').style.right=(ww-dataRect.width-16).toFixed()+'px';
+el('dataShowHideButton').style.top=(dataRect.top+6).toFixed()+'px';
+el('dataShowHideButton').style.display='block';
+//alert((ww-dataRect.width).toFixed());
+}//end setDataShowHideButton
+
+
 
 el('shortcutKeys').style.width=ww*.93+'px';
 el('shortcutKeysHeading').style.width=ww*.93+'px';
@@ -778,7 +906,7 @@ vertices[v].nCount=vertices[v].n.length;
 
 
 function sortByNeighborCount(){
-startTime=Date.now();
+
 getNeighbors();
 sortedVerts=[];
 for(let v=0;v<vertices.length;v++){
@@ -815,12 +943,16 @@ if(colorAvailable){vertices[sortedVerts[v].i].c=c;break;}
 
 function solveButton(){
 if(solving&&el('solve').value=='Solve'){
-el('solve').value='Solving...';
+//el('solve').value='Solving...';
 el('solve').style.backgroundColor='#ffd7d4';
-}else if(!solving&&el('solve').value=='Solving...'){
-el('solve').value='Solve';
+}
+/*
+else if(!solving&&el('solve').style.backgroundColor=='#ffd7d4'){
+//el('solve').value='Solve';
 el('solve').style.backgroundColor='#dbedff';
 }
+*/
+
 }//end solveButton
 
 
@@ -855,14 +987,7 @@ el('showSolving').style.backgroundColor='#ffd7d4';
 
 function stepper(){
 showSolving=false;
-
-if(!rColorGraphDone){
-rColorGraph(animSV);
-animSV++;
-if(animSV>sortedVerts.length-1){animSV=sortedVerts.length-1;}
-}else if(rColorGraphDone){
 recursiveNeighborSolver();
-}
 render();
 }//end stepper
 
@@ -874,6 +999,14 @@ el('showSolving').value='Solving...||';
 }else{
 el('showSolving').style.backgroundColor='white';
 el('showSolving').value='Show Solving';
+}
+
+if(streamSolving){
+el('streamSolve').value='streaming';
+el('streamSolve').style.backgroundColor='#ffd7d4';
+}else{
+el('streamSolve').value='streaming';
+el('streamSolve').style.backgroundColor='#ffffff';
 }
 }//end showSolvingStatus
 
@@ -895,6 +1028,7 @@ animate();
 showSolving=true;
 activeButton('showSolving');
 showSolvingStatus();
+setTimeout("activeButton('showSolving');showSolvingButton();",500);
 }//end animInit
 
 
@@ -907,32 +1041,20 @@ animId=requestAnimationFrame(animate);
 
 if(playOpening&&solved){solved=false;
 clearTimeout(playOpeningTimer);
-playOpeningTimer=setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",3000);
+playOpeningTimer=setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
+
+
 if(showSolving&&!pauser&&!stepping){
-
-if(!rColorGraphDone){
-rColorGraph(animSV);
-animSV++;
-if(animSV>=sortedVerts.length-1){
-//pauser=true;
-rColorGraphDone=true;
-}
-
-}//if(!rColorGraphDone)
-
-if(rColorGraphDone){
 recursiveNeighborSolver();
-}
 render();
-}//end!&&pauser
+}//end showSolving&&!&&pauser
 },1000/framesPerSecond);//end setTimeout
 }//end animate
 
 
 
-
-
+/*
 function rColorGraph(){
 if(!isThere(sortedVerts[animSV])){
 animSV=sortedVerts.length;
@@ -951,8 +1073,8 @@ solved=false;
 for(let c=0;c<4;c++){
 let colorAvailable=true;
 for(let n=0;n<sortedVerts[animSV].nCount;n++){
-if(isThere(vertices[vertices[sortedVerts[animSV].i].n[n]])){
-if(vertices[vertices[sortedVerts[animSV].i].n[n]].c==c){
+if(isThere(vertices[sortedVerts[animSV].n[n]])){
+if(vertices[sortedVerts[animSV].n[n]].c==c){
 colorAvailable=false;
 break;
 }
@@ -969,9 +1091,9 @@ animSV=0;
 break;
 }//if colorAvailable
 }//end c loop
-}//isThere(sortedVerts[sv]
+}//isThere(sortedVerts[animSV]
 }//end rColorGraph
-
+*/
 
 
 
@@ -1023,8 +1145,10 @@ for(let c=0;c<4;c++){
 if(colorAvailable[c]&&c!=vertices[v].c){
 vertices[v].c=c;
 vertices[v].searching=false;
+if(showSolving||stepping){render();return;}else{
 continue nextVertex;
 }
+}//if(colorAvailable[c]
 }//end c loop
 
 let colorCounter=[];
@@ -1169,6 +1293,7 @@ if(showSolving||stepping){showMessage('All Solved',2000);}
 if(solving){
 showMessage('Solved in: '+deltaTime+' ms',2000);
 solving=false;solveButton();
+el('solve').style.backgroundColor='#dbedff';
 }
 rColorGraphDone=false;
 solved=true;
@@ -1191,12 +1316,12 @@ return;
 }else if(stillSearching==true){
 if(numSolves==40){
 animSV=0;
-rColorGraph(animSV);
+//rColorGraph();
 }else if(numSolves==100){
 //alert('still solving after numSolves:'+numSolves);
 tripleCheck=false;
 checkCounter=0;
-}else if(numSolves>1000){
+}else if(numSolves>5000){
 alert('still solving after numSolves:'+numSolves+' so...returning.');
 return;
 }
@@ -1270,6 +1395,10 @@ flexibles[v].colorsAvailable.push(fourColorShort[c]);
 }//end c loop
 }//!=4
 }//end v loop
+
+flexiblesCount=
+flexibles.filter((obj)=>obj.avail==true).length;
+
 }//end getFlexibles
 
 
@@ -1666,6 +1795,215 @@ triangle.v2 == st.v0 || triangle.v2 == st.v1 || triangle.v2 == st.v2);
 
 return triangles;
 }//end triangulate
+
+
+
+
+
+function countOccurrences(arr,property,targetValue,conditionProperty, conditionValue){
+return arr.reduce((count,obj)=>{
+if(obj[property]===targetValue &&obj[conditionProperty]===conditionValue){
+    return count+1;
+    }
+    return count;
+  }, 0);
+}
+
+
+
+function dropRandom(){
+
+let sampleSize=5;
+
+let sumVertCount=0;
+let avgVertCount=0;
+
+let sumFlexCount=0;
+let avgFlexCount=0;
+
+let sumVertFlexRatios=0;
+let avgVertFlexRatios=0;
+
+
+let sumDiffColorPairsCount=0;
+let avgDiffColorPairsCount=0;
+
+let sumSameColorPairsCount=0;
+let avgSameColorPairsCount=0;
+
+let avgDiffSamePairsRatio=0;
+let sumDiffSamePairsRatio=0;
+
+let sumPairCount=0;
+let avgPairCount=0;
+
+let sumSameFlexibleCount=0;
+let avgSameFlexibleCount=0;
+
+let sumVertsInSameColorPairCount=0;
+let avgVertsInSameColorPairCount=0;
+
+let vertsInSameColorPairCount=0;
+
+let sumNeighsPerVertex=0;
+let avgNeighsPerVertex=0;
+
+let sumColorsPerFlexible=0;
+let avgColorsPerFlexible=0;
+
+let maxNeighs=0;
+let minNeighs=1000;
+
+for(let r=0;r<sampleSize;r++){
+buildAndRender();
+
+
+let sameColorPairsCount=0;
+let diffColorPairsCount=0;
+let neighsPerVertex=0;
+let colorsPerFlexible=0;
+
+sumVertCount+=vertices.length;
+sumPairCount+=pairArr.length;
+
+maxNeighs=0;
+
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=randRange(0,3);
+neighsPerVertex+=vertices[v].nCount;
+if(vertices[v].nCount>maxNeighs){
+maxNeighs=vertices[v].nCount;
+}
+if(vertices[v].nCount<minNeighs){
+minNeighs=vertices[v].nCount;
+}
+
+//render();
+}//end v loop
+
+
+
+
+neighsPerVertex/=vertices.length;
+sumNeighsPerVertex+=neighsPerVertex;
+
+
+for(let j=0;j<pairArr.length;j++){
+if(vertices[pairArr[j][0]].c==vertices[pairArr[j][1]].c){
+vertices[pairArr[j][0]].inSameColorPair=true;
+vertices[pairArr[j][1]].inSameColorPair=true;
+sameColorPairsCount++;
+}else{
+diffColorPairsCount++;
+}
+}//end j loop
+
+
+
+
+render();
+getFlexibles();
+
+
+for(let f=0;f<flexibles.length;f++){
+if(flexibles[f].avail){
+colorsPerFlexible+=flexibles[f].colorsAvailable.length;
+}//if(flex
+}//f loop
+sumColorsPerFlexible+=colorsPerFlexible/flexiblesCount;
+
+sumFlexCount+=flexiblesCount;
+sumVertFlexRatios+=(vertices.length/flexiblesCount);
+
+sumDiffSamePairsRatio+=(diffColorPairsCount/sameColorPairsCount);
+
+sumSameColorPairsCount+=sameColorPairsCount;
+sumDiffColorPairsCount+=diffColorPairsCount;
+
+let sameFlexibleCount=countOccurrences(vertices, 'isFlexible',true,'inSameColorPair',true);
+sumSameFlexibleCount+=sameFlexibleCount;
+
+
+
+
+vertsInSameColorPairCount=vertices.filter((obj)=>obj.inSameColorPair==true).length;
+sumVertsInSameColorPairCount+=vertsInSameColorPairCount;
+
+
+}//end r loop
+
+avgColorsPerFlexible=(sumColorsPerFlexible/sampleSize).toFixed(3);
+
+avgNeighsPerVertex=(sumNeighsPerVertex/sampleSize).toFixed(0);
+
+avgVertsInSameColorPairCount=(sumVertsInSameColorPairCount/sampleSize).toFixed(0);
+
+
+avgSameFlexibleCount=(sumSameFlexibleCount/sampleSize).toFixed(0);
+
+avgPairCount=(sumPairCount/sampleSize).toFixed(0);
+
+avgSameColorPairsCount=(sumSameColorPairsCount
+/sampleSize).toFixed(0);
+
+avgDiffColorPairsCount=(sumDiffColorPairsCount
+/sampleSize).toFixed(0);
+
+avgDiffSamePairsRatio=(sumDiffSamePairsRatio/sampleSize).toFixed(2);
+
+avgVertCount=(sumVertCount/sampleSize).toFixed(0);
+avgPercentVertsInSameColorPair=((avgVertsInSameColorPairCount/avgVertCount)*100).toFixed(0);
+avgFlexCount=(sumFlexCount/sampleSize).toFixed(0);
+avgVertFlexRatio=(sumVertFlexRatios/sampleSize).toFixed(2);
+
+let avgVertPairPercent=((avgVertCount/avgPairCount)*100).toFixed(0);
+let avgVertPairRatio=(avgVertCount/avgPairCount).toFixed(2);
+let avgPairsPerVertex=(avgPairCount/avgVertCount).toFixed(2)
+
+el('data').style.display='block';
+
+let dat=[
+[`number of graphs sampled:`,sampleSize], 
+[`avg # vertices:`,avgVertCount],
+[`avg # pairs:`,avgPairCount],
+['avg ratio pairs/verts:',avgPairsPerVertex+` x more pairs`],
+['avg ratio verts/pairs:',avgVertPairRatio+' ('+avgVertPairPercent+'% of pairs)'],
+['avg neighbors per vertex, max, min:',avgNeighsPerVertex+', '+maxNeighs+', '+minNeighs],
+[`avg # flexibles:`,avgFlexCount],
+[`avg ratio flexibles/vertices:`,
+(1/avgVertFlexRatio).toFixed(2)+` (`+((1/avgVertFlexRatio)*100).toFixed(0)+`% of verts)`],
+[`avg ratio vertices/flexibles:`,avgVertFlexRatio+` x more verts`],
+[`avg # different color pairs:`,avgDiffColorPairsCount],
+[`avg # same color pairs:`,avgSameColorPairsCount],
+[`avg ratio diff/same pairs:`,avgDiffSamePairsRatio+` times more diff`],
+[`avg ratio same/diff pairs:`,(1/avgDiffSamePairsRatio).toFixed(2)+` (`+((1/avgDiffSamePairsRatio)*100).toFixed(0)+`% of same)`],
+[`avg % of pairs which are different colors:`,((avgDiffColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
+[`avg % of pairs which are same colors:`,((avgSameColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
+[`avg # verts in at least one same color pair:`,avgVertsInSameColorPairCount+` (`+avgPercentVertsInSameColorPair+`% of all verts)`],
+[`avg # flexible verts in same color pairs:`,avgSameFlexibleCount+` (`+((avgSameFlexibleCount/avgFlexCount)*100).toFixed(0)+`% of all flexibles)`],
+[`avg % verts in same color pairs which are flexible:`,((avgSameFlexibleCount/avgVertsInSameColorPairCount)*100).toFixed(0)+`%`],
+[`avg # alternate colors per flexible:`,avgColorsPerFlexible]
+];
+
+
+let stringer2=`<table style="width:100%;"`;
+for(let d=0;d<dat.length;d++){
+stringer2+=
+`<tr><td class="t">`+
+dat[d][0]
++`</td><td class="t2">`+
+dat[d][1]
+;
+}//end d loop
+stringer2+=`</td></tr></table>`;
+
+da('tableId',stringer2);
+activeButton('dropRandom');
+setTimeout('setDataShowHideButton();',100);
+hideMessage('messageTimer');
+}//dropRandom
+
+
 
 
 
