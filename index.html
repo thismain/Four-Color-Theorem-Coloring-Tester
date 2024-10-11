@@ -725,7 +725,7 @@ canv.ontouchstart=function(e){
 stepActions();
 }
 activeButton('step');
-if(!showSolving&&solved&&!stepping){;
+if(!showSolving&&solved&&!stepping){
 reSolverReset();
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
@@ -737,6 +737,10 @@ showSolving=false;
 
 showSolvingStatus();
 }//end stepActions
+
+canv.ontouchstart=function(e){
+showSolvingActions();
+}
 
 
 function moveVertex(e,delaunay){
