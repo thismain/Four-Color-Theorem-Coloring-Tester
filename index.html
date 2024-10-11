@@ -39,8 +39,7 @@ scrollbar-width: none;  /* Firefox */}
 </head>
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
-var playOpening=true;
-var streamSolving=false;
+var streamSolving=true;
 var usePHP=false;
 var serverAddress='http://0.0.0.0:45267/';
 var EPSILON=1.0e-6;
@@ -210,7 +209,7 @@ Filename:
 </div>
 
 <div id="buttonHolder" style="text-align:justify;white-space:nowrap;z-index:1000;position:fixed;background-color:#ffffff;padding:10px;
-;overflow:hidden;" ontouchstart="if(!streamSolving){playOpening=false;}">
+;overflow:hidden;">
  
 
 
@@ -218,51 +217,60 @@ Filename:
 
 
 
-<input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};" class="b">
+<input id="streamSolve" type="button" value="stream" 
+ontouchstart="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} showSolvingButton();"    
+class="b">
+
+
 
 <input id="showSolving" type="button" value="Show Solving" 
-ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();if(!streamSolving){playOpening=false;}" class="b">
-
+ontouchstart="showSolvingActions();" class="b">
 
 
 <input id="solve" type="button" value="Solve" 
-ontouchstart="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();for(let v=0;v<vertices.length;v++){vertices[v].c=4;} startTime=Date.now();recursiveNeighborSolver();" class="b">
+ontouchstart="solveActions();" class="b">
 
 
-<input id="step" type="button" value="Step" ontouchstart="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b">
+<input id="step" type="button" value="Step" ontouchstart="stepActions();" class="b">
 
 
 
 <br>
 
-<input id="addVertex" type="button" value="Add Vertex" 
+<input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};" class="b">
+
+<input id="addVertex" type="button" value="Add Vert" 
 ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
 class="b">
 
 
 
-<input id="moveVertex" type="button" value="Move Vertex" 
+<input id="moveVertex" type="button" value="Move Vert" 
 ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
 
-<input id="deleteVertex" type="button" value="Delete Vertex" 
+<input id="deleteVertex" type="button" value="Delete Vert" 
 ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b">
 
 
-<input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
+
 
 <br>
 
-<input id="numberOfVerts" type="button" value="Number of Vertices" ontouchstart="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
+<input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
+
+<input id="numberOfVerts" type="button" value="Number of Verts" ontouchstart="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
 
 <input id="fpsId" type="button" value="FPS" ontouchstart=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
 
 <input id="timeToSolveId" type="button" value="TimeToSolve" ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
 
+<br>
+
 <input id="neighs" type="button" value="Neighs" 
 ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b">
 
-<br>
+
 
 <input type="button" value="Tester" id="testerButton"
 ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
@@ -280,14 +288,11 @@ ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFl
 <input type="button" value="Console" id="consoleButton"
 ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
 
-<input id="dropRandom" type="button" value="Random" 
+<input id="dropRandom" type="button" value="Random Drop" 
 ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
 class="b">
 
 
-<input id="streamSolve" type="button" value="stream" 
-ontouchstart="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){playOpening=true;solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}else{playOpening=false;} showSolvingButton();"    
-class="b">
 
 
 <div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:10px;font-size:40px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:450px;overflow:scroll;">
@@ -679,11 +684,59 @@ render();
 }//end ontouchmove
 
 
-
+function showSolvingActions(){
+event.preventDefault();
 canv.ontouchstart=function(e){
-setRandomVerts=true;buildAndRender();
+showSolvingActions();
 }
+activeButton('showSolving');
+if(!showSolving&&solved&&!stepping){
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}//if(!showSolving&&
+showSolvingButton();
+}//end showSolvingActions
 
+
+function solveActions(){
+event.preventDefault();
+canv.ontouchstart=function(e){
+solveActions();
+}
+activeButton('solve');
+stepping=false;
+pauser=false;
+showSolving=false;
+streamSolving=false;
+solving=true;
+solveButton();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;} 
+startTime=Date.now();
+recursiveNeighborSolver();
+}//end solveActions
+
+
+
+function stepActions(){
+event.preventDefault();
+canv.ontouchstart=function(e){
+stepActions();
+}
+activeButton('step');
+if(!showSolving&&solved&&!stepping){;
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}//end if(!showSolving&
+solved=false;
+stepping=true;
+stepper();
+showSolving=false;
+
+showSolvingStatus();
+}//end stepActions
 
 
 function moveVertex(e,delaunay){
@@ -949,7 +1002,7 @@ showSolvingStatus();
 if(pauser){
 el('showSolving').value='Paused...\ > ';
 el('showSolving').style.backgroundColor='#ffd7d4';
-}else if(!pauser||playOpening){el('showSolving').value='Solving...||';}
+}else if(!pauser||streamSolving){el('showSolving').value='Solving...||';}
 }//end showSolvingButton
 
 
@@ -965,10 +1018,8 @@ el('showSolving').value='Show Solving';
 }
 
 if(streamSolving){
-el('streamSolve').value='streaming';
 el('streamSolve').style.backgroundColor='#ffd7d4';
 }else{
-el('streamSolve').value='streaming';
 el('streamSolve').style.backgroundColor='#ffffff';
 }
 }//end showSolvingStatus
@@ -994,7 +1045,7 @@ function animate(){
 setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
-if(playOpening&&solved){solved=false;
+if(streamSolving&&solved){solved=false;
 setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
 
@@ -1865,8 +1916,8 @@ let dat=[
 [`avg # pairs:`,avgPairCount],
 ['avg ratio pairs/verts:',avgPairsPerVertex+` x more pairs`],
 ['avg ratio verts/pairs:',avgVertPairRatio+' ('+avgVertPairPercent+'% of pairs)'],
-['avg neighbors per vertex, max, min:',avgNeighsPerVertex+', '+maxNeighs+', '+minNeighs],
-[`avg # flexibles:`,avgFlexCount],
+['avg # neighbors per vertex, max, min:',avgNeighsPerVertex+', '+maxNeighs+', '+minNeighs],
+[`avg # flexibles(can be alt. color(s)):`,avgFlexCount],
 [`avg ratio flexibles/vertices:`,
 (1/avgVertFlexRatio).toFixed(2)+` (`+((1/avgVertFlexRatio)*100).toFixed(0)+`% of verts)`],
 [`avg ratio vertices/flexibles:`,avgVertFlexRatio+` x more verts`],
