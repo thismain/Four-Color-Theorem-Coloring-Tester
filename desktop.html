@@ -124,12 +124,10 @@ var startConnecting=false;
 var endConnecting=false;
 var delaunay=true;
 var moveRaw=false;
-var playOpening=true;
-var streamSolving=false;
+var streamSolving=true;
 var buildTimer=0;clearTimeout(buildTimer);
 var solveTimer=0;clearTimeout(solveTimer);
 var numVertsTimer=0;clearTimeout(numVertsTimer);
-var playOpeningTimer=0;clearTimeout(playOpeningTimer);
 var animateTimer=0;clearTimeout(animateTimer);
 var typing=false;
 
@@ -171,14 +169,14 @@ elm.style.height=(h/scale)+"%";
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
 
 
-<div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+<div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:80%;overflow:auto;padding:10px;margin:0px;">
 <div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:40px;">
 <b>Shortcut Keys:</b>
 
 <div onmousedown="showHide('shortcutKeys');" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-bottom:8px;padding-left:8px;padding-right:8px;height:18px;width:18px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
 <div style="background-color:#ffffff;font-family:monospace;padding:10px;display:block;">
-<br><br><br><br>
+<br><br><br>
 <table>
 <tr><td class="t">
     [P]: Show Solving </td><td class="t2">Renders each step of the 4-coloring algorithm as it solves the graph
@@ -237,41 +235,47 @@ Filename:
 
 
 
-<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;" onmousedown="if(!streamSolving){playOpening=false;}">
+<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;"><div id="buttonHolderInner" style="width:100%;">
  
 <input id="about" type="button" value="About" onmousedown="event.preventDefault();activeButton(this.id);showHide('aboutDiv');" class="b">
 
-<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);el('showSolving').value='Show Solving';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
 
-<input id="showSolving" type="button" value="Show Solving" 
-onmousedown="event.preventDefault();activeButton(this.id);if(!showSolving&&solved&&!stepping){;reSolverReset();for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}showSolvingButton();if(!streamSolving){playOpening=false;}" class="b" title="[P] or spacebar">
+<input id="streamSolve" type="button" value="stream" 
+onmousedown="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} showSolvingButton();"    
+class="b">
+
+
+
+<input id="showSolving" type="button" value="Show Solving" onmousedown="showSolvingActions();" class="b" title="[P] or spacebar">
+
 
 <input id="solve" type="button" value="Solve" 
-onmousedown="event.preventDefault();activeButton(this.id);stepping=false;pauser=false;showSolving=false;solving=true;solveButton();for(let v=0;v<vertices.length;v++){vertices[v].c=4;} startTime=Date.now();recursiveNeighborSolver();" class="b" title="[S]">
-
-<input id="step" type="button" value="Step" onmousedown="event.preventDefault();activeButton(this.id);solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();" class="b" title="[ V ]">
+onmousedown="solveActions();" class="b" title="[S]">
 
 
+<input id="step" type="button" value="Step" onmousedown="stepActions();" class="b" title="[ V ]">
 
-<!--<br>-->
 
-<input id="addVertex" type="button" value="Add Vertex" 
+
+<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);el('showSolving').value='Show Solving';showSolving=false;building=true;streamSolving=false;showSolvingStatus();showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
+
+
+<input id="addVertex" type="button" value="Add Vert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
 class="b" title="[A]">
 
 
 
-<input id="moveVertex" type="button" value="Move Vertex" 
+<input id="moveVertex" type="button" value="Move Vert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
-<input id="deleteVertex" type="button" value="Delete Vertex" 
+<input id="deleteVertex" type="button" value="Delete Vert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b" title="[D]">
 
 
-<input id="colorVerts" type="button" value="ColorVerts" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
+<input id="colorVerts" type="button" value="Color Vert" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
 
-<!--<br>-->
 
 <input id="numberOfVerts" type="button" value="Number of Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
 
@@ -282,7 +286,6 @@ class="b" title="[D]">
 <input id="neighs" type="button" value="Neighs" 
 onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b" title="[G]">
 
-<!--<br>-->
 
 <input type="button" value="Tester" id="testerButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]">
@@ -305,12 +308,6 @@ onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInpu
 
 <input id="dropRandom" type="button" value="Random" 
 onmousedown="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
-class="b">
-
-
-
-<input id="streamSolve" type="button" value="stream" 
-onmousedown="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){playOpening=true;solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}}else{playOpening=false;} showSolvingButton();"    
 class="b">
 
 
@@ -349,6 +346,12 @@ onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.on
 <input id="deleteVertButton" type="button" value="Delete" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b" title="[5]">
+
+
+<input id="keysButton" type="button" value="Keys" 
+onmousedown="event.preventDefault();activeButton(this.id);showHide('shortcutKeys');"    
+class="b" title="[K]">
+
 
 </div>
 <div style="width:44px;">
@@ -393,12 +396,12 @@ FPS (1-60):
 
 
 
-<div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
-<div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;padding-left30px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
-<b>&nbsp;A javascript program for four coloring any graph</b>
+<div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:80%;overflow:auto;padding-left:40px;padding-top:20px;padding-bottom:20px;padding-right:60px;margin:0px;">
+<div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding-right:60px;padding-left:40px;padding-top:20px;padding-bottom:20px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
+<b>&nbsp;A Javascript Program for Four Coloring any Graph</b>
 
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;font-size:10px;text-align:justify;line-height:12px">
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;font-size:23px;text-align:justify;line-height:30px">
 <br><br><br>
 The github files are here:<br>
 <a href="https://github.com/thismain/Four-Color-Theorem-Coloring-Tester" target="_blank">https://github.com/thismain/Four-Color-Theorem-Coloring-Tester</a>
@@ -520,8 +523,8 @@ canv.style.left=(ww/2-cW/2)+'px';
 
 el('data').style.width=ww*.93+'px';
 el('dataHeading').style.width=ww*.93+'px';
-el('aboutDiv').style.width=ww*.93+'px';
-el('aboutDivHeading').style.width=ww*.93+'px';
+el('aboutDiv').style.width=ww*.9+'px';
+el('aboutDivHeading').style.width=ww*.9+'px';
 
 
 function setDataShowHideButton(){
@@ -533,6 +536,9 @@ el('dataShowHideButton').style.display='block';
 }//end setDataShowHideButton
 
 
+let rect=el('buttonHolder').getBoundingClientRect();
+el('shortcutKeys').style.height=parseInt(rect.top-rect.height)+'px';
+el('aboutDiv').style.height=parseInt(rect.top-rect.height)+'px';
 
 el('shortcutKeys').style.width=ww*.93+'px';
 el('shortcutKeysHeading').style.width=ww*.93+'px';
@@ -573,7 +579,7 @@ da('expander','+');
 
 
 function showBools(buttonValue){
-da('tester',buttonValue+'<br>numSolves:'+numSolves+'<br>foundUnsolved:'+foundUnsolved+'<br>animSV:'+animSV+'<br>playOpening:'+playOpening+'<br>pauser:'+pauser+'<br>tripleCheck:'+tripleCheck+'<br>checkCounter:'+checkCounter+'<br>stillSearching:'+stillSearching+'<br> solved:'+solved+' <br>  rColorGraphDone:'+rColorGraphDone+' <br>showSolving: '+showSolving+'<br>-----------------<br>');
+da('tester',buttonValue+'<br>numSolves:'+numSolves+'<br>foundUnsolved:'+foundUnsolved+'<br>animSV:'+animSV+'<br>pauser:'+pauser+'<br>tripleCheck:'+tripleCheck+'<br>checkCounter:'+checkCounter+'<br>stillSearching:'+stillSearching+'<br> solved:'+solved+' <br>  rColorGraphDone:'+rColorGraphDone+' <br>showSolving: '+showSolving+'<br>-----------------<br>');
 el('tester').scrollTop=el('tester').scrollHeight;
 }//end showBools
 
@@ -713,8 +719,63 @@ render();
 }//end onmousemove
 
 
+
+
+
+function showSolvingActions(){
+event.preventDefault();
 canv.onmousedown=function(e){
-setRandomVerts=true;buildAndRender();
+showSolvingActions();}
+activeButton('showSolving');
+if(!showSolving&&solved&&!stepping){
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}//if(!showSolving&&
+showSolvingButton();
+}//end showSolvingActions
+
+
+function solveActions(){
+event.preventDefault();
+canv.onmousedown=function(e){
+solveActions();}
+activeButton('solve');
+stepping=false;
+pauser=false;
+showSolving=false;
+streamSolving=false;
+solving=true;
+solveButton();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;} 
+startTime=Date.now();
+recursiveNeighborSolver();
+}//end solveActions
+
+
+
+function stepActions(){
+event.preventDefault();
+canv.onmousedown=function(e){
+stepActions();}
+activeButton('step');
+if(!showSolving&&solved&&!stepping){
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}//end if(!showSolving&
+solved=false;
+stepping=true;
+stepper();
+showSolving=false;
+showSolvingStatus();
+}//end stepActions
+
+
+
+canv.onmousedown=function(e){
+showSolvingActions();
 }
 
 
@@ -980,7 +1041,7 @@ showSolvingStatus();
 if(pauser){
 el('showSolving').value='Paused...\ > ';
 el('showSolving').style.backgroundColor='#ffd7d4';
-}else if(!pauser||playOpening){el('showSolving').value='Solving...||';}
+}else if(!pauser||streamSolving){el('showSolving').value='Solving...||';}
 }//end showSolvingButton
 
 
@@ -1002,10 +1063,8 @@ el('showSolving').value='Show Solving';
 }
 
 if(streamSolving){
-el('streamSolve').value='streaming';
 el('streamSolve').style.backgroundColor='#ffd7d4';
 }else{
-el('streamSolve').value='streaming';
 el('streamSolve').style.backgroundColor='#ffffff';
 }
 }//end showSolvingStatus
@@ -1028,7 +1087,7 @@ animate();
 showSolving=true;
 activeButton('showSolving');
 showSolvingStatus();
-setTimeout("activeButton('showSolving');showSolvingButton();",500);
+//setTimeout("activeButton('showSolving');showSolvingButton();",500);
 }//end animInit
 
 
@@ -1039,9 +1098,8 @@ clearTimeout(animateTimer);
 animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
-if(playOpening&&solved){solved=false;
-clearTimeout(playOpeningTimer);
-playOpeningTimer=setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
+if(streamSolving&&solved){solved=false;
+setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
 
 
@@ -1478,10 +1536,9 @@ getGraphData();
 }
 
 building=false;
-activeButton('buildRandomGraph');
+//activeButton('buildRandomGraph');
 buildRandomGraphButton();
-
-//da('tester',ww+'----'+hh+'----'+vertSize+'---'+Math.sqrt(cW*cH/numPoints*.29));
+hideMessage(messageTimer);
 }// end buildAndRender
 
 
@@ -2022,10 +2079,12 @@ case 'k':
 showHide('shortcutKeys');
 break;
 case ' ':
-buildAndRender();
-activeButton('showSolving');playOpening=false;showSolvingButton();showSolvingButton();
+canv.click();
+//buildAndRender();
+//activeButton('showSolving');
+showSolvingButton();showSolvingButton();
 case 'p':
-activeButton('showSolving');playOpening=false;showSolvingButton();
+activeButton('showSolving');showSolvingButton();
 break;
 case 's':
 activeButton('solve');stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);
