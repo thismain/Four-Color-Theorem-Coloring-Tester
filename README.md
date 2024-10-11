@@ -6,7 +6,7 @@ http://moygen.rf.gd/graph2/index.html
 
 [![Screenshot of Graph Four-Coloring](http://moygen.rf.gd/graph2/screenshotter.png)](http://moygen.rf.gd/graph2/desktop.html)
 
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 31ms, though the average time is around 300ms. I use delaunay triangulation, from [Joshua Bell's code](https://travellermap.com/tmp/delaunay.js), to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, though the average time is around 300ms. I use delaunay triangulation, from [Joshua Bell's code](https://travellermap.com/tmp/delaunay.js), to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 
