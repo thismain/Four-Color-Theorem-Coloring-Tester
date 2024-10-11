@@ -99,6 +99,7 @@ var rColorGraphDone=false;
 var animSV=0;
 var stepping=false;
 var solved=false;
+var loading=true;
 var showNumNeigh=false;
 var solving=false;
 var timeToSolve=0;
@@ -277,7 +278,7 @@ class="b" title="[D]">
 <input id="colorVerts" type="button" value="Color Vert" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
 
 
-<input id="numberOfVerts" type="button" value="Number of Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
+<input id="numberOfVerts" type="button" value="Num Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
 
 <input id="fpsId" type="button" value="FPS" onmousedown=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b" title="[F]">
 
@@ -1098,7 +1099,9 @@ clearTimeout(animateTimer);
 animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
-if(streamSolving&&solved){solved=false;
+if(streamSolving&&loading){loading=false;
+buildAndRender();activeButton('showSolving');showSolvingButton()
+}else if(streamSolving&&solved){solved=false;
 setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
 
