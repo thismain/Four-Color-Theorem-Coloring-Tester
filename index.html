@@ -91,13 +91,14 @@ var loopCounter=0;
 var tripleCheck=false;
 var framesPerSecond=30;
 var pauser=false;
-var showSolving=false;
+var showSolving=true;
 var stillSearching=false;
 var animId=0;
 var rColorGraphDone=false;
 var animSV=0;
 var stepping=false;
 var solved=false;
+var loading=true;
 var showNumNeigh=false;
 var solving=false;
 var timeToSolve=0;
@@ -134,13 +135,15 @@ var minDiam=56;
 var moveRaw=false;
 var randOnlySome=.29;
 
+var buildTimer=0;clearTimeout(buildTimer);
+var solveTimer=0;clearTimeout(solveTimer);
+var numVertsTimer=0;clearTimeout(numVertsTimer);
+var animateTimer=0;clearTimeout(animateTimer);
+
 function clamp(a,min,max){
 if(a<min){a=min;}else if(a>max){a=max;}
 return a;
 }//end clamp
-
-
-
 
 
 function getDeltaTime(){
@@ -234,10 +237,9 @@ ontouchstart="solveActions();" class="b">
 <input id="step" type="button" value="Step" ontouchstart="stepActions();" class="b">
 
 
-
 <br>
 
-<input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="event.preventDefault();activeButton(this.id);building=true;showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;setTimeout('buildAndRender();',50);canv.ontouchstart=function(e){setRandomVerts=true;buildAndRender();};" class="b">
+<input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="buildGraphActions();" class="b">
 
 <input id="addVertex" type="button" value="Add Vert" 
 ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
@@ -385,7 +387,7 @@ The live Mobile demo is here:<br>
 <br><br>
 <img src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 39ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -686,9 +688,6 @@ render();
 
 function showSolvingActions(){
 event.preventDefault();
-canv.ontouchstart=function(e){
-showSolvingActions();
-}
 activeButton('showSolving');
 if(!showSolving&&solved&&!stepping){
 reSolverReset();
@@ -696,14 +695,12 @@ for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
 }//if(!showSolving&&
 showSolvingButton();
+canv.ontouchstart=function(e){showSolvingActions();}
 }//end showSolvingActions
 
 
 function solveActions(){
 event.preventDefault();
-canv.ontouchstart=function(e){
-solveActions();
-}
 activeButton('solve');
 stepping=false;
 pauser=false;
@@ -715,15 +712,13 @@ for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;} 
 startTime=Date.now();
 recursiveNeighborSolver();
+canv.ontouchstart=function(e){solveActions();}
 }//end solveActions
 
 
 
 function stepActions(){
 event.preventDefault();
-canv.ontouchstart=function(e){
-stepActions();
-}
 activeButton('step');
 if(!showSolving&&solved&&!stepping){
 reSolverReset();
@@ -734,9 +729,27 @@ solved=false;
 stepping=true;
 stepper();
 showSolving=false;
-
 showSolvingStatus();
+canv.ontouchstart=function(e){stepActions();}
 }//end stepActions
+
+
+function buildGraphActions(){
+event.preventDefault();
+activeButton('buildRandomGraph');
+building=true;
+showSolving=false;
+streamSolving=false;
+showSolvingStatus();
+showMessage('Building Graph',60000);
+buildRandomGraphButton();
+setRandomVerts=true;
+setTimeout('buildAndRender();',50);
+canv.ontouchstart=function(e){buildGraphActions();}
+}//buildGraphActions
+
+
+
 
 canv.ontouchstart=function(e){
 showSolvingActions();
@@ -1041,15 +1054,18 @@ showSolvingStatus();
 pauser=false;
 animSV=0;
 animate();
-setTimeout("activeButton('showSolving');showSolvingButton();",500);
+//setTimeout("activeButton('showSolving');showSolvingButton();",500);
 }//end animInit
 
 
 function animate(){
-setTimeout(function(){
+clearTimeout(animateTimer);
+animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
-if(streamSolving&&solved){solved=false;
+if(streamSolving&&loading){solved=false;loading=false;
+buildAndRender();activeButton('showSolving');showSolvingButton();
+}else if(streamSolving&&solved){solved=false;
 setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
 
