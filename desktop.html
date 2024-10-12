@@ -440,7 +440,7 @@ The live Mobile demo is here:<br>
 <br><br>
 <img id="screenshot" src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 39ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -1125,7 +1125,7 @@ animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
 if(streamSolving&&loading){solved=false;loading=false;
-buildAndRender();activeButton('showSolving');showSolvingButton()
+buildAndRender();activeButton('showSolving');showSolvingButton();
 }else if(streamSolving&&solved){solved=false;
 setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
 }
@@ -2113,7 +2113,7 @@ case 'p':
 activeButton('showSolving');showSolvingButton();
 break;
 case 's':
-activeButton('solve');stepping=false;pauser=false;showSolving=false;solving=true;solveButton();clearTimeout(solveTimer);solveTimer=setTimeout('for(let v=0;v<vertices.length;v++){vertices[v].c=4;}sortByNeighborCount();colorGraph();recursiveNeighborSolver();',10);
+solveActions();
 break;
 case 'v': 
 activeButton('step');solved=false;stepping=true;stepper();showSolving=false;showSolvingStatus();
