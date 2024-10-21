@@ -354,20 +354,20 @@ class="b">
 <!--<br>-->
 
 <input type="button" value="add" id="addButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b" title="[1]">
+onmousedown="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b" title="[1]">
 
 <input type="button" value="addLinked" id="addLinkedButton"
-onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[2]">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[2]">
 
 <input type="button" value="Link" id="linkVertsButton"
-onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[3]">
+onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b" title="[3]">
 
 
 <input id="moveVertButton" type="button" value="Move" 
-onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b" title="[4]">
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onmousedown=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b" title="[4]">
 
 <input id="deleteVertButton" type="button" value="Delete" 
-onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b" title="[5]">
 
 
