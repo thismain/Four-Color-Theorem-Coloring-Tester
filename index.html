@@ -41,7 +41,9 @@ scrollbar-width: none;  /* Firefox */}
 <script>
 var streamSolving=true;
 var usePHP=false;
+//var serverAddress='http://172.18.11.218:45267/';
 var serverAddress='http://0.0.0.0:45267/';
+//var serverAddress='http://185.27.134.212:86400/';
 var EPSILON=1.0e-6;
 var Vertex;
 var Triangle;
@@ -274,25 +276,31 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){show
 
 
 
-<input type="button" value="Tester" id="testerButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
-
-<input type="button" value="loadGraph" id="loadGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
-
-
-<input type="button" value="saveGraph" id="saveGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
 
 <input type="button" value="Flexibles" id="flexiblesButton"
 ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
 
-<input type="button" value="Console" id="consoleButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
 
 <input id="dropRandom" type="button" value="Random Drop" 
 ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
 class="b">
+
+
+<input type="button" value="Tester" id="testerButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
+
+
+<input type="button" value="Console" id="consoleButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
+
+
+<input type="button" value="load" id="loadGraphButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
+
+
+<input type="button" value="save" id="saveGraphButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
+
 
 
 
@@ -316,23 +324,24 @@ class="b">
 <br>
 
 <input type="button" value="add" id="addButton"
-ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
 
 <input type="button" value="addLinked" id="addVertButton"
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;gettingLinkStart=true;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
 <input type="button" value="Link" id="linkVertsButton"
-ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
 
 
 <input id="moveVertButton" type="button" value="Move" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
 
 <input id="deleteVertButton" type="button" value="Delete" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
 
+<br>
 
 
 
@@ -423,6 +432,8 @@ What might those modules be? Let's number them:
 9) ...
 <br><br>
 It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
+<br><br>
+Why are five colors never required? 
 <br><br>
 
 
@@ -546,6 +557,13 @@ var showBoolCounter=1;
 function showBools(buttonValue, marker){
 if(!marker){marker=showBoolCounter;}
 daa('tester',buttonValue+' '+marker+': <br>stepping:'+stepping+'<br> solving:'+solving+' <br> solved:'+solved+' <br>  rColorGraphDone:'+rColorGraphDone+' <br>showSolving: '+showSolving+'<br>-----------------<br>');
+el('tester').scrollTop=el('tester').scrollHeight;
+showBoolCounter++;
+}//end showBools
+
+function showBools2(buttonValue){
+if(!marker){marker=showBoolCounter;}
+daa('tester',buttonValue+': <br>startConnecting:'+startConnecting+'<br> endConnecting:'+endConnecting+' <br> linkStart:'+linkStart+' <br>  linkEnd:'+linkEnd+' <br>showSolving: '+showSolving+'<br>-----------------<br>');
 el('tester').scrollTop=el('tester').scrollHeight;
 showBoolCounter++;
 }//end showBools
@@ -803,11 +821,11 @@ linkEnd=vertices.length-1;
 if(linkStart>=0&&linkEnd>=0){
 pairArr.push([linkStart,linkEnd]);
 linkStart=linkEnd;
-}
+}//end if(linkStart
 sortByNeighborCount();
 render();
 //addingVert=false;
-}
+}//end adding vert
 }//end function(e)
 
 }else if(startConnecting){
