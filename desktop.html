@@ -41,8 +41,11 @@ scrollbar-width: none;  /* Firefox */}
 </head>
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
+var streamSolving=true;
 var usePHP=false;
-var serverAddress='http://0.0.0.0:45267/';
+var serverAddress='http://moygen.rf.gd/graph2/';
+//var serverAddress='http://172.18.11.218:45267/';
+//var serverAddress='http://localhost/graph2/';
 var EPSILON=1.0e-6;
 var Vertex;
 var Triangle;
@@ -82,6 +85,7 @@ var searcher=[];
 var lastSearcher=[];
 var nonNeighbor=[];
 var numSolves=0;
+var randomDropping=false;
 var solveCounter=0;
 var chunkSolveString='';
 var allSolvesString='';
@@ -125,7 +129,6 @@ var startConnecting=false;
 var endConnecting=false;
 var delaunay=true;
 var moveRaw=false;
-var streamSolving=true;
 var buildTimer=0;clearTimeout(buildTimer);
 var solveTimer=0;clearTimeout(solveTimer);
 var numVertsTimer=0;clearTimeout(numVertsTimer);
@@ -232,23 +235,23 @@ elm.style.height=(h/scale)+"%";
 
 
 
-<select id="selectGraph" onchange="setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;visibility:hidden;position:absolute;top:100px;left:250px;padding:30px;">
+<select id="selectGraph" onchange="showMessage('Loading Graph...',60000);setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;display:none;position:absolute;top:100px;left:250px;padding:30px;">
 <option disabled selected id="label">Load Graph</option>
 </select>
 
 
 
-<div id="filenameInputDiv" style="z-index:10000000;position:fixed;left:50px;bottom:1000px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:40px">
+<div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;top:200px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;display:none;height:100px">
 
 
 Filename:
-<input id="enterGraphName" type="text"  value="" style="display:inline-block;font-family:monospace;color:black;font-size:30px;border:1px solid black;" size="30">
+<input id="enterGraphName" type="text" onmousedown="typing=true;"  value="" style="display:inline-block;font-family:monospace;color:black;font-size:30px;border:1px solid black;" size="30">
 
 <br>
 
-<input value="save" type="button" onmousedown="dataFileName=el('enterGraphName').value+'.txt';el('filenameInputDiv').style.visibility='hidden';saveGraphData();"  style="display:inline-block;font-size:30px;margin-top:12px;">
+<input value="save" type="button" onmousedown="typing=false;showMessage('Saving Graph...');dataFileName=el('enterGraphName').value+'.txt';el('filenameInputDiv').style.display='none';saveGraphData();"  style="display:inline-block;font-size:30px;margin-top:12px;">
 
-<input value="cancel" type="button" onmousedown="el('filenameInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:30px;margin-top:12px;">
+<input value="cancel" type="button" onmousedown="typing=false;el('filenameInputDiv').style.display='none';" style="display:inline-block;font-size:30px;margin-top:12px;">
 
 </div>
 
@@ -280,7 +283,7 @@ onmousedown="solveActions();" class="b" title="[S]">
 
 
 
-<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();activeButton(this.id);el('showSolving').value='Show Solving';showSolving=false;building=true;streamSolving=false;showSolvingStatus();showMessage('Building Graph',60000);buildRandomGraphButton();setRandomVerts=true;clearTimeout(buildTimer);buildTimer=setTimeout('buildAndRender();',50);canv.onmousedown=function(e){setRandomVerts=true;buildAndRender();};" class="b" title="[B]">
+<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="buildGraphActions();" class="b" title="[B]">
 
 
 <input id="addVertex" type="button" value="Add Vert" 
@@ -313,25 +316,29 @@ onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showN
 <input type="button" value="Tester" id="testerButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]">
 
-<input type="button" value="loadGraph" id="loadGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
-
-
-<input type="button" value="saveGraph" id="saveGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
-
-
-<input type="button" value="Flexibles" id="flexiblesButton"
-onmousedown="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b" title="[X]">
 
 <input type="button" value="Console" id="consoleButton"
 onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]">
 
 
+<input type="button" value="Flexibles" id="flexiblesButton"
+onmousedown="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b" title="[X]">
+
+
+
 
 <input id="dropRandom" type="button" value="Random" 
-onmousedown="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
+onmousedown="event.preventDefault();activeButton(this.id);buildGraphActions();el('selectGraph').style.display='none';el('filenameInputDiv').style.display='none';randomDropping=true;showMessage('Running Samples',60000);setTimeout('dropRandom();',300);"    
 class="b">
+
+
+
+<input type="button" value="loadGraph" id="loadGraphButton"
+onmousedown="event.preventDefault();activeButton(this.id);showHide('selectGraph');" class="b" style="display:none;">
+
+
+<input type="button" value="saveGraph" id="saveGraphButton"
+onmousedown="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" style="display:none;">
 
 
 
@@ -397,7 +404,7 @@ Number of Vertices:
 <input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;color:caret-color:white;font-family:monospace;color:white;font-size:70px;padding:10px"
 onmousedown="typing=true;">
 
-<input id="numVertsApply" value="Apply" type="button" onmousedown="typing=false;activeButton(this.id);flexibles=[];numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(numVertsTimer);numVertsTimer=setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
+<input id="numVertsApply" value="Apply" type="button" onmousedown="typing=false;activeButton(this.id);showMessage('Building Graph',60000);flexibles=[];numPoints=parseInt(el('enterNumVerts').value);graphRenderScaleFactors();el('numVertsInputDiv').style.visibility='hidden';building=true;buildRandomGraphButton();setRandomVerts=true;clearTimeout(numVertsTimer);numVertsTimer=setTimeout('buildAndRender();',100);"  style="display:inline-block;font-size:50px;padding:10px;">
 
 <input value="cancel" type="button" onmousedown="typing=false;el('numVertsInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:50px;padding:10px;">
 
@@ -440,7 +447,7 @@ The live Mobile demo is here:<br>
 <br><br>
 <img id="screenshot" src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 22ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -611,14 +618,21 @@ el('tester').scrollTop=el('tester').scrollHeight;
 
 
 function getGraphFilenames(){
+graphFileNames=null;
 if(usePHP){
 el('ifr').src=serverAddress+'filenameReader.php';
-setTimeout(function(){
+waitFilenamesInt=setInterval(function(){
+if(isThere(el('ifr').contentWindow.filenames)){ 
+
 graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
 
+clearInterval(waitFilenamesInt);
+waitFilenamesInt=0;
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
-},500);
+}//if(isThere(el('ifr').contentWindow.filenames)){
+
+},50);
 }//if usePHP
 }//end get graph filenames
 
@@ -633,48 +647,102 @@ el('selectGraph').appendChild(op);
 //el('op0').selected="selected";
 }//end init select graph
 
+var waitGraphDataInt=0;
+
 function getGraphData(){
 if(usePHP){
 el('ifr').src=serverAddress+"saver.php?loading=1&dataFileName="+dataFileName;
-setTimeout("loadGraphData();",500);
+waitGraphDataInt=setInterval("loadGraphData();",1000);
 }//usePHP
 }//end getGraphData
 
+
 function loadGraphData(){
+vertScaler=1;
+dataReceive=null;
 dataReceive=el('ifr').contentWindow.dataSend;
-if(!isThere(dataReceive)){
-getGraphData();
-}else{
+if(isThere(dataReceive)){
+clearInterval(waitGraphDataInt);
+waitGraphDataInt=0;
+hideMessage(messageTimer);
 
 if(dataReceive.indexOf('[')>=0){
 delaunay=false;
-}
 
-if(!delaunay){
 let pairArrString=
 dataReceive.substring(0,dataReceive.lastIndexOf(']')+1.);
-
 pairArr=JSON.parse(pairArrString);
+
 dataReceive=
 dataReceive.replace(pairArrString+' ','');
-}//end if !delaunay
+
+}//if(dataReceive.indexOf('[')>=0){
 
 stringArr=dataReceive.split(" ");
 
+if(!delaunay){
+graphScaler=1;
+let graphFitter=.8;
+yShift=0;
+
+let miny=100000;
 for(let i=0;i<stringArr.length;i+=4){
-vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
+let x=parseInt(stringArr[i]);
+let y=parseInt(stringArr[i+1]);
+if(y<miny){miny=y;}
+}//end i loop
+yShift=miny-80;
+
+let maxx=0;
+let maxy=0;
+
+for(let i=0;i<stringArr.length;i+=4){
+let x=parseInt(stringArr[i]);
+let y=parseInt(stringArr[i+1])-yShift;
+if(x>maxx){maxx=x;}
+if(y>maxy){maxy=y;}
+}//end i loop
+
+let difH=cH-maxy;
+let hRatio=cH/maxy;
+let difW=cW-maxx;
+let wRatio=cW/maxx;
+
+if(hRatio<wRatio){
+if(hRatio<1){graphScaler=hRatio*graphFitter;vertScaler=graphScaler*2;}
+}else{
+if(wRatio<1){graphScaler=wRatio*graphFitter;vertScaler=graphScaler*2;}
+}
+
+
+/*
+alert(yShift);
+alert(difH+' ---- '+difW);
+alert(hRatio+' ---- '+wRatio);
+alert(graphScaler);
+*/
+
+for(let i=0;i<stringArr.length;i+=4){
+vertices.push(new Vertex((parseInt(stringArr[i])*graphScaler).toFixed(2),(parseInt(stringArr[i+1]-yShift)*graphScaler).toFixed(2),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
 if(delaunay){
 triangles=triangulate(vertices);
 }
 }//end i loop
 
-if(delaunay){
+
+}else if(delaunay){
+for(let i=0;i<stringArr.length;i+=4){
+vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
+triangles=triangulate(vertices);
+}//end i loop
+
+}//end if(delaunay){
+
 sortByNeighborCount();
-}
-//if(colorSavedGraph){colorGraph();}
 render();
 dataReceive='';
 }//end isThere
+vertScaler=1;
 }//end loadGraphData
 
 
@@ -685,17 +753,13 @@ for(let i=0;i<vertices.length;i++){
 graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
 }//end i loop
 
+alert(graphData);
+
 if(!delaunay){
+removeDuplicatePairs();
 graphData=
 JSON.stringify(pairArr)+' '+graphData;
 }
-
-/*
-let pairArr=[[675,89],[98,2],[8,7]];
-let dataSaved=JSON.stringify(pairArr);
-pairArr=JSON.parse(dataSaved);
-*/
-
 
 if(!el('op'+numSavedGraphs)){
 graphFileNames.push(dataFileName);
@@ -707,6 +771,8 @@ op.text=dataFileName;
 el('selectGraph').appendChild(op);
 numSavedGraphs++;
 }//end if(!el
+
+hideMessage(messageTimer);
 }//usePHP
 }//end saveGraphData
 
@@ -797,6 +863,21 @@ stepper();
 showSolving=false;
 showSolvingStatus();
 }//end stepActions
+
+
+function buildGraphActions(){
+event.preventDefault();
+activeButton('buildRandomGraph');
+building=true;
+showSolving=false;
+streamSolving=false;
+showSolvingStatus();
+showMessage('Building Graph',60000);
+buildRandomGraphButton();
+setRandomVerts=true;
+setTimeout('buildAndRender();',50);
+canv.ontouchstart=function(e){buildGraphActions();}
+}//buildGraphActions
 
 
 
@@ -993,7 +1074,6 @@ vertices[v].nCount=vertices[v].n.length;
 
 
 function sortByNeighborCount(){
-
 getNeighbors();
 sortedVerts=[];
 for(let v=0;v<vertices.length;v++){
@@ -1500,6 +1580,9 @@ var diam=100;
 var vertSize=19;
 var maxVertSize=25;
 var minVertSize=16;
+var graphScaler=1;
+var vertScaler=1;
+var yShift=0;
 
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*.29);
@@ -1559,14 +1642,15 @@ if(!showSolving){
 render();
 }
 
-}else if(!setRandomVerts){
+}else if(!setRandomVerts&&!randomDropping){
 getGraphData();
 }
 
 building=false;
-//activeButton('buildRandomGraph');
+if(setRandomVerts&&!randomDropping){
 buildRandomGraphButton();
 hideMessage(messageTimer);
+}
 }// end buildAndRender
 
 
@@ -1675,7 +1759,7 @@ ctx.moveTo(vertices[pairArr[i][0]].x, vertices[pairArr[i][0]].y);
 ctx.lineTo(vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
 ctx.closePath();
 ctx.strokeStyle="black";
-ctx.lineWidth=5;
+ctx.lineWidth=5*vertScaler;
 ctx.stroke();
 
 }//end if same color
@@ -1690,7 +1774,7 @@ ctx.stroke();
 let ci=0;
 this.vertices.forEach(function(vertex){
 ctx.beginPath();
-ctx.arc(vertex.x, vertex.y, vertSize, 0, Math.PI * 2, true);
+ctx.arc(vertex.x, vertex.y, vertSize*vertScaler, 0, Math.PI * 2, true);
 ctx.closePath();
 
 if(xray){
@@ -2083,7 +2167,8 @@ stringer2+=`</td></tr></table>`;
 da('tableId',stringer2);
 activeButton('dropRandom');
 setTimeout('setDataShowHideButton();',100);
-hideMessage('messageTimer');
+hideMessage(messageTimer);
+randomDropping=false;
 }//dropRandom
 
 
