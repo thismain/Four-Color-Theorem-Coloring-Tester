@@ -1,7 +1,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
-<script src="redirectToDesktop.js"></script>
+<!--<script src="redirectToDesktop.js"></script>-->
 <style>
 .b{
 font-size:40px;
@@ -40,10 +40,10 @@ scrollbar-width: none;  /* Firefox */}
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
 var streamSolving=true;
-var usePHP=false;
+var usePHP=true;
+var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
-var serverAddress='http://0.0.0.0:45267/';
-//var serverAddress='http://185.27.134.212:86400/';
+var scaleFactor=1;
 var EPSILON=1.0e-6;
 var Vertex;
 var Triangle;
@@ -114,6 +114,7 @@ var flexibles=[];
 var showFlexibles=true;
 var flexibleColor='#db37d9';
 var numSolvesCounter=0;
+var randomDropping=false;
 
 var gettingLinkStart=false;
 var addingVert=false;
@@ -168,7 +169,7 @@ elm.style.height=(h/scale)+"%";
 
 <div id="tester"  style="color:white;background-color:black;position:absolute;left:70px;top:800px;z-index:10000;font-size:40px;padding:6px;border:6px solid white;display:none;width:1200px;height:600px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:0px;overflow:scroll;"></div>
 
-<div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:90px;border:12px solid black;display:none;z-index:1000000;background-color:white;">
+<div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:90px;border:12px solid black;display:none;z-index:10000000;background-color:white;">
 
 <div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:60px;">
 </div>
@@ -185,13 +186,13 @@ elm.style.height=(h/scale)+"%";
 
 
 
-<select id="selectGraph" onchange="setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;visibility:hidden;position:absolute;top:100px;left:250px;padding:30px;">
+<select id="selectGraph" onchange="clearInterval(waitGraphDataInt);waitGraphDataInt=0;hideMessage(messageTimer);showMessage('Loading Graph...',60000);setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:12px solid #000000;display:none;position:absolute;top:100px;left:250px;padding:30px;">
 <option disabled selected id="label">Load Graph</option>
 </select>
 
 
 
-<div id="filenameInputDiv" style="z-index:10000000;position:fixed;left:50px;bottom:1000px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:40px">
+<div id="filenameInputDiv" style="z-index:10000000;position:fixed;left:50px;bottom:1000px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;display:none;height:40px">
 
 
 Filename:
@@ -199,9 +200,9 @@ Filename:
 
 <br>
 
-<input value="save" type="button" ontouchstart="dataFileName=el('enterGraphName').value+'.txt';el('filenameInputDiv').style.visibility='hidden';saveGraphData();"  style="display:inline-block;font-size:30px;margin-top:12px;">
+<input value="save" type="button" ontouchstart="dataFileName=el('enterGraphName').value+'.txt';el('filenameInputDiv').style.display='none';saveGraphData();"  style="display:inline-block;font-size:30px;margin-top:12px;">
 
-<input value="cancel" type="button" ontouchstart="el('filenameInputDiv').style.visibility='hidden';" style="display:inline-block;font-size:30px;margin-top:12px;">
+<input value="cancel" type="button" ontouchstart="el('filenameInputDiv').style.display='none';" style="display:inline-block;font-size:30px;margin-top:12px;">
 
 </div>
 
@@ -281,8 +282,8 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){show
 ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
 
 
-<input id="dropRandom" type="button" value="Random Drop" 
-ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Running Samples',60000);setTimeout('dropRandom();',20);"    
+<input id="dropRandom" type="button" value="Random" 
+ontouchstart="event.preventDefault();activeButton(this.id);buildGraphActions();el('selectGraph').style.display='none';el('filenameInputDiv').style.display='none';randomDropping=true;showMessage('Running Samples',60000);setTimeout('dropRandom();',300);"    
 class="b">
 
 
@@ -290,18 +291,23 @@ class="b">
 ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
 
 
+
+
+
 <input type="button" value="Console" id="consoleButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" >
 
 
-<input type="button" value="load" id="loadGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('selectGraph');" class="b" style="display:none;">
 
 
 <input type="button" value="save" id="saveGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('filenameInputDiv');" class="b" style="display:none;">
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" style="display:none;">
 
 
+<input type="button" value="load" id="loadGraphButton"
+ontouchstart="event.preventDefault();activeButton(this.id);streamSolving=false;showSolvingStatus();showHide('selectGraph');" class="b">
+
+<br>
 
 
 
@@ -340,6 +346,11 @@ ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startC
 <input id="deleteVertButton" type="button" value="Delete" 
 ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
+
+
+<input type="button" value="rotate" id="scaleButton"
+ontouchstart="event.preventDefault();activeButton(this.id);graphRotater();" class="b">
+
 
 <br>
 
@@ -455,7 +466,7 @@ Why are five colors never required?
 
 </div>
 
-<div id="dataShowHideButton" ontouchstart="showHide('data');" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:12px;font-size:35px;color:black;padding-top:5px;padding-bottom:4px;padding-left:8px;padding-right:8px;height:45px;width:245px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:10002;">show/hide</div>
+<input type="button" value="show/hide" id="dataShowHideButton" ontouchstart="showHide('data');" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:12px;font-size:35px;color:black;padding-top:5px;padding-bottom:8px;padding-left:8px;padding-right:8px;height:55px;width:245px;background-color:dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:10002;"></div>
 
 
 <script>
@@ -480,13 +491,19 @@ var ww=window.innerWidth;
 var hh=window.innerHeight;
 var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
+
+var cW,cH;
+function canvSetSize(){
 canv.width=window.innerWidth;
 canv.height=window.innerHeight;
-var cW=canv.width;
-var cH=canv.height;
+cW=canv.width;
+cH=canv.height;
 canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
+}//end canvSetSize
+
+canvSetSize();
 
 //showHide('loadGraphButton');
 //showHide('saveGraphButton');
@@ -505,6 +522,9 @@ el('dataShowHideButton').style.display='block';
 //alert((ww-dataRect.width).toFixed());
 }//end setDataShowHideButton
 
+//for testing scaling of loaded graphs which are larger than the canvas, as they are when loading a graph saved from phone on desktop (to be tested on desktop)
+//var cW2=cW;//cW*2;
+//var cH2=cH;//cH*2;
 
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*randOnlySome);
@@ -568,16 +588,22 @@ el('tester').scrollTop=el('tester').scrollHeight;
 showBoolCounter++;
 }//end showBools
 
+var waitFilenamesInt=0;
 
 function getGraphFilenames(){
+graphFileNames=null;
 if(usePHP){
 el('ifr').src=serverAddress+'filenameReader.php';
-setTimeout(function(){
+waitFilenamesInt=setInterval(function(){
+if(isThere(el('ifr').contentWindow.filenames)){
 graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
-
+clearInterval(waitFilenamesInt);
+waitFilenamesInt=0;
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
-},500);
+}//if(isThere(el('ifr').contentWindow.filenames)){
+
+},50);
 }//if usePHP
 }//end get graph filenames
 
@@ -592,49 +618,189 @@ el('selectGraph').appendChild(op);
 //el('op0').selected="selected";
 }//end init select graph
 
+var waitGraphDataInt=0;
+
 function getGraphData(){
 if(usePHP){
+
 el('ifr').src=serverAddress+"saver.php?loading=1&dataFileName="+dataFileName;
-setTimeout("loadGraphData();",500);
+waitGraphDataInt=setInterval("loadGraphData();",1000);
+
 }//usePHP
 }//end getGraphData
 
+
+
+
 function loadGraphData(){
+canvSetSize();
+reSolverReset();
+dataReceive=null;
 dataReceive=el('ifr').contentWindow.dataSend;
-if(!isThere(dataReceive)){
-getGraphData();
-}else{
+if(isThere(dataReceive)){
+clearInterval(waitGraphDataInt);
+waitGraphDataInt=0;
+hideMessage(messageTimer);
 
 if(dataReceive.indexOf('[')>=0){
 delaunay=false;
-}
 
-if(!delaunay){
 let pairArrString=
 dataReceive.substring(0,dataReceive.lastIndexOf(']')+1.);
-
 pairArr=JSON.parse(pairArrString);
+
 dataReceive=
 dataReceive.replace(pairArrString+' ','');
-}//end if !delaunay
+
+}//if(dataReceive.indexOf('[')>=0){
 
 stringArr=dataReceive.split(" ");
 
 for(let i=0;i<stringArr.length;i+=4){
 vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
+
 if(delaunay){
 triangles=triangulate(vertices);
 }
 }//end i loop
 
-if(delaunay){
+
 sortByNeighborCount();
-}
-//if(colorSavedGraph){colorGraph();}
 render();
-dataReceive='';
+graphResizer();
+autoRotate();
+dataReceive=null;
 }//end isThere
 }//end loadGraphData
+
+
+function autoRotate(){
+let miny=0,maxy=0,minx=0,maxx=0;
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+let gH=maxy-miny;
+let gW=maxx-minx;
+
+if((cW>cH&&gH/gW>1)||(cW<cH&&gH/gW<1)){
+graphRotater();}
+
+}// end autoRotate
+
+
+function graphRotater(){
+let margin=vertSize;
+
+let graphAng=-90*Math.PI/180;
+
+for(let i=0;i<vertices.length;i++){
+let dist=Math.sqrt(vertices[i].y*vertices[i].y+vertices[i].x*vertices[i].x)
+let ang=Math.atan2(vertices[i].y,vertices[i].x);
+ang+=graphAng;
+vertices[i].y=Math.sin(ang)*dist;
+
+vertices[i].x=Math.cos(ang)*dist;
+}//end i loop
+
+let miny=100000;
+let minx=100000;
+
+let maxy=0;
+let maxx=0;
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+vertices[i].y-=miny-margin;
+}
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+
+let wRatio=(cW-margin)/maxx;
+let hRatio=(cH-margin)/maxy;
+
+
+for(let i=0;i<vertices.length;i++){
+if(wRatio<hRatio){
+vertices[i].x*=wRatio;
+vertices[i].y*=wRatio;
+}else{
+vertices[i].x*=hRatio;
+vertices[i].y*=hRatio;
+}
+}
+
+render();
+}//end graphRotater
+
+
+
+
+
+var resizeCanv=false;
+
+function graphResizer(){
+resizeCanv=false;
+
+if(scaleFactor!=1){
+vertSize=vertSize*scaleFactor;
+scaleFactor=1;
+canvSetSize();
+}
+let maxy=0,maxx=0;
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+
+let marginY=50,marginX=100;
+if(maxy>canv.height){
+resizeCanv=true;
+canv.height=maxy+marginY;
+canv.style.height=maxy+marginY+"px";
+}
+if(maxx>canv.width){
+resizeCanv=true;
+canv.width=maxx+marginX;
+canv.style.width=maxx+marginX+"px";
+}
+
+if(resizeCanv&&!setRandomVerts){
+let scaleY=cH/canv.height;
+let scaleX=cW/canv.width;
+if(scaleY<=scaleX){
+scaleFactor=scaleY;
+}else{
+scaleFactor=scaleX;
+}
+
+ctx.scale(scaleFactor, scaleFactor);
+ctx.drawImage(canv, 0, 0);
+cW=cW*(1/scaleFactor);
+cH=cH*(1/scaleFactor);
+vertSize=vertSize*(1/scaleFactor);
+render();
+}//if(resizeCanv&&!setRandomVerts)
+
+//vertSize=vertSize*scaleFactor;
+}//end graphResizer
+
+
 
 
 function saveGraphData(){
@@ -645,6 +811,7 @@ graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c
 }//end i loop
 
 if(!delaunay){
+removeDuplicatePairs();
 graphData=
 JSON.stringify(pairArr)+' '+graphData;
 }
@@ -820,6 +987,7 @@ vertices.push(new Vertex(e.touches[0].pageX,e.touches[0].pageY,4,vertices.length
 linkEnd=vertices.length-1;
 if(linkStart>=0&&linkEnd>=0){
 pairArr.push([linkStart,linkEnd]);
+removeDuplicatePairs();
 linkStart=linkEnd;
 }//end if(linkStart
 sortByNeighborCount();
@@ -1327,7 +1495,7 @@ animSV=0;
 }else if(numSolves==100){
 tripleCheck=false;
 checkCounter=0;
-}else if(numSolves==5000){
+}else if(numSolves==10000){
 
 alert('still solving after numSolves:'+numSolves+' so...returning.');
 return;
@@ -1415,6 +1583,7 @@ flexibles.filter((obj)=>obj.avail==true).length;
 
 
 function buildAndRender(){
+canvSetSize();
 vertices=[];
 triangles=[];
 pairArr=[];
@@ -1440,6 +1609,7 @@ let radius=diam*.5;
 let offset=.5*radius;
 let onlySome=0;
 let pointCounter=0;
+let resizeCanv=false;
 
 if(setRandomVerts){
 for(let y=diam;y<cH-radius;y+=diam){
@@ -1464,15 +1634,28 @@ if(!showSolving){
 render();
 }
 
-}else if(!setRandomVerts){
+}else if(!setRandomVerts&&!randomDropping){
 getGraphData();
-}
+
+}//end if(!setRandomVerts
 
 building=false;
 //activeButton('buildRandomGraph');
+if(setRandomVerts&&!randomDropping){
 buildRandomGraphButton();
 hideMessage(messageTimer);
+}
+
+
+
+
 }// end buildAndRender
+
+
+
+
+
+
 
 
 
@@ -1591,7 +1774,7 @@ ctx.stroke();
 
 }//end if highlightSame
 
-    
+ 
 
 //draw vertices as circles
 let ci=0;
@@ -1612,27 +1795,29 @@ ctx.fillStyle='black';
 }else{
 ctx.fillStyle='white';
 }
-ctx.font="26px Monospace";
-let xOff=12;
-if(vertex.i>99){xOff=24;}
+var fonter=parseInt(24*(1/scaleFactor));
+ctx.font=fonter+"px Monospace";
+let xOff=parseInt(12*(1/scaleFactor));
+let yOff=parseInt(8*(1/scaleFactor));
+if(vertex.i>99){xOff=parseInt(24*(1/scaleFactor));}
 if(showNumNeigh){
-ctx.fillText(vertex.nCount,vertex.x-12,vertex.y+8);
+ctx.fillText(vertex.nCount,vertex.x-xOff,vertex.y+yOff);
 }else{
-ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+8);
+ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+yOff);
 }
 
 if(showFlexibles&&flexibles[ci].avail){
 ctx.fillStyle='black';
 for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
-let coff=c*15;
+let coff=c*parseInt(15*(1/scaleFactor));
 ctx.fillText(flexibles[ci
-].colorsAvailable[c],vertex.x+12+coff,vertex.y+58);
+].colorsAvailable[c],vertex.x+parseInt(12*(1/scaleFactor))+coff,vertex.y+parseInt(58*(1/scaleFactor)));
 }//end c loop
 ctx.strokeStyle='black';
-ctx.lineWidth=14;
+ctx.lineWidth=parseInt(14*(1/scaleFactor));
 }else{
 ctx.strokeStyle='black';
-ctx.lineWidth=1;
+ctx.lineWidth=parseInt(1*(1/scaleFactor));
 }
 ctx.stroke();
 
@@ -1797,8 +1982,6 @@ if(obj[property]===targetValue &&obj[conditionProperty]===conditionValue){
 
 function dropRandom(){
 
-
-
 let sampleSize=5;
 
 let sumVertCount=0;
@@ -1868,8 +2051,6 @@ minNeighs=vertices[v].nCount;
 }//end v loop
 
 
-
-
 neighsPerVertex/=vertices.length;
 sumNeighsPerVertex+=neighsPerVertex;
 
@@ -1883,8 +2064,6 @@ sameColorPairsCount++;
 diffColorPairsCount++;
 }
 }//end j loop
-
-
 
 
 render();
@@ -1908,7 +2087,6 @@ sumDiffColorPairsCount+=diffColorPairsCount;
 
 let sameFlexibleCount=countOccurrences(vertices, 'isFlexible',true,'inSameColorPair',true);
 sumSameFlexibleCount+=sameFlexibleCount;
-
 
 
 
@@ -1986,7 +2164,8 @@ stringer2+=`</td></tr></table>`;
 da('tableId',stringer2);
 activeButton('dropRandom');
 setTimeout('setDataShowHideButton();',100);
-hideMessage('messageTimer');
+hideMessage(messageTimer);
+randomDropping=false;
 }//dropRandom
 
 
@@ -2007,6 +2186,44 @@ zoom(el('fpsInputDiv'),2,80,20);
 //zoom(el('bodyer'),.25,100,100);
 
 
+var Lshift=-100;
+function scaleCanvas(){
+canv.style.border='20px solid black';
+canv.style.left=Lshift+'px';
+canv.style.top=Lshift+'px';
+Lshift-=100;
+/*
+let rect=el('button').getBoundingClientRect();
+el('dataShowHideButton').style.right=(ww-dataRect.width-16).toFixed()+'px';
+el('dataShowHideButton').style.top=(dataRect.top+6).toFixed()+'px';
+
+
+*/
+//canv.width=window.innerWidth;
+//canv.height=window.innerHeight;
+/*
+let hRatio=screen.height/window.innerHeight;
+let wRatio=screen.width/window.innerWidth;
+let ratio=1;
+if(hRatio<=wRatio){ratio=hRatio;
+}else{ratio=wRatio;}
+
+da('tester',screen.height+'---'+window.innerHeight+'--- '+hRatio+'---'+wRatio);
+let scaleFactor=ratio;
+ctx.scale(scaleFactor, scaleFactor);
+ctx.drawImage(canvas, 0, 0);
+
+*/
+/*
+canv.width=screen.width;
+canv.height=screen.height;
+cW=canv.width;
+cH=canv.height;
+canv.style.width=cW+"px";
+canv.style.height=cH+"px";
+*/
+canv.ontouchstart=function(e){};
+}//end scale canvas
 
 
 </script>
