@@ -42,10 +42,11 @@ scrollbar-width: none;  /* Firefox */}
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
 var streamSolving=true;
-var usePHP=false;
+var usePHP=true;
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://localhost/graph2/';
+var scaleFactor=1;
 var EPSILON=1.0e-6;
 var Vertex;
 var Triangle;
@@ -235,7 +236,7 @@ elm.style.height=(h/scale)+"%";
 
 
 
-<select id="selectGraph" onchange="showMessage('Loading Graph...',60000);setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;display:none;position:absolute;top:100px;left:250px;padding:30px;">
+<select id="selectGraph" onchange="showMessage('Loading Graph...',60000);setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:25px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;display:none;position:absolute;top:20px;right:20px;padding:15px;">
 <option disabled selected id="label">Load Graph</option>
 </select>
 
@@ -313,12 +314,6 @@ class="b" title="[D]">
 onmousedown="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b" title="[G]">
 
 
-<input type="button" value="Tester" id="testerButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]">
-
-
-<input type="button" value="Console" id="consoleButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]">
 
 
 <input type="button" value="Flexibles" id="flexiblesButton"
@@ -333,12 +328,20 @@ class="b">
 
 
 
-<input type="button" value="loadGraph" id="loadGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('selectGraph');" class="b" style="display:none;">
+<input type="button" value="load" id="loadGraphButton"
+onmousedown="event.preventDefault();activeButton(this.id);streamSolving=false;pauser=false;showSolvingStatus();showHide('selectGraph');" class="b">
 
 
-<input type="button" value="saveGraph" id="saveGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" style="display:none;">
+<input type="button" value="save" id="saveGraphButton"
+onmousedown="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" >
+
+
+<input type="button" value="Tester" id="testerButton"
+onmousedown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]" style="display:none;">
+
+
+<input type="button" value="Console" id="consoleButton"
+onmousedown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]" style="display:none;">
 
 
 
@@ -376,6 +379,9 @@ onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startCo
 <input id="deleteVertButton" type="button" value="Delete" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onmousedown=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b" title="[5]">
+
+<input type="button" value="rotate" id="scaleButton"
+onmousedown="event.preventDefault();activeButton(this.id);graphRotater();" class="b">
 
 
 <input id="keysButton" type="button" value="Keys" 
@@ -549,7 +555,9 @@ var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
 var cW,cH,ww,hh;
 
-function init(){
+
+
+function canvSetSize(){
 ww=window.innerWidth;
 hh=window.innerHeight;
 canv.width=window.innerWidth;
@@ -559,6 +567,15 @@ cH=canv.height;
 canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
+if(scaleFactor!=1){
+vertSize=vertSize*scaleFactor;
+scaleFactor=1;
+}
+}//end canvSetSize
+
+function init(){
+canvSetSize();
+
 
 el('data').style.width=ww*.95+'px';
 el('dataHeading').style.width=ww*.95+'px';
@@ -658,7 +675,8 @@ waitGraphDataInt=setInterval("loadGraphData();",1000);
 
 
 function loadGraphData(){
-vertScaler=1;
+canvSetSize();
+reSolverReset();
 dataReceive=null;
 dataReceive=el('ifr').contentWindow.dataSend;
 if(isThere(dataReceive)){
@@ -680,70 +698,171 @@ dataReceive.replace(pairArrString+' ','');
 
 stringArr=dataReceive.split(" ");
 
-if(!delaunay){
-graphScaler=1;
-let graphFitter=.8;
-yShift=0;
 
-let miny=100000;
-for(let i=0;i<stringArr.length;i+=4){
-let x=parseInt(stringArr[i]);
-let y=parseInt(stringArr[i+1]);
-if(y<miny){miny=y;}
-}//end i loop
-yShift=miny-80;
-
-let maxx=0;
-let maxy=0;
 
 for(let i=0;i<stringArr.length;i+=4){
-let x=parseInt(stringArr[i]);
-let y=parseInt(stringArr[i+1])-yShift;
-if(x>maxx){maxx=x;}
-if(y>maxy){maxy=y;}
-}//end i loop
+vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
 
-let difH=cH-maxy;
-let hRatio=cH/maxy;
-let difW=cW-maxx;
-let wRatio=cW/maxx;
-
-if(hRatio<wRatio){
-if(hRatio<1){graphScaler=hRatio*graphFitter;vertScaler=graphScaler*2;}
-}else{
-if(wRatio<1){graphScaler=wRatio*graphFitter;vertScaler=graphScaler*2;}
-}
-
-
-/*
-alert(yShift);
-alert(difH+' ---- '+difW);
-alert(hRatio+' ---- '+wRatio);
-alert(graphScaler);
-*/
-
-for(let i=0;i<stringArr.length;i+=4){
-vertices.push(new Vertex((parseInt(stringArr[i])*graphScaler).toFixed(2),(parseInt(stringArr[i+1]-yShift)*graphScaler).toFixed(2),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
 if(delaunay){
 triangles=triangulate(vertices);
 }
 }//end i loop
 
+let miny=100000,minx=100000,maxy=0,maxx=0;;
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
 
-}else if(delaunay){
-for(let i=0;i<stringArr.length;i+=4){
-vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
-triangles=triangulate(vertices);
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
 }//end i loop
 
-}//end if(delaunay){
+for(let i=0;i<vertices.length;i++){
+
+if(miny>diam){vertices[i].y-=miny-diam*2;}
+if(minx>diam){vertices[i].x-=minx-diam;}
+
+if(maxy>cH-diam){vertices[i].y-=diam*1.5;}
+if(minx<diam){vertices[i].x+=diam;}
+}//end i loop
+
 
 sortByNeighborCount();
 render();
-dataReceive='';
+graphResizer();
+autoRotate();
+dataReceive=null;
 }//end isThere
-vertScaler=1;
 }//end loadGraphData
+
+
+
+function autoRotate(){
+let miny=0,maxy=0,minx=0,maxx=0;
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+let gH=maxy-miny;
+let gW=maxx-minx;
+
+if((cW>cH&&gH/gW>1)||(cW<cH&&gH/gW<1)){
+graphRotater();}
+
+}// end autoRotate
+
+
+function graphRotater(){
+let margin=vertSize;
+
+let graphAng=-90*Math.PI/180;
+
+for(let i=0;i<vertices.length;i++){
+let dist=Math.sqrt(vertices[i].y*vertices[i].y+vertices[i].x*vertices[i].x)
+let ang=Math.atan2(vertices[i].y,vertices[i].x);
+ang+=graphAng;
+vertices[i].y=Math.sin(ang)*dist;
+
+vertices[i].x=Math.cos(ang)*dist;
+}//end i loop
+
+let miny=100000;
+let minx=100000;
+
+let maxy=0;
+let maxx=0;
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+vertices[i].y-=miny-margin;
+}
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+
+let wRatio=(cW-margin)/maxx;
+let hRatio=(cH-margin)/maxy;
+
+
+for(let i=0;i<vertices.length;i++){
+if(wRatio<hRatio){
+vertices[i].x*=wRatio;
+vertices[i].y*=wRatio;
+}else{
+vertices[i].x*=hRatio;
+vertices[i].y*=hRatio;
+}
+}
+
+render();
+}//end graphRotater
+
+
+
+
+
+var resizeCanv=false;
+
+function graphResizer(){
+resizeCanv=false;
+
+if(scaleFactor!=1){
+vertSize=vertSize*scaleFactor;
+scaleFactor=1;
+canvSetSize();
+}
+let maxy=0,maxx=0;
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+
+let marginY=50,marginX=100;
+if(maxy>canv.height){
+resizeCanv=true;
+canv.height=maxy+marginY;
+canv.style.height=maxy+marginY+"px";
+}
+if(maxx>canv.width){
+resizeCanv=true;
+canv.width=maxx+marginX;
+canv.style.width=maxx+marginX+"px";
+}
+
+if(resizeCanv&&!setRandomVerts){
+let scaleY=cH/canv.height;
+let scaleX=cW/canv.width;
+if(scaleY<=scaleX){
+scaleFactor=scaleY;
+}else{
+scaleFactor=scaleX;
+}
+
+ctx.scale(scaleFactor, scaleFactor);
+ctx.drawImage(canv, 0, 0);
+cW=cW*(1/scaleFactor);
+cH=cH*(1/scaleFactor);
+vertSize=vertSize*(1/scaleFactor);
+render();
+}//if(resizeCanv&&!setRandomVerts)
+
+//vertSize=vertSize*scaleFactor;
+}//end graphResizer
+
 
 
 function saveGraphData(){
@@ -753,7 +872,7 @@ for(let i=0;i<vertices.length;i++){
 graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
 }//end i loop
 
-alert(graphData);
+//alert(graphData);
 
 if(!delaunay){
 removeDuplicatePairs();
@@ -816,8 +935,6 @@ render();
 
 function showSolvingActions(){
 event.preventDefault();
-canv.onmousedown=function(e){
-showSolvingActions();}
 activeButton('showSolving');
 if(!showSolving&&solved&&!stepping){
 reSolverReset();
@@ -825,6 +942,7 @@ for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
 }//if(!showSolving&&
 showSolvingButton();
+canv.onmousedown=function(e){showSolvingActions();}
 }//end showSolvingActions
 
 
@@ -1513,21 +1631,27 @@ el('messageHolder').style.display='none';
 }//hide message
 
 
+
 function reSolverReset(){
+solving=false;
+solved=true;
+animSV=0;
+showSolving=false;
+pauser=false;
+showSolvingStatus();
 pairString='';
-da('tester','');
 numSolves=0;
 solveCounter=0;
 chunkSolveString='';
-allSolvesString='';
 loopingDetected=false;
 nIndexString='';
 solveRemainingPass=0;
 tripleCheck=false;
-checkCounter=0;
-rColorGraphDone=false;
-solved=false;
+pairString='';
+da('tester','');
+allSolvesString='';
 }//end resolver reset
+
 
 
 function getFlexibles(){
@@ -1579,20 +1703,18 @@ var numPoints=60;
 var diam=100;
 var vertSize=19;
 var maxVertSize=25;
-var minVertSize=16;
-var graphScaler=1;
-var vertScaler=1;
-var yShift=0;
+var minVertSize=13;
 
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*.29);
-vertSize=clamp(.27*diam,minVertSize,maxVertSize);
+vertSize=clamp(.22*diam,minVertSize,maxVertSize);
 }//graphRenderScaleFactors
 
 graphRenderScaleFactors();
 
 function buildAndRender(){
 clearTimeout(buildTimer);
+canvSetSize();
 vertices=[];
 triangles=[];
 pairArr=[];
@@ -1759,7 +1881,7 @@ ctx.moveTo(vertices[pairArr[i][0]].x, vertices[pairArr[i][0]].y);
 ctx.lineTo(vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
 ctx.closePath();
 ctx.strokeStyle="black";
-ctx.lineWidth=5*vertScaler;
+ctx.lineWidth=4;
 ctx.stroke();
 
 }//end if same color
@@ -1768,13 +1890,13 @@ ctx.stroke();
 
 }//end if highlightSame
 
-    
+
 
 //draw vertices as circles
 let ci=0;
 this.vertices.forEach(function(vertex){
 ctx.beginPath();
-ctx.arc(vertex.x, vertex.y, vertSize*vertScaler, 0, Math.PI * 2, true);
+ctx.arc(vertex.x, vertex.y, vertSize, 0, Math.PI * 2, true);
 ctx.closePath();
 
 if(xray){
@@ -1784,45 +1906,56 @@ ctx.fillStyle=fourColor[vertices[ci].c];
 }
 ctx.fill();
 
-
-if(showFlexibles&&flexibles[ci].avail){
-ctx.fillStyle='black';
-for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
-let coff=c*15;
-ctx.fillText(flexibles[ci
-].colorsAvailable[c],vertex.x+12+coff,vertex.y+39);
-}//end c loop
-ctx.strokeStyle='black';
-ctx.lineWidth=9;
-}else{
-ctx.strokeStyle='black';
-ctx.lineWidth=1;
-}
-ctx.stroke();
-
-
-
 if(vertices[ci].c==4){
 ctx.fillStyle='black';
 }else{
 ctx.fillStyle='white';
 }
-ctx.font="22px Monospace";
-let xOff=5;
-let yOff=8;
-if(vertex.i>99){xOff=14;yOff=6;ctx.font="15px Monospace";}else
-if(vertex.i>9){xOff=11;yOff=8;ctx.font="20px Monospace";}
 
+var fonter=parseInt(14*(1/scaleFactor));
+ctx.font=fonter+"px Monospace";
 
+let xOff=0;
+let yOff=0;
+
+if(vertex.i>99){
+xOff=parseInt(14*(1/scaleFactor));
+yOff=parseInt(4*(1/scaleFactor));
+}else if(vertex.i>9){
+xOff=parseInt(8*(1/scaleFactor));
+yOff=parseInt(4*(1/scaleFactor));
+}else if(vertex.i<=9){
+xOff=parseInt(4*(1/scaleFactor));
+yOff=parseInt(4*(1/scaleFactor));
+}
 
 if(showNumNeigh){
-xOff=5;yOff=8;
+if(vertex.nCount>9){
+xOff=parseInt(8*(1/scaleFactor));
+yOff=parseInt(4*(1/scaleFactor));
+}else if(vertex.nCount<=9){
+xOff=parseInt(4*(1/scaleFactor));
+yOff=parseInt(4*(1/scaleFactor));
+}
 ctx.fillText(vertex.nCount,vertex.x-xOff,vertex.y+yOff);
 }else{
 ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+yOff);
 }
 
-
+if(showFlexibles&&flexibles[ci].avail){
+ctx.fillStyle='black';
+for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
+let coff=c*parseInt(15*(1/scaleFactor));
+ctx.fillText(flexibles[ci
+].colorsAvailable[c],vertex.x+parseInt(14*(1/scaleFactor))+coff,vertex.y+parseInt(24*(1/scaleFactor)));
+}//end c loop
+ctx.strokeStyle='black';
+ctx.lineWidth=parseInt(8*(1/scaleFactor));
+}else{
+ctx.strokeStyle='black';
+ctx.lineWidth=parseInt(1*(1/scaleFactor));
+}
+ctx.stroke();
 
 ci++;
 });//end vertices foreach
