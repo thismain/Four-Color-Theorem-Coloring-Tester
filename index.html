@@ -43,6 +43,8 @@ var streamSolving=true;
 var usePHP=true;
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
+//var serverAddress='http://48.52.212.109:45267/';
+var numPoints=50;
 var scaleFactor=1;
 var EPSILON=1.0e-6;
 var Vertex;
@@ -71,6 +73,14 @@ var dataReceive=null;
 var getDataInterval=0;
 var stringArr=[];
 var pairArr=[];
+var segPoints=[];
+var segCounter=0;
+var settingSegPoints=[];
+var curvedLinkStart=-1;
+var curvedLinkEnd=-1;
+var gettingCurvedLinkStart=false;
+var gettingCurvedLinkEnd=false;
+var tapMessageShown=false;
 var setRandomVerts=true;
 var sortedVerts=[];
 var counter=0;
@@ -88,7 +98,7 @@ var chunkSolveString='';
 var allSolvesString='';
 var nIndexString='';
 var loopingDetected=false;
-var solveRemainingPass=0;
+var solveRemainingPass=0; 
 var loopCounter=0;
 var tripleCheck=false;
 var framesPerSecond=30;
@@ -128,9 +138,9 @@ var diffColorPairsCount=0;
 var sameColorPairsCount=0;
 
 
-var numPoints=60;//50,70,160,300
-var vertSize=30;//30,30,27,24
-var diam=110;//120,110,80,60
+
+var vertSize=30;
+var diam=110;
 var maxVertSize=31;
 var minVertSize=24;
 var maxDiam=120;
@@ -147,6 +157,8 @@ function clamp(a,min,max){
 if(a<min){a=min;}else if(a>max){a=max;}
 return a;
 }//end clamp
+
+function fixAngleRad(a){if(a>Math.PI){a-=Math.PI*2;}else if(a<-Math.PI){a+=Math.PI*2;}return a;}
 
 
 function getDeltaTime(){
@@ -167,11 +179,11 @@ elm.style.height=(h/scale)+"%";
 </div>
 
 
-<div id="tester"  style="color:white;background-color:black;position:absolute;left:70px;top:800px;z-index:10000;font-size:40px;padding:6px;border:6px solid white;display:none;width:1200px;height:600px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:0px;overflow:scroll;"></div>
+<div id="tester"  style="color:white;background-color:black;position:absolute;left:70px;top:100px;z-index:10000;font-size:20px;padding:6px;border:6px solid white;display:none;width:1200px;height:1600px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:0px;overflow:scroll;"></div>
 
 <div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:90px;border:12px solid black;display:none;z-index:10000000;background-color:white;">
 
-<div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:60px;">
+<div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:60px;line-height:70px;text-align:center;">
 </div>
 </div>
 
@@ -245,16 +257,16 @@ ontouchstart="solveActions();" class="b">
 <input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="buildGraphActions();" class="b">
 
 <input id="addVertex" type="button" value="Add Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
 class="b">
 
 
 
 <input id="moveVertex" type="button" value="Move Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
 
 <input id="deleteVertex" type="button" value="Delete Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b">
 
 
@@ -262,50 +274,53 @@ class="b">
 
 <br>
 
-<input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
+<input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){e.preventDefault();getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
 
-<input id="numberOfVerts" type="button" value="Number of Verts" ontouchstart="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
+<input id="numberOfVerts" type="button" value="NumVerts" ontouchstart="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b">
 
 <input id="fpsId" type="button" value="FPS" ontouchstart=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
 
 <input id="timeToSolveId" type="button" value="TimeToSolve" ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
 
-<br>
 
 <input id="neighs" type="button" value="Neighs" 
 ontouchstart="event.preventDefault();activeButton(this.id);if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}render();" class="b">
 
 
+<br>
 
 
 <input type="button" value="Flexibles" id="flexiblesButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFlexibles;render();" class="b" style="display:none;">
 
 
 <input id="dropRandom" type="button" value="Random" 
 ontouchstart="event.preventDefault();activeButton(this.id);buildGraphActions();el('selectGraph').style.display='none';el('filenameInputDiv').style.display='none';randomDropping=true;showMessage('Running Samples',60000);setTimeout('dropRandom();',300);"    
-class="b">
+class="b" style="display:none">
 
 
 <input type="button" value="Tester" id="testerButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b">
-
-
-
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b" >
 
 
 <input type="button" value="Console" id="consoleButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" >
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b">
 
 
+<input type="button" value="rotate" id="scaleButton"
+ontouchstart="event.preventDefault();activeButton(this.id);graphRotater();canv.ontouchstart=function(e){graphRotater();}" class="b">
 
 
 <input type="button" value="save" id="saveGraphButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" style="display:none;">
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b">
 
 
 <input type="button" value="load" id="loadGraphButton"
 ontouchstart="event.preventDefault();activeButton(this.id);streamSolving=false;showSolvingStatus();showHide('selectGraph');" class="b">
+
+
+<input type="button" value="curvedLink" id="addCurveButton"
+ontouchstart="event.preventDefault();activeButton(this.id);if(!tapMessageShown){tapMessageShown=true;showMessage('Tap dotted<br>line between <br>unlinked nodes',3000);}gettingCurvedLinkStart=true;curvedLink();" class="b">
 
 <br>
 
@@ -330,26 +345,24 @@ ontouchstart="event.preventDefault();activeButton(this.id);streamSolving=false;s
 <br>
 
 <input type="button" value="add" id="addButton"
-ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
 
 <input type="button" value="addLinked" id="addVertButton"
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
 <input type="button" value="Link" id="linkVertsButton"
-ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+
 
 
 
 <input id="moveVertButton" type="button" value="Move" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
 
 <input id="deleteVertButton" type="button" value="Delete" 
-ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
 
-
-<input type="button" value="rotate" id="scaleButton"
-ontouchstart="event.preventDefault();activeButton(this.id);graphRotater();" class="b">
 
 
 <br>
@@ -444,7 +457,10 @@ What might those modules be? Let's number them:
 <br><br>
 It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
 <br><br>
-Why are five colors never required? 
+-----------------
+<br><br>
+
+After solving graphs manually and watching the algorithm solve graphs in a similar way, one develops an intuition for the reason the four color theorem is true. But articulating this feeling requires much ratiocination and accounting for all possible cases, not to mention a careful definition of terms along the way, which often interferes with the flow of the logic of one's argument. Then also, any exposition which does not rest upon quantifiable statstical relationships rings hollow. It's easy to suppose that there's a certain minimum degree of flexibility which is common to all four-colored planar graphs, where flexibility is defined as the option to be one or two colors other than one's own, without conflict. But it's not so easy to statistically quantify this minimum degree of flexibility. Everyone can see that conflicted nodes can be resolved by swapping colors along a path toward a flexible node, and it also becomes obvious that this flexibility is deriving from the inevitable isolation of every node from the rest of the graph by its neighbors. But how can one show, without testing every possible kind of case, that this local principle of isolation will always yield enough flexibility to four-color any graph?
 <br><br>
 
 
@@ -487,6 +503,21 @@ function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(
 
 function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
 
+
+//testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
+function testVars(...args){
+let stringVars='';
+for(let i=0;i<args.length;i++){
+if(i==0||i%2==0){
+stringVars+=args[i]+': '+args[i+1]+'<br>';
+}
+}//end i loop
+daa('tester',stringVars+'<br>');
+}//end testVars
+
+
+
+
 var ww=window.innerWidth;
 var hh=window.innerHeight;
 var canv=document.getElementById("canvas");
@@ -519,7 +550,7 @@ let dataRect=el('data').getBoundingClientRect();
 el('dataShowHideButton').style.right=(ww-dataRect.width-16).toFixed()+'px';
 el('dataShowHideButton').style.top=(dataRect.top+6).toFixed()+'px';
 el('dataShowHideButton').style.display='block';
-//alert((ww-dataRect.width).toFixed());
+
 }//end setDataShowHideButton
 
 //for testing scaling of loaded graphs which are larger than the canvas, as they are when loading a graph saved from phone on desktop (to be tested on desktop)
@@ -540,6 +571,16 @@ el(buttonId).style.backgroundColor='#dbedff';
 lastButton=buttonId;
 if(lastButton!='dropRandom'){el('dataShowHideButton').style.display='none';el('data').style.display='none';}
 if(lastButton!='about'){el('aboutDiv').style.display='none';}
+if(lastButton!='curvedLink'&&gettingCurvedLinkEnd){
+gettingCurvedLinkStart=false;
+gettingCurvedLinkEnd=false;
+curvedLinkStart=-1;
+curvedLinkEnd=-1;
+segPoints[pairArr.length]=null;
+settingSegPoints[pairArr.length]=false;
+segCounter=0;
+render();
+}//end if(lastButton!='curvedLink'
 }//activeButton
 
 
@@ -552,7 +593,7 @@ var bhStyle=getComputedStyle(el('buttonHolder'));var bhHeight=bhStyle.height;
 var cpClosedPos=parseInt(window.innerHeight*2)+'px';
 var cpOpenPos='10px';
 
-
+ 
 el('buttonHolder').style.width=ww+'px';
 el('buttonHolder').style.bottom=cpOpenPos;
 //el('expander').style.bottom=parseInt(bhHeight)+30+'px';
@@ -645,8 +686,23 @@ hideMessage(messageTimer);
 if(dataReceive.indexOf('[')>=0){
 delaunay=false;
 
-let pairArrString=
-dataReceive.substring(0,dataReceive.lastIndexOf(']')+1.);
+segPoints=[];
+let segPointString='';
+
+if(dataReceive.lastIndexOf('}]]')>=0){
+segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('}]]')+3);
+segPoints=JSON.parse(segPointString);
+}else if(dataReceive.lastIndexOf('null]')>=0){
+segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('null]')+5);
+segPoints=JSON.parse(segPointString);
+}
+
+if(isThere(segPoints)){
+dataReceive=
+dataReceive.replace(segPointString+' ','');
+}
+
+let pairArrString=dataReceive.substring(0,dataReceive.lastIndexOf(']')+1);
 pairArr=JSON.parse(pairArrString);
 
 dataReceive=
@@ -664,7 +720,6 @@ triangles=triangulate(vertices);
 }
 }//end i loop
 
-
 sortByNeighborCount();
 render();
 graphResizer();
@@ -672,6 +727,48 @@ autoRotate();
 dataReceive=null;
 }//end isThere
 }//end loadGraphData
+
+
+
+function saveGraphData(){
+if(usePHP){
+let graphData='';
+for(let i=0;i<vertices.length;i++){
+graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
+}//end i loop
+
+if(!delaunay){
+removeDuplicatePairs();
+let sp='';
+if(isThere(segPoints)){
+sp=JSON.stringify(segPoints)+' ';
+}
+graphData=sp+JSON.stringify(pairArr)+' '+graphData;
+}
+
+/*
+let pairArr=[[675,89],[98,2],[8,7]];
+let dataSaved=JSON.stringify(pairArr);
+pairArr=JSON.parse(dataSaved);
+*/
+
+
+if(!el('op'+numSavedGraphs)){
+graphFileNames.push(dataFileName);
+el('ifr').src=serverAddress+"saver.php?graphData="+graphData+"&saving=1&dataFileName="+dataFileName;
+let op=document.createElement("option");
+op.id='op'+numSavedGraphs;
+op.value=numSavedGraphs;
+op.text=dataFileName;
+el('selectGraph').appendChild(op);
+numSavedGraphs++;
+}//end if(!el
+}//usePHP
+}//end saveGraphData
+
+
+
+
 
 
 function autoRotate(){
@@ -696,33 +793,97 @@ graphRotater();}
 }// end autoRotate
 
 
+
+
+
+
 function graphRotater(){
-let margin=vertSize;
+let margin=vertSize*3;
+
 
 let graphAng=-90*Math.PI/180;
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(isThere(segPoints[i][s])){
+let dist=Math.sqrt(segPoints[i][s].y*segPoints[i][s].y+segPoints[i][s].x*segPoints[i][s].x);
+
+let ang=Math.atan2(segPoints[i][s].y,segPoints[i][s].x);
+ang+=graphAng; 
+segPoints[i][s].y=Math.sin(ang)*dist;
+segPoints[i][s].x=Math.cos(ang)*dist;
+}//if(isThere(segPoints[i][s])){
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
+
 
 for(let i=0;i<vertices.length;i++){
 let dist=Math.sqrt(vertices[i].y*vertices[i].y+vertices[i].x*vertices[i].x)
 let ang=Math.atan2(vertices[i].y,vertices[i].x);
 ang+=graphAng;
 vertices[i].y=Math.sin(ang)*dist;
-
 vertices[i].x=Math.cos(ang)*dist;
 }//end i loop
+
+
 
 let miny=100000;
 let minx=100000;
 
-let maxy=0;
-let maxx=0;
+let maxy=-100000;
+let maxx=-100000;
+
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(segPoints[i][s].y<miny){miny=segPoints[i][s].y;}
+if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
 
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
 }//end i loop
+
+
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+
+segPoints[i][s].y-=miny-margin;
+segPoints[i][s].x-=minx-margin;
+
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
 
 for(let i=0;i<vertices.length;i++){
 vertices[i].y-=miny-margin;
+vertices[i].x-=minx-margin;
 }
+
+
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+
+if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
+if(segPoints[i][s].x<maxx){maxx=segPoints[i][s].x;}
+
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
 
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y>maxy){maxy=vertices[i].y;}
@@ -730,8 +891,25 @@ if(vertices[i].x>maxx){maxx=vertices[i].x;}
 }//end i loop
 
 
-let wRatio=(cW-margin)/maxx;
-let hRatio=(cH-margin)/maxy;
+
+let wRatio=(cW-margin)/(maxx+margin);//((maxx+margin)-(minx-margin));
+let hRatio=(cH-margin)/(maxy+margin);//((maxy+margin)-(miny-margin));
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(isThere(segPoints[i][s])){
+if(wRatio<hRatio){
+segPoints[i][s].x*=wRatio;
+segPoints[i][s].y*=wRatio;
+}else{
+segPoints[i][s].x*=hRatio;
+segPoints[i][s].y*=hRatio;
+}
+}//if(isThere(segPoints[i][s])){
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
 
 
 for(let i=0;i<vertices.length;i++){
@@ -742,9 +920,12 @@ vertices[i].y*=wRatio;
 vertices[i].x*=hRatio;
 vertices[i].y*=hRatio;
 }
-}
+}//end i loop
+
 
 render();
+
+//testVars("miny",miny,"maxy","minx",minx,"maxx",maxx); 
 }//end graphRotater
 
 
@@ -801,40 +982,6 @@ render();
 }//end graphResizer
 
 
-
-
-function saveGraphData(){
-if(usePHP){
-let graphData='';
-for(let i=0;i<vertices.length;i++){
-graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
-}//end i loop
-
-if(!delaunay){
-removeDuplicatePairs();
-graphData=
-JSON.stringify(pairArr)+' '+graphData;
-}
-
-/*
-let pairArr=[[675,89],[98,2],[8,7]];
-let dataSaved=JSON.stringify(pairArr);
-pairArr=JSON.parse(dataSaved);
-*/
-
-
-if(!el('op'+numSavedGraphs)){
-graphFileNames.push(dataFileName);
-el('ifr').src=serverAddress+"saver.php?graphData="+graphData+"&saving=1&dataFileName="+dataFileName;
-let op=document.createElement("option");
-op.id='op'+numSavedGraphs;
-op.value=numSavedGraphs;
-op.text=dataFileName;
-el('selectGraph').appendChild(op);
-numSavedGraphs++;
-}//end if(!el
-}//usePHP
-}//end saveGraphData
 
 
 function changeVertexColor(e){
@@ -943,14 +1090,58 @@ showSolvingActions();
 
 function moveVertex(e,delaunay){
 if(vertexToEdit>=0){
+let lastx=vertices[vertexToEdit].x;
+let lasty=vertices[vertexToEdit].y;
 vertices[vertexToEdit].x=e.touches[0].pageX;
 vertices[vertexToEdit].y=e.touches[0].pageY;
+let moveDifx=[];
+let moveDify=[];
 ctx.clearRect(0,0,cW,cH);
-if(delaunay){
-triangles=triangulate(vertices);
-}
+if(delaunay){triangles=triangulate(vertices);}
+
+for(let i=0;i<pairArr.length;i++){
+if(pairArr[i][0]==vertexToEdit||pairArr[i][1]==vertexToEdit){
+if(isThere(segPoints[i])){
+moveDifx[i]=vertices[vertexToEdit].x-lastx;
+moveDify[i]=vertices[vertexToEdit].y-lasty;
+let fac=.98;
+let facFac=.7;
+
+let difx0=segPoints[i][1].x-vertices[vertexToEdit].x;
+let dify0=segPoints[i][1].y-vertices[vertexToEdit].y;
+let distToSeg0=Math.sqrt(difx0*difx0+dify0*dify0);
+
+let difxL=segPoints[i][segPoints[i].length-1].x-vertices[vertexToEdit].x;
+let difyL=segPoints[i][segPoints[i].length-1].y-vertices[vertexToEdit].y;
+let distToSegLength=Math.sqrt(difxL*difxL+difyL*difyL);
+
+if(distToSeg0<=distToSegLength){//forward loop
+
+for(let s=0;s<segPoints[i].length-1;s++){
+moveDifx[i]*=fac;
+segPoints[i][s].x+=moveDifx[i];
+moveDify[i]*=fac;
+segPoints[i][s].y+=moveDify[i];
+fac*=facFac;
+}//end s loop
+ 
+}else if(distToSeg0>distToSegLength){//backward loop
+
+for(let s=segPoints[i].length-1;s>=0;s--){
+moveDifx[i]*=fac;
+segPoints[i][s].x+=moveDifx[i];
+moveDify[i]*=fac;
+segPoints[i][s].y+=moveDify[i];
+fac*=facFac;
+}//end s loop
+
+}//end if(distToSeg0>distToSegLength){
+}//isThere segPoints
+}//if(pairArr[i][0]==vertexToEdit||pairArr[i][1]==vertexToEdit){
+}//end i loop
+
 render();
-}
+}//if(vertexToEdit>=0){
 }//end moveVertex
 
 
@@ -966,7 +1157,114 @@ render();
 
 
 
+function curvedLink(){
+curvedLinkEnd=-1;
+curvedLinkStart=-1;
+segCounter=0;
+canv.ontouchstart=function(e){
+e.preventDefault();
+el('expander').style.visibility='hidden';
+delaunay=false;
+vertexToEdit=-1;
+let alreadyConnected=false;
+
+for(let i=0;i<vertices.length;i++){
+ctx.beginPath();
+ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
+if(ctx.isPointInPath(e.touches[0].pageX, 
+e.touches[0].pageY)){
+vertexToEdit=i;
+
+
+if(gettingCurvedLinkStart){
+gettingCurvedLinkStart=false;
+gettingCurvedLinkEnd=true;
+curvedLinkStart=vertexToEdit;
+segPoints[pairArr.length]=[];
+segPoints[pairArr.length][segCounter]={
+x:vertices[curvedLinkStart].x,
+y:vertices[curvedLinkStart].y
+};
+settingSegPoints[pairArr.length]=true;
+segCounter++;
+
+}else if(gettingCurvedLinkEnd){
+
+curvedLinkEnd=vertexToEdit;
+for(let i=0;i<pairArr.length;i++){
+if(
+(curvedLinkEnd==pairArr[i][0]&&curvedLinkStart==pairArr[i][1])||
+(curvedLinkEnd==pairArr[i][1]&&curvedLinkStart==pairArr[i][0])){
+alreadyConnected=true;
+curvedLinkEnd=-1;
+curvedLinkStart=-1;
+gettingCurvedLinkStart=true;
+segPoints[pairArr.length]=null;
+segCounter=0;
+showMessage('Already Connected',3000);
+}//end if already connected
+}//end i loop
+
+if(!alreadyConnected){
+gettingCurvedLinkEnd=false;
+settingSegPoints[pairArr.length]=false;
+
+segPoints[pairArr.length][segCounter]={
+x:vertices[curvedLinkEnd].x,
+y:vertices[curvedLinkEnd].y
+};
+
+
+if(curvedLinkStart>=0&&curvedLinkEnd>=0){
+pairArr.push([curvedLinkStart,curvedLinkEnd]);
+removeDuplicatePairs();
+//curvedLinkStart=-1;
+//curvedLinkEnd=-1;
+curvedLinkStart=curvedLinkEnd;
+curvedLinkEnd=-1;
+segCounter=0;
+segPoints[pairArr.length]=[];
+segPoints[pairArr.length][segCounter]={
+x:vertices[curvedLinkStart].x,
+y:vertices[curvedLinkStart].y
+};
+settingSegPoints[pairArr.length]=true;
+segCounter++;
+gettingCurvedLinkEnd=true;
+
+}//if(curvedLinkStart>=
+}//end if(gettingCurvedLinkEnd){
+
+
+ctx.lineWidth='240';
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
+}//end if(!alreadyConnected){
+}//ctx.isPointInPath
+}//i loop
+
+ctx.closePath();
+
+if(!alreadyConnected){
+if(settingSegPoints[pairArr.length]){
+segPoints[pairArr.length][segCounter]={
+x:e.touches[0].pageX,
+y:e.touches[0].pageY
+};
+segCounter++;
+}//end if(settingSegPoints[pairArr.length]){
+}//end if(!alreadyConnected){
+
+sortByNeighborCount();
+render();
+}//end function(e)
+
+}//end curvedLink
+
+
+
 function getVertexToEdit(e){
+e.preventDefault();
 vertexToEdit=-1;
 for(let i=0;i<vertices.length;i++){
 ctx.beginPath();
@@ -980,13 +1278,15 @@ linkStart=vertexToEdit;
 addingVert=true;
 //gettingLinkStart=false;
 canv.ontouchstart=function(e){
+e.preventDefault();
 el('expander').style.visibility='hidden';
 if(addingVert){
 ctx.clearRect(0,0,cW,cH);
 vertices.push(new Vertex(e.touches[0].pageX,e.touches[0].pageY,4,vertices.length));
 linkEnd=vertices.length-1;
-if(linkStart>=0&&linkEnd>=0){
+if(linkStart>=0&&linkEnd>=0&&linkStart!=linkEnd){
 pairArr.push([linkStart,linkEnd]);
+segPoints.push(null);
 removeDuplicatePairs();
 linkStart=linkEnd;
 }//end if(linkStart
@@ -1001,30 +1301,37 @@ addingVert=false;
 linkStart=vertexToEdit;
 startConnecting=false;
 endConnecting=true;
+ctx.lineWidth='240';
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
 
 }else if(endConnecting){
 addingVert=false;
 delaunay=false;
 linkEnd=vertexToEdit;
-if(linkStart>=0&&linkEnd>=0){
+
+if(linkStart>=0&&linkEnd>=0&&linkStart!=linkEnd){
 pairArr.push([linkStart,linkEnd]);
+segPoints.push(null);
 removeDuplicatePairs();
+
 linkStart=linkEnd;
+ctx.lineWidth='240';
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
 }
 sortByNeighborCount();
 render();
 //endConnecting=false;
-}
+
+}//end if(endConnecting){
 }//if(!delaunay
 
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-if(!endConnecting){
-ctx.stroke();
-}
+
 }//ctx.isPointInPath
 }//i loop
 ctx.closePath();
+//testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"linkStart",linkStart,"linkEnd",linkEnd,"pairArr[pairArr.length-1][0]",pairArr[pairArr.length-1][0],"pairArr[pairArr.length-1][1]",pairArr[pairArr.length-1][1]);
 }//end getVertexToEdit
 
 
@@ -1039,6 +1346,7 @@ if(!delaunay){
 for(let i=pairArr.length-1;i>=0;i--){
 if(vertexToEdit==pairArr[i][0]||vertexToEdit==pairArr[i][1]){
 pairArr.splice(i,1);
+segPoints.splice(i,1);
 }
 }//i loop
 delaunay=false;
@@ -1069,25 +1377,23 @@ render();
 function getVertexPairs(){
 if(delaunay){
 pairArr=[];
+segPoints=[];
+settingSegPoints=[];
+
 for(let i=0;i<triangles.length;i++){
 pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
+segPoints.push(null);
 pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
+segPoints.push(null);
 pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
+segPoints.push(null);
 }//i loop
 
-}
-/*
-else if(!delaunay){
-if(linkStart>=0&&linkEnd>=0){
-pairArr.push([linkStart,linkEnd]);
-}//if(linkStart
-}//end if !delaunay
-
-*/
+}//if(delaunay)
 
 removeDuplicatePairs();
-
 }//end getVertexPairs
+
 
 
 //remove duplicate pairs
@@ -1107,6 +1413,7 @@ pairArr[i][1]==pairArr[j][1])
 pairArr[i][1]==pairArr[j][0])
 ){
 pairArr.splice(i,1);
+segPoints.splice(i,1);
 }
 }//end isThere
 }//end j loop
@@ -1512,6 +1819,7 @@ recursiveNeighborSolver();
 
 function showMessage(messageString,time){
 el('messageHolder').style.display='block';
+el('messageHolder').ontouchstart=function(e){el('messageHolder').style.display='none';}
 da('message',messageString);
 messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
 }//end show message
@@ -1587,6 +1895,8 @@ canvSetSize();
 vertices=[];
 triangles=[];
 pairArr=[];
+segPoints=[];
+settingSegPoints=[];
 pairString='';
 //da('tester','');
 numSolves=0;
@@ -1656,11 +1966,6 @@ hideMessage(messageTimer);
 
 
 
-
-
-
-
-
 var renderCount=0;
 
 function render(){
@@ -1672,9 +1977,6 @@ if(showFlexibles){getFlexibles();}
 
 //drawBackground
 ctx.beginPath();
-ctx.globalAlpha=1;
-ctx.fillStyle='white';
-ctx.fillRect(0, 0, cW, cH);
 ctx.globalAlpha=1;
 ctx.fillStyle=backgroundColor;//d6d651
 ctx.fillRect(0, 0, cW, cH);
@@ -1709,13 +2011,58 @@ i++;
 
 }//!custom
 
+
+
 if(!delaunay){
 ctx.globalAlpha=1;
 
 
+if(settingSegPoints[pairArr.length]&&isThere(segPoints[pairArr.length])){
+
+for(let s=0;s<segPoints[pairArr.length].length;s++){
+ctx.beginPath();
+ctx.arc(segPoints[pairArr.length][s].x, segPoints[pairArr.length][s].y, vertSize, 0, Math.PI * 2, true);
+ctx.closePath();
+ctx.fillStyle='white';
+ctx.fill();
+ctx.strokeStyle='black';
+ctx.lineWidth=1;
+ctx.stroke();
+}//end s loop
+}//if settingSegPoints[pairArr.length]
+
 
 for(let i=0;i<pairArr.length;i++){
 if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
+
+if(isThere(segPoints[i])&&!settingSegPoints[i]){
+if(isThere(segPoints[i][0])){
+
+ctx.beginPath();
+ctx.moveTo(segPoints[i][0].x, segPoints[i][0].y);
+
+for(let s=1;s<segPoints[i].length-2;s++){
+let xc=(segPoints[i][s].x+segPoints[i][s+1].x)/2;
+let yc=(segPoints[i][s].y+segPoints[i][s+1].y)/2;
+ctx.quadraticCurveTo(
+segPoints[i][s].x, 
+segPoints[i][s].y, 
+xc, yc);
+}//end s loop
+
+// Connect the last two points
+ctx.quadraticCurveTo(
+segPoints[i][segPoints[i].length-2].x,
+segPoints[i][segPoints[i].length-2].y,
+segPoints[i][segPoints[i].length-1].x,
+segPoints[i][segPoints[i].length-1].y
+);
+
+//ctx.closePath();
+
+}//isThere
+}else if(!isThere(segPoints[i])&&!settingSegPoints[i]){
+
 
 ctx.beginPath();
 
@@ -1723,14 +2070,18 @@ ctx.moveTo(
 vertices[pairArr[i][0]].x, 
 vertices[pairArr[i][0]].y);
 
-
 ctx.lineTo(
-vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
-
+vertices[pairArr[i][1]].x,
+vertices[pairArr[i][1]].y);
 ctx.closePath();
+
+}//if(!isThere(segPoints[i])){
+
+
 ctx.strokeStyle='black';
 ctx.lineWidth=1;
 ctx.stroke();
+
 }//isThere
 }//end i loop
 }//if !delaunay
@@ -1758,7 +2109,7 @@ sameColorVerts[i]=true;
 
 for(let i=0;i<pairArr.length;i++){
 
-if(sameColorVerts[i]){
+if(sameColorVerts[i]&&!isThere(segPoints[i])){
 
 ctx.beginPath();
 ctx.moveTo(vertices[pairArr[i][0]].x, vertices[pairArr[i][0]].y);
@@ -1768,13 +2119,50 @@ ctx.strokeStyle="black";
 ctx.lineWidth=5;
 ctx.stroke();
 
-}//end if same color
+
+}else if(sameColorVerts[i]&&isThere(segPoints[i])){
+
+
+
+if(isThere(segPoints[i])&&!settingSegPoints[i]){
+if(isThere(segPoints[i][0])){
+
+ctx.beginPath();
+ctx.moveTo(segPoints[i][0].x, segPoints[i][0].y);
+
+for(let s=1;s<segPoints[i].length-2;s++){
+let xc=(segPoints[i][s].x+segPoints[i][s+1].x)/2;
+let yc=(segPoints[i][s].y+segPoints[i][s+1].y)/2;
+ctx.quadraticCurveTo(
+segPoints[i][s].x, 
+segPoints[i][s].y, 
+xc, yc);
+}//end s loop
+
+// Connect the last two points
+ctx.quadraticCurveTo(
+segPoints[i][segPoints[i].length-2].x,
+segPoints[i][segPoints[i].length-2].y,
+segPoints[i][segPoints[i].length-1].x,
+segPoints[i][segPoints[i].length-1].y
+);
+
+//ctx.closePath();
+ctx.strokeStyle="black";
+ctx.lineWidth=5;
+ctx.stroke();
+
+}//isThere
+}//isThere
+
+}//}else if(sameColorVerts[i]&&isThere(segPoints[i])){
 
 }//end i loop
 
 }//end if highlightSame
 
- 
+
+
 
 //draw vertices as circles
 let ci=0;
@@ -1826,6 +2214,8 @@ ci++;
 
 renderCount++;
 }//end render
+
+
 
 
 
@@ -2182,48 +2572,6 @@ getGraphFilenames();
 zoom(el('filenameInputDiv'),2,80,20);
 zoom(el('numVertsInputDiv'),2,80,20);
 zoom(el('fpsInputDiv'),2,80,20);
-//zoom(el('buttonHolder'),.25,100,100);
-//zoom(el('bodyer'),.25,100,100);
-
-
-var Lshift=-100;
-function scaleCanvas(){
-canv.style.border='20px solid black';
-canv.style.left=Lshift+'px';
-canv.style.top=Lshift+'px';
-Lshift-=100;
-/*
-let rect=el('button').getBoundingClientRect();
-el('dataShowHideButton').style.right=(ww-dataRect.width-16).toFixed()+'px';
-el('dataShowHideButton').style.top=(dataRect.top+6).toFixed()+'px';
-
-
-*/
-//canv.width=window.innerWidth;
-//canv.height=window.innerHeight;
-/*
-let hRatio=screen.height/window.innerHeight;
-let wRatio=screen.width/window.innerWidth;
-let ratio=1;
-if(hRatio<=wRatio){ratio=hRatio;
-}else{ratio=wRatio;}
-
-da('tester',screen.height+'---'+window.innerHeight+'--- '+hRatio+'---'+wRatio);
-let scaleFactor=ratio;
-ctx.scale(scaleFactor, scaleFactor);
-ctx.drawImage(canvas, 0, 0);
-
-*/
-/*
-canv.width=screen.width;
-canv.height=screen.height;
-cW=canv.width;
-cH=canv.height;
-canv.style.width=cW+"px";
-canv.style.height=cH+"px";
-*/
-canv.ontouchstart=function(e){};
-}//end scale canvas
 
 
 </script>
