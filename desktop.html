@@ -44,7 +44,10 @@ scrollbar-width: none;  /* Firefox */}
 var streamSolving=true;
 var usePHP=true;
 var serverAddress='http://moygen.rf.gd/graph2/';
+//
+
 //var serverAddress='http://172.18.11.218:45267/';
+//var serverAddress='http://48.55.10.206:45267/';
 //var serverAddress='http://localhost/graph2/';
 var scaleFactor=1;
 var EPSILON=1.0e-6;
@@ -143,6 +146,8 @@ var solveTimer=0;clearTimeout(solveTimer);
 var numVertsTimer=0;clearTimeout(numVertsTimer);
 var animateTimer=0;clearTimeout(animateTimer);
 var typing=false;
+var resizeCanv=false;
+var streamCurrent=false;
 
 function getDeltaTime(){
 deltaTime=endTime-startTime;
@@ -190,9 +195,15 @@ elm.style.height=(h/scale)+"%";
 </div>
 <div style="background-color:#ffffff;font-family:monospace;padding:10px;display:block;">
 <br><br>
-<table>
-<tr><td class="d">
-    [P]: Show Solving </td><td class="t2">Renders each step of the 4-coloring algorithm as it solves the graph
+<table >
+<tr><td class="t" style="padding-top:40px;">
+[P]: Show Solving </td><td class="t2" style="padding-top:40px;">Renders each step of the 4-coloring algorithm as it solves the graph
+</td></tr>
+<tr><td class="t">
+[6]: Stream Solve Current Graph</td><td class="t2">Repeatedly solve current graph
+</td></tr>
+<tr><td class="t">
+[7]: Stream Solve Random Graphs</td><td class="t2">Continuously solve random graphs
 </td></tr>
 <tr><td class="t">[S]: Solve </td><td class="t2">Renders result of solve and displays time in milliseconds
 </td></tr>
@@ -237,9 +248,14 @@ elm.style.height=(h/scale)+"%";
 <tr><td class="t">[Y] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
 </td></tr>
 <tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
+</td></tr>
+<tr><td class="t">[L] Load Graph</td><td class="t2">Load a graph file (someName.txt) from the server
+</td></tr>
+<tr><td class="t">[E] Save Graph</td><td class="t2">Save a graph file (someName.txt) to the server
+</td></tr>
+<tr><td class="t">[R] Rotate Graph</td><td class="t2">Rotate the graph
 </td></tr></table>
 </div>
-
 </div>
 
 
@@ -275,9 +291,13 @@ Filename:
 <input id="about" type="button" value="About" onmousedown="event.preventDefault();activeButton(this.id);showHide('aboutDiv');" class="b">
 
 
-<input id="streamSolve" type="button" value="stream" 
-onmousedown="event.preventDefault();activeButton('streamSolve');streamSolving=!streamSolving; if(streamSolving){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} showSolvingButton();"    
-class="b">
+
+<input id="streamSolveCurrent" type="button" value="streamCurrent" 
+onmousedown="event.preventDefault();activeButton('streamSolveCurrent');streamCurrent=true;streamSolving=!streamSolving; if(streamSolving){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} showSolvingButton();" class="b" title="[6]">
+
+
+<input id="streamSolveRandom" type="button" value="streamRandom" 
+onmousedown="event.preventDefault();activeButton('streamSolveRandom');streamCurrent=false;streamSolving=!streamSolving; if(streamSolving){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} showSolvingButton();" title="[7]" class="b">
 
 
 
@@ -292,27 +312,27 @@ onmousedown="event.preventDefault();solveActions();" class="b" title="[S]">
 
 
 
-<input id="buildRandomGraph" type="button" value="Build Graph" onmousedown="event.preventDefault();buildGraphActions();" class="b" title="[B]">
+<input id="buildRandomGraph" type="button" value="BuildGraph" onmousedown="event.preventDefault();buildGraphActions();" class="b" title="[B]">
 
 
-<input id="addVertex" type="button" value="Add Vert" 
+<input id="addVertex" type="button" value="AddVert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){e.preventDefault();delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
 class="b" title="[A]">
 
 
 
-<input id="moveVertex" type="button" value="Move Vert" 
+<input id="moveVertex" type="button" value="MoveVert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){e.preventDefault();delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b" title="[M]">
 
-<input id="deleteVertex" type="button" value="Delete Vert" 
+<input id="deleteVertex" type="button" value="DeleteVert" 
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onmousedown=function(e){e.preventDefault();delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
 class="b" title="[D]">
 
 
-<input id="colorVerts" type="button" value="Color Vert" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){e.preventDefault();getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
+<input id="colorVerts" type="button" value="ColorVert" onmousedown="event.preventDefault();activeButton(this.id);canv.onmousedown=function(e){e.preventDefault();getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b" title="[C]">
 
 
-<input id="numberOfVerts" type="button" value="Num Verts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
+<input id="numberOfVerts" type="button" value="NumVerts" onmousedown="event.preventDefault();activeButton(this.id);el('enterNumVerts').value=numPoints;showHideV('numVertsInputDiv');" class="b" title="[N]">
 
 <input id="fpsId" type="button" value="FPS" onmousedown=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b" title="[F]">
 
@@ -337,11 +357,11 @@ class="b">
 
 
 <input type="button" value="load" id="loadGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);streamSolving=false;pauser=false;showSolvingStatus();showHide('selectGraph');" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);streamSolving=false;pauser=false;showSolvingStatus();showHide('selectGraph');" class="b" title="[L]">
 
 
 <input type="button" value="save" id="saveGraphButton"
-onmousedown="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" >
+onmousedown="event.preventDefault();activeButton(this.id);showHide('filenameInputDiv');" class="b" title="[E]">
 
 
 <input type="button" value="Tester" id="testerButton"
@@ -382,7 +402,7 @@ onmousedown="event.preventDefault();activeButton(this.id);gettingLinkStart=false
 
 
 <input type="button" value="curvedLink" id="addCurveButton"
-onmousedown="event.preventDefault();activeButton(this.id);if(!tapMessageShown){tapMessageShown=true;showMessage('Tap dotted<br>line between <br>unlinked nodes',3000);}gettingCurvedLinkStart=true;curvedLink();" class="b">
+onmousedown="event.preventDefault();activeButton(this.id);if(!tapMessageShown){tapMessageShown=true;showMessage('draw dotted<br>line between <br>nodes',3000);}gettingCurvedLinkStart=true;curvedLink();" class="b" title="[0]">
 
 
 
@@ -393,13 +413,13 @@ onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startCo
 onmousedown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onmousedown=function(e){e.preventDefault();delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b" title="[5]">
 
-<input type="button" value="rotate" id="scaleButton"
-onmousedown="event.preventDefault();activeButton(this.id);graphRotater();" class="b">
+<input type="button" value="rotate" id="rotateButton"
+onmousedown="event.preventDefault();activeButton(this.id);graphRotater();canv.onmousedown=function(e){e.preventDefault();graphRotater();}" class="b" title="[6]">
 
 
 <input id="keysButton" type="button" value="Keys" 
 onmousedown="event.preventDefault();activeButton(this.id);showHide('shortcutKeys');"    
-class="b" title="[K]">
+class="b" title="[K]" style="display:none;">
 
 
 </div>
@@ -503,6 +523,13 @@ What might those modules be? Let's number them:
 <br><br>
 It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
 <br><br>
+-----------------
+<br><br>
+
+After solving graphs manually and watching the algorithm solve graphs in a similar way, one develops an intuition for the reason the four color theorem is true. But articulating this feeling requires much ratiocination and accounting for all possible cases, not to mention a careful definition of terms along the way, which often interferes with the flow of the logic of one's argument. Then also, any exposition which does not rest upon quantifiable statstical relationships rings hollow. It's easy to suppose that there's a certain minimum degree of flexibility which is common to all four-colored planar graphs, where flexibility is defined as the option to be one or two colors other than one's own, without conflict. But it's not so easy to statistically quantify this minimum degree of flexibility. Everyone can see that conflicted nodes can be resolved by swapping colors along a path toward a flexible node, and it also becomes obvious that this flexibility is deriving from the inevitable isolation of every node from the rest of the graph by its neighbors. But how can one show, without testing every possible kind of case, that this local principle of isolation will always yield enough flexibility to four-color any graph?
+<br><br>
+
+
 
 
 </div>
@@ -579,7 +606,7 @@ render();
 }//end if(lastButton!='curvedLink'
 }//activeButton
 
-window.onresize=function(){init();};
+window.onresize=function(){setTimeout("render();",200);};
 
 
 function setDataShowHideButton(){
@@ -615,13 +642,11 @@ scaleFactor=1;
 function init(){
 canvSetSize();
 
-
 el('data').style.width=ww*.95+'px';
 el('dataHeading').style.width=ww*.95+'px';
 el('aboutDiv').style.width=ww*.85+'px';
 el('aboutDivHeading').style.width=ww*.85+'px';
 el('screenshot').style.width=ww*.85+'px';
-
 
 let rect=el('buttonHolder').getBoundingClientRect();
 el('shortcutKeys').style.height=parseInt(rect.top-rect.height)+'px';
@@ -629,8 +654,6 @@ el('aboutDiv').style.height=parseInt(rect.top-rect.height)+'px';
 
 el('shortcutKeys').style.width=ww*.93+'px';
 el('shortcutKeysHeading').style.width=ww*.93+'px';
-
-
 
 el('messageHolder').style.left=ww*.5-220+'px';
 el('messageHolder').style.top=hh*.23+'px';
@@ -652,6 +675,7 @@ buildAndRender();
 animInit();
 getGraphFilenames();
 //controlPanelOpenClose();
+graphRenderScaleFactors();
 }//end init
 
 init();
@@ -659,10 +683,10 @@ init();
 function controlPanelOpenClose(){
 if(el('buttonHolder').style.display=='none'){
 el('buttonHolder').style.display='block';
-da('expander','-');
+el('expander').value='-';
 }else{
 el('buttonHolder').style.display='none';
-da('expander','+');
+el('expander').value='+';
 }
 }//end controlPanelOpenClose
 
@@ -742,9 +766,7 @@ dataReceive=
 dataReceive.replace(segPointString+' ','');
 }
 
-
-let pairArrString=
-dataReceive.substring(0,dataReceive.lastIndexOf(']')+1.);
+let pairArrString=dataReceive.substring(0,dataReceive.lastIndexOf(']')+1);
 pairArr=JSON.parse(pairArrString);
 
 dataReceive=
@@ -754,8 +776,6 @@ dataReceive.replace(pairArrString+' ','');
 
 stringArr=dataReceive.split(" ");
 
-
-
 for(let i=0;i<stringArr.length;i+=4){
 vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3])));
 
@@ -764,29 +784,11 @@ triangles=triangulate(vertices);
 }
 }//end i loop
 
-let miny=100000,minx=100000,maxy=0,maxx=0;;
-for(let i=0;i<vertices.length;i++){
-if(vertices[i].y<miny){miny=vertices[i].y;}
-if(vertices[i].x<minx){minx=vertices[i].x;}
-
-if(vertices[i].y>maxy){maxy=vertices[i].y;}
-if(vertices[i].x>maxx){maxx=vertices[i].x;}
-}//end i loop
-
-for(let i=0;i<vertices.length;i++){
-
-if(miny>diam){vertices[i].y-=miny-diam*2;}
-if(minx>diam){vertices[i].x-=minx-diam;}
-
-if(maxy>cH-diam){vertices[i].y-=diam*1.5;}
-if(minx<diam){vertices[i].x+=diam;}
-}//end i loop
-
-
 sortByNeighborCount();
 render();
-graphResizer();
+//graphResizer();
 autoRotate();
+graphRotater(0);
 dataReceive=null;
 }//end isThere
 }//end loadGraphData
@@ -817,11 +819,13 @@ graphRotater();}
 
 
 
-function graphRotater(){
-let margin=vertSize*3;
-
+function graphRotater(angle){
+let margin=vertSize*1;
 
 let graphAng=-90*Math.PI/180;
+if(isThere(angle)){
+graphAng=angle*Math.PI/180;
+}
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
@@ -877,10 +881,8 @@ if(vertices[i].x<minx){minx=vertices[i].x;}
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-
 segPoints[i][s].y-=miny-margin;
 segPoints[i][s].x-=minx-margin;
-
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -889,17 +891,15 @@ segPoints[i][s].x-=minx-margin;
 for(let i=0;i<vertices.length;i++){
 vertices[i].y-=miny-margin;
 vertices[i].x-=minx-margin;
-}
+}//end i loop
 
 
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-
 if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
 if(segPoints[i][s].x<maxx){maxx=segPoints[i][s].x;}
-
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -950,7 +950,7 @@ render();
 
 
 
-var resizeCanv=false;
+
 
 function graphResizer(){
 resizeCanv=false;
@@ -960,7 +960,18 @@ vertSize=vertSize*scaleFactor;
 scaleFactor=1;
 canvSetSize();
 }
+
 let maxy=0,maxx=0;
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
+if(segPoints[i][s].x<maxx){maxx=segPoints[i][s].x;}
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y>maxy){maxy=vertices[i].y;}
 if(vertices[i].x>maxx){maxx=vertices[i].x;}
@@ -1610,14 +1621,19 @@ el('showSolving').value='Show Solving';
 }
 
 if(streamSolving){
-el('streamSolve').style.backgroundColor='#ffd7d4';
+
+if(streamCurrent){
+el('streamSolveCurrent').style.backgroundColor='#ffd7d4';
 }else{
-el('streamSolve').style.backgroundColor='#ffffff';
+el('streamSolveRandom').style.backgroundColor='#ffd7d4';
+}
+
+}else{
+el('streamSolveRandom').style.backgroundColor='#ffffff';
+el('streamSolveCurrent').style.backgroundColor='#ffffff';
 }
 }//end showSolvingStatus
 
-
-var counter1=0,counter2=0,counter3=0,counter4=0;
 
 
 
@@ -1647,8 +1663,9 @@ animId=requestAnimationFrame(animate);
 
 if(loading){solved=false;loading=false;
 buildAndRender();activeButton('showSolving');showSolvingButton();
-}else if(streamSolving&&solved){solved=false;
+}else if(streamSolving&&solved&&!streamCurrent){solved=false;
 setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
+}else if(streamSolving&&solved&&streamCurrent){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}setTimeout("activeButton('showSolving');showSolvingButton();",2000);
 }
 
 
@@ -1918,7 +1935,7 @@ tripleCheck=false;
 
 
 render();
-counter1=0;counter2=0;counter3=0;counter4=0;
+
 return;
 }else if(stillSearching==true){
 if(numSolves==40){
@@ -2023,7 +2040,7 @@ return a;
 
 //ww=1366 hh=689 (on desktop at 100% browser zoom) 
 //with onlySome
-var numPoints=50;
+var numPoints=40;
 var diam=100;
 var vertSize=19;
 var maxVertSize=25;
@@ -2034,7 +2051,7 @@ diam=Math.sqrt(cW*cH/numPoints*.29);
 vertSize=clamp(.22*diam,minVertSize,maxVertSize);
 }//graphRenderScaleFactors
 
-graphRenderScaleFactors();
+
 
 function buildAndRender(){
 clearTimeout(buildTimer);
@@ -2724,24 +2741,33 @@ randomDropping=false;
 //document.body.onload=function(){init();}
 
 document.body.onkeydown=function(){onKeyDowner(event);}
-
+var shiftX=10;
+var shiftY=12;
 
 onKeyDowner=function(event){
+el('selectGraph').blur();
 if(!typing){
 switch(event.key){
+case 'l':
+activeButton('loadGraphButton');streamSolving=false;pauser=false;showSolvingStatus();showHide('selectGraph');
+break;
+case 'e':
+activeButton('saveGraphButton');showHide('filenameInputDiv');
+break;
 case 'w':
 toggleFullScreen();
 break;
 case 'k':
 showHide('shortcutKeys');
 break;
+case '9':
+streamSolving=!streamSolving;
+break;
 case ' ':
 canv.click();
-//buildAndRender();
-//activeButton('showSolving');
-showSolvingButton();showSolvingButton();
+showSolvingActions();
 case 'p':
-activeButton('showSolving');showSolvingButton();
+showSolvingActions();
 break;
 case 's':
 solveActions();
@@ -2802,9 +2828,37 @@ break;
 case '5':
 activeButton('deleteVertButton');canv.onmousedown=function(e){e.preventDefault();delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}
 break;
+case '6':
+activeButton('streamSolveCurrent');
+streamCurrent=true;
+streamSolving=!streamSolving; 
+if(streamSolving){
+solved=false;
+for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} 
+showSolvingButton();
+bteak;
+case '7':
+activeButton('streamSolveRandom');
+streamCurrent=false;
+streamSolving=!streamSolving; 
+if(streamSolving){
+solved=false;
+for(let v=0;v<vertices.length;v++){vertices[v].c=4;}} 
+showSolvingButton();
+break;
+case 'r':
+activeButton('rotateButton');graphRotater();canv.onmousedown=function(e){e.preventDefault();graphRotater();}
+break;
+case '0':
+activeButton('addCurveButton');
+if(!tapMessageShown){tapMessageShown=true;showMessage('Tap dotted<br>line between <br>unlinked nodes',3000);}
+gettingCurvedLinkStart=true;
+curvedLink();
+break;
 }//end switch
 }//end if(!typing){
 }//end onKeyDowner
+
 
 
 function isFullScreen(){
