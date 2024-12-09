@@ -194,7 +194,16 @@ elm.style.height=(h/scale)+"%";
 
 </script>
 
+<div id="consoleInputDiv" style="width:1200px;z-index:10000000;position:fixed;left:50px;top:10px;font-size:40px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:450px;overflow:scroll;">
+
+<input id="consoleInput" type="text"  value="pairArr" style="font-family:monospace;color:black;font-size:25px;border:1px solid black;zoom:4;word-wrap:break-word;" size="18">
+<br>
+<input value="Enter" type="button" ontouchstart="da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="position:absolute;display:block;font-size:60px;padding:30px;margin-top:12px;bottom:0px;right:0px;">
+
+<div id="consoler"  style="width:1200px;height:300px;display:block;font-size:60px;margin-top:12px;background-color:white;">Enter a Variable</div>
 </div>
+
+
 
 
 <div id="tester"  style="color:white;background-color:black;position:absolute;left:70px;top:100px;z-index:10000;font-size:30px;padding:6px;border:6px solid white;display:none;width:1200px;height:1600px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:0px;overflow:scroll;"></div>
@@ -314,15 +323,13 @@ ontouchstart="event.preventDefault();activeButton(this.id);showFlexibles=!showFl
 
 <input id="dropRandom" type="button" value="Random" 
 ontouchstart="event.preventDefault();activeButton(this.id);buildGraphActions();el('selectGraph').style.display='none';el('filenameInputDiv').style.display='none';randomDropping=true;showMessage('Running Samples',60000);setTimeout('dropRandom();',300);"    
-class="b" >
+class="b" style="display:inline-block">
 
 
-<input type="button" value="Tester" id="testerButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b" style="display:none">
 
 
 <input type="button" value="Console" id="consoleButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();canv.ontouchstart=function(e){event.preventDefault();}" class="b" style="display:none">
+ontouchstart="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" style="display:none">
 
 
 <input type="button" value="panZoom" id="panZoomButton"
@@ -349,18 +356,7 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(!tapMessageShown){
 
 
 
-<div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:10px;font-size:40px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;visibility:hidden;height:450px;overflow:scroll;">
 
-<input id="consoleInput" type="text"  value="pairArr" style="font-family:monospace;color:black;font-size:25px;border:1px solid black;zoom:4;word-wrap:break-word;wifth:200px" size="20">
-<br>
-<input value="Enter" type="button" ontouchstart="da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));" style="position:absolute;display:block;font-size:60px;padding:30px;margin-top:12px;bottom:0px;right:0px;">
-
-<div id="consoler"  style="width:100px;height:300px;display:block;font-size:60px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
-
-
-
-
-</div>
 
 
 <!--daa('tester','numPoints:'+numPoints+' --- diam:'+diam+' --- vertSize:'+vertSize+'<br><br>');-->
@@ -387,6 +383,8 @@ ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false
 class="b">
 
 
+<input type="button" value="Tester" id="testerButton"
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b" style="display:inline-block;">
 
 <br>
 
@@ -719,19 +717,23 @@ delaunay=false;
 
 segPoints=[];
 let segPointString='';
+let segPointsCopy=[];
 
-if(dataReceive.lastIndexOf('}]]')>=0){
-segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('}]]')+3);
+
+if(dataReceive.lastIndexOf('] [[')>=0){
+
+segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('] [[')+1);
+
 segPoints=JSON.parse(segPointString);
-}else if(dataReceive.lastIndexOf('null]')>=0){
-segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('null]')+5);
-segPoints=JSON.parse(segPointString);
-}
+
+segPointsCopy=JSON.parse(JSON.stringify(segPoints));
 
 if(isThere(segPoints)){
 dataReceive=
 dataReceive.replace(segPointString+' ','');
 }
+}//end if(dataReceive.
+
 
 let pairArrString=dataReceive.substring(0,dataReceive.lastIndexOf(']')+1);
 pairArr=JSON.parse(pairArrString);
@@ -739,7 +741,19 @@ pairArr=JSON.parse(pairArrString);
 dataReceive=
 dataReceive.replace(pairArrString+' ','');
 
+if(isThere(segPointsCopy)){
+for(let i=0;i<pairArr.length;i++){
+segPoints[i]=null;
+for(let m=0;m<segPointsCopy.length;m++){
+if(segPointsCopy[m][0].pairIndex==i){
+segPoints[i]=JSON.parse(JSON.stringify(segPointsCopy[m]));
+}//==
+}//end m loop 
+}//end i loop
+}//if(isThere(segPoints)){
+
 }//if(dataReceive.indexOf('[')>=0){
+
 
 stringArr=dataReceive.split(" ");
 
@@ -756,7 +770,12 @@ autoRotate();
 graphRotater(0); 
 dataReceive=null; 
 }//end isThere
+
 }//end loadGraphData
+
+
+
+
 
 
 
@@ -764,14 +783,34 @@ function saveGraphData(){
 if(usePHP){
 let graphData='';
 for(let i=0;i<vertices.length;i++){
-graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
+graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i;
+if(i<vertices.length-1){graphData+=' ';}
 }//end i loop
 
 if(!delaunay){
 removeDuplicatePairs();
+let segPointsCopy=[];
+for(let i=0;i<segPoints.length;i++){
+segPointsCopy[i]=segPoints[i];
+}//end i loop
 let sp='';
-if(isThere(segPoints)){
-sp=JSON.stringify(segPoints)+' ';
+if(isThere(segPointsCopy)){
+for(let i=segPointsCopy.length-1;i>=0;i--){
+if(!isThere(segPointsCopy[i])){
+segPointsCopy.splice(i,1);
+}
+}//end i loop
+
+for(let i=0;i<segPointsCopy.length;i++){
+if(isThere(segPointsCopy[i])){
+for(let s=0;s<segPointsCopy[i].length;s++){
+segPointsCopy[i][s].x=parseInt(segPointsCopy[i][s].x);
+segPointsCopy[i][s].y=parseInt(segPointsCopy[i][s].y);
+}//s loop
+}//isThere
+}//end i loop
+
+sp=JSON.stringify(segPointsCopy)+' ';
 }
 graphData=sp+JSON.stringify(pairArr)+' '+graphData;
 }
@@ -808,12 +847,23 @@ let maxy=-100000;
 let maxx=-100000;
 
 
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(segPoints[i][s].y<miny){miny=segPoints[i][s].y;}
+if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
+
+if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
+if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
+
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
+
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y<miny){miny=vertices[i].y;}
 if(vertices[i].x<minx){minx=vertices[i].x;}
-}//end i loop
-
-for(let i=0;i<vertices.length;i++){
 if(vertices[i].y>maxy){maxy=vertices[i].y;}
 if(vertices[i].x>maxx){maxx=vertices[i].x;}
 }//end i loop
@@ -1193,9 +1243,11 @@ gettingCurvedLinkStart=false;
 gettingCurvedLinkEnd=true;
 curvedLinkStart=vertexToEdit;
 segPoints[pairArr.length]=[];
+//alert(('1: '+parseInt(vertices[curvedLinkStart].x)));
 segPoints[pairArr.length][segCounter]={
-x:vertices[curvedLinkStart].x,
-y:vertices[curvedLinkStart].y
+pairIndex:pairArr.length,
+x:parseInt(vertices[curvedLinkStart].x),
+y:parseInt(vertices[curvedLinkStart].y)
 };
 settingSegPoints[pairArr.length]=true;
 segCounter++;
@@ -1217,16 +1269,17 @@ showMessage('Already Connected',3000);
 }//end if already connected
 }//end i loop
 
+
 if(!alreadyConnected){
 gettingCurvedLinkEnd=false;
 settingSegPoints[pairArr.length]=false;
-
+//alert(('2: '+parseInt(vertices[curvedLinkEnd].x)))
 segPoints[pairArr.length][segCounter]={
-x:vertices[curvedLinkEnd].x,
-y:vertices[curvedLinkEnd].y
+x:parseInt(vertices[curvedLinkEnd].x),
+y:parseInt(vertices[curvedLinkEnd].y)
 };
 
-
+ 
 if(curvedLinkStart>=0&&curvedLinkEnd>=0){
 pairArr.push([curvedLinkStart,curvedLinkEnd]);
 removeDuplicatePairs();
@@ -1236,9 +1289,11 @@ curvedLinkStart=curvedLinkEnd;
 curvedLinkEnd=-1;
 segCounter=0;
 segPoints[pairArr.length]=[];
+//alert(('3: '+parseInt(vertices[curvedLinkStart].x)));
 segPoints[pairArr.length][segCounter]={
-x:vertices[curvedLinkStart].x,
-y:vertices[curvedLinkStart].y
+pairIndex:pairArr.length,
+x:parseInt(vertices[curvedLinkStart].x),
+y:parseInt(vertices[curvedLinkStart].y)
 };
 settingSegPoints[pairArr.length]=true;
 segCounter++;
@@ -1259,9 +1314,10 @@ ctx.closePath();
 
 if(!alreadyConnected){
 if(settingSegPoints[pairArr.length]){
+//alert(('4: '+parseInt(e.touches[0].pageX)));
 segPoints[pairArr.length][segCounter]={
-x:e.touches[0].pageX,
-y:e.touches[0].pageY
+x:parseInt(e.touches[0].pageX),
+y:parseInt(e.touches[0].pageY)
 };
 segCounter++;
 }//end if(settingSegPoints[pairArr.length]){
@@ -1403,11 +1459,11 @@ settingSegPoints=[];
 
 for(let i=0;i<triangles.length;i++){
 pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
-segPoints.push(null);
+//segPoints.push(null);
 pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
-segPoints.push(null);
+//segPoints.push(null);
 pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
-segPoints.push(null);
+//segPoints.push(null);
 }//i loop
 
 }//if(delaunay)
@@ -1987,6 +2043,17 @@ hideMessage(messageTimer);
 
 var fonter=30;
 function render(){
+/*
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(isThere(segPoints[i][s])){
+segPoints[i][s].x=parseInt(segPoints[i][s].x);
+segPoints[i][s].y=parseInt(segPoints[i][s].y);
+testVars("i",i,"s",s,"segPoints[i][s].x",segPoints[i][s].x);
+}}}}
+*/
+ 
 for(let v=0;v<vertices.length;v++){
 vertices[v].i=v;}
 
@@ -2691,23 +2758,21 @@ zoomingOut=false;
 zoomingIn=false;
 lastTouchX=e.touches[0].pageX;
 lastTouchY=e.touches[0].pageY;
-panner();
+panner(e);
 }//ontouchstart
 }//el('panButton').ontouchstart
 
-function panner(e){
+function panner(e){  
 for(let i=0;i<vertices.length;i++){
 vertices[i].x+=e.touches[0].pageX-lastTouchX;
 vertices[i].y+=e.touches[0].pageY-lastTouchY;
 }//end i loop
-
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-//if(isThere(segPoints[i][s])&&!isNaN(segPoints[i][s])){
+
 segPoints[i][s].x+=e.touches[0].pageX-lastTouchX;
 segPoints[i][s].y+=e.touches[0].pageY-lastTouchY;
-//}//isThere
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -2748,11 +2813,9 @@ let segPointsTotalLength=0;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-//if(isThere(segPoints[i][s])&&!isNaN(segPoints[i][s])){
 if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
 if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
 segPointsTotalLength++;
-//}//isThere
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -2808,30 +2871,24 @@ let vstring='';
 let sumX=0;
 let sumY=0;
 for(let i=0;i<vertices.length;i++){
-if(!isNaN(vertices[i].x)&&!isNaN(vertices[i].y)){
 vertices[i].x=vertices[i].x;
 vertices[i].y=vertices[i].y;
-//vstring+='x:'+vertices[i].x+' --- y:'+vertices[i].y+'<br>';
 sumX+=vertices[i].x;
 sumY+=vertices[i].y;
-}//isNaN
 }//end i loop
 
-//testVars("vstring",vstring);
-//testVars("sumX",sumX);
+
 
 let segPointsTotalLength=0;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
 if(isThere(segPoints[i][s])){
-if(!isNaN(segPoints[i][s].x)&&!isNaN(segPoints[i][s].y)){
 segPoints[i][s].x=segPoints[i][s].x;
 segPoints[i][s].y=segPoints[i][s].y;
 sumX+=segPoints[i][s].x;
 sumY+=segPoints[i][s].y;
 segPointsTotalLength++;
-}//end !isNaN
 }//end if(isThere)
 }//end s loop
 }//end if(isThere)
@@ -2846,7 +2903,6 @@ centerY=sumY/totalLength;
 
 for(let i=0;i<vertices.length;i++){
 if(isThere(vertices[i])){
-if(!isNaN(vertices[i].x)&&!isNaN(vertices[i].y)){
 let subX=vertices[i].x-centerX;
 let subY=vertices[i].y-centerY;
 
@@ -2855,7 +2911,6 @@ let distToVert=Math.sqrt(subX*subX+subY*subY);
 
 vertices[i].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
 vertices[i].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//!isNaN
 }//isThere
 
 }//end i loop
@@ -2865,14 +2920,12 @@ for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
 if(isThere(segPoints[i][s])){
-if(!isNaN(segPoints[i][s].x)&&!isNaN(segPoints[i][s].y)){
 let subX=segPoints[i][s].x-centerX;
 let subY=segPoints[i][s].y-centerY;
 let angToVert=Math.atan2(subY,subX);
 let distToVert=Math.sqrt(subX*subX+subY*subY);
 segPoints[i][s].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
 segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//!isNaN
 }//end if(isThere)
 }//end s loop
 }//end if(isThere)
@@ -2882,6 +2935,9 @@ vertScaler();
 render();
 
 }//end zoomer()
+
+
+
 </script>
 
 </body>

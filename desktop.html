@@ -46,6 +46,7 @@ var usePHP=true;
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/'; 
 //var serverAddress='http://48.52.212.109:45267/';
+//var serverAddress='http://localhost/graph2/';
 var streamSolving=true;
 var numPoints=50;
 let isLive=serverAddress.indexOf('moygen');
@@ -343,7 +344,7 @@ class="b" title="[A]">
 
 
 <input id="moveVertex" type="button" value="MoveVert" 
-onpointerdown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onpointerdown=function(event){event.preventDefault();delaunay=true;el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(event);solved=false;}" class="b" title="[M]">
+onpointerdown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onpointerdown=function(event){event.preventDefault();delaunay=true;el('expander').blur();dragging=true;moveRaw=false;getVertexToEdit(event);solved=false;}" class="b" title="[M]">
 
 <input id="deleteVertex" type="button" value="DeleteVert" 
 onpointerdown="event.preventDefault();activeButton(this.id);delaunay=true;canv.onpointerdown=function(event){event.preventDefault();delaunay=true;getVertexToEdit(event);deleteVertex(event,true);solved=false;}"    
@@ -386,11 +387,11 @@ onpointerdown="event.preventDefault();activeButton(this.id);showHide('filenameIn
 
 
 <input type="button" value="Tester" id="testerButton"
-onpointerdown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]"style="display:none;">
+onpointerdown="event.preventDefault();activeButton(this.id);showHide('testerHolder');el('tester').scrollTop=el('tester').scrollHeight;" class="b" title="[Y]" >
 
 
 <input type="button" value="Console" id="consoleButton"
-onpointerdown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]" style="display:none;">
+onpointerdown="event.preventDefault();activeButton(this.id);showHideV('consoleInputDiv');render();" class="b" title="[O]">
 
 
 
@@ -413,13 +414,13 @@ onpointerdown="event.preventDefault();activeButton(this.id);showHideV('consoleIn
 <!--<br>-->
 
 <input type="button" value="add" id="addButton"
-onpointerdown="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(event);solved=false;}" class="b" title="[1]">
+onpointerdown="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').blur();mouseAdd_Vertex(event);solved=false;}" class="b" title="[1]">
 
 <input type="button" value="addLinked" id="addLinkedButton"
-onpointerdown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(event);solved=false;}" class="b" title="[2]">
+onpointerdown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').blur();getVertexToEdit(event);solved=false;}" class="b" title="[2]">
 
 <input type="button" value="Link" id="linkVertsButton"
-onpointerdown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(event);solved=false;}" class="b" title="[3]">
+onpointerdown="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').blur();getVertexToEdit(event);solved=false;}" class="b" title="[3]">
 
 
 <input type="button" value="curvedLink" id="addCurveButton"
@@ -428,7 +429,7 @@ onpointerdown="event.preventDefault();activeButton(this.id);if(!tapMessageShown)
 
 
 <input id="moveVertButton" type="button" value="Move" 
-onpointerdown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(event);solved=false;}" class="b" title="[4]">
+onpointerdown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;el('expander').blur();dragging=true;moveRaw=true;getVertexToEdit(event);solved=false;}" class="b" title="[4]">
 
 <input id="deleteVertButton" type="button" value="Delete" 
 onpointerdown="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.onpointerdown=function(event){event.preventDefault();delaunay=false;getVertexToEdit(event);deleteVertex(event,false);solved=false;}"    
@@ -616,7 +617,7 @@ function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(
 function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
 
 
-
+ 
 //testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
 function testVars(...args){
 let stringVars='';
@@ -647,7 +648,7 @@ gettingCurvedLinkStart=false;
 gettingCurvedLinkEnd=false;
 curvedLinkStart=-1;
 curvedLinkEnd=-1;
-segPoints[pairArr.length]=null;
+segPoints[pairArr.length]='';
 settingSegPoints[pairArr.length]=false;
 segCounter=0;
 render();
@@ -790,6 +791,7 @@ waitGraphDataInt=setInterval("loadGraphData();",1000);
 }//end getGraphData
 
 
+
 function loadGraphData(){
 canvSetSize();
 reSolverReset();
@@ -805,19 +807,23 @@ delaunay=false;
 
 segPoints=[];
 let segPointString='';
+let segPointsCopy=[];
 
-if(dataReceive.lastIndexOf('}]]')>=0){
-segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('}]]')+3);
+
+if(dataReceive.lastIndexOf('] [[')>=0){
+
+segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('] [[')+1);
+
 segPoints=JSON.parse(segPointString);
-}else if(dataReceive.lastIndexOf('null]')>=0){
-segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('null]')+5);
-segPoints=JSON.parse(segPointString);
-}
+
+segPointsCopy=JSON.parse(JSON.stringify(segPoints));
 
 if(isThere(segPoints)){
 dataReceive=
 dataReceive.replace(segPointString+' ','');
 }
+}//end if(dataReceive.
+
 
 let pairArrString=dataReceive.substring(0,dataReceive.lastIndexOf(']')+1);
 pairArr=JSON.parse(pairArrString);
@@ -825,7 +831,19 @@ pairArr=JSON.parse(pairArrString);
 dataReceive=
 dataReceive.replace(pairArrString+' ','');
 
+if(isThere(segPointsCopy)){
+for(let i=0;i<pairArr.length;i++){
+segPoints[i]=null;
+for(let m=0;m<segPointsCopy.length;m++){
+if(segPointsCopy[m][0].pairIndex==i){
+segPoints[i]=JSON.parse(JSON.stringify(segPointsCopy[m]));
+}//==
+}//end m loop 
+}//end i loop
+}//if(isThere(segPoints)){
+
 }//if(dataReceive.indexOf('[')>=0){
+
 
 stringArr=dataReceive.split(" ");
 
@@ -838,11 +856,14 @@ triangles=triangulate(vertices);
 }//end i loop
 
 sortByNeighborCount();
-//autoRotate();
-graphRotater(0);
-dataReceive=null;
+autoRotate();
+graphRotater(0); 
+dataReceive=null; 
 }//end isThere
+
 }//end loadGraphData
+
+
 
 
 
@@ -1009,6 +1030,7 @@ if(usePHP){
 let graphData='';
 for(let i=0;i<vertices.length;i++){
 graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i+' ';
+if(i<vertices.length-1){graphData+=' ';}
 }//end i loop
 
 //alert(graphData);
@@ -1059,14 +1081,13 @@ dragging=false;
 panning=false;
 zoomingOut=false;
 zoomingIn=false;
-el('expander').style.visibility='visible';
 render();
 }//end onpointerup
 
 canv.onpointermove=function(event){
 event.preventDefault();
 if(dragging){
-el('expander').style.visibility='hidden';
+el('expander').blur();
 if(moveRaw){
 moveVertex(event,delaunay=false);
 }else{
@@ -1076,10 +1097,9 @@ sortByNeighborCount();
 render();
 }//if(dragging)
 else if(panning){
-el('expander').style.visibility='hidden';
+el('expander').blur();
 panner(event);
 }//if(panning)
-zoomingIn=false;zoomingOut=false;
 }//end onpointermove
 
 
@@ -1240,7 +1260,7 @@ curvedLinkStart=-1;
 segCounter=0;
 canv.onpointerdown=function(event){
 event.preventDefault();
-el('expander').style.visibility='hidden';
+el('expander').blur();
 delaunay=false;
 vertexToEdit=-1;
 let alreadyConnected=false;
@@ -1276,7 +1296,7 @@ alreadyConnected=true;
 curvedLinkEnd=-1;
 curvedLinkStart=-1;
 gettingCurvedLinkStart=true;
-segPoints[pairArr.length]=null;
+segPoints[pairArr.length]='';
 segCounter=0;
 showMessage('Already Connected',3000);
 }//end if already connected
@@ -1357,7 +1377,7 @@ addingVert=true;
 //gettingLinkStart=false;
 canv.onpointerdown=function(event){
 event.preventDefault();
-el('expander').style.visibility='hidden';
+el('expander').blur();
 if(addingVert){
 ctx.clearRect(0,0,cW,cH);
 vertices.push(new Vertex(event.pageX,event.pageY,4,vertices.length));
@@ -2802,7 +2822,7 @@ case 'a':
 activeButton('addVertex');canv.onpointerdown=function(event){event.preventDefault();delaunay=true;mouseAdd_Vertex(event);solved=false;}
 break;
 case 'm':
-activeButton('moveVertex');canv.onpointerdown=function(event){event.preventDefault();el('expander').style.visibility='hidden';dragging=true;moveRaw=false;getVertexToEdit(event);solved=false;}
+activeButton('moveVertex');canv.onpointerdown=function(event){event.preventDefault();el('expander').blur();dragging=true;moveRaw=false;getVertexToEdit(event);solved=false;}
 break;
 case 'd':
 activeButton('deleteVertex');canv.onpointerdown=function(event){event.preventDefault();getVertexToEdit(event);deleteVertex(event,true);solved=false;}
@@ -2832,16 +2852,16 @@ case 'o':
 activeButton('consoleButton');showHideV('consoleInputDiv');render();
 break;
 case '1':
-activeButton('addButton');gettingLinkStart=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();el('expander').style.visibility='hidden';mouseAdd_Vertex(event);solved=false;}
+activeButton('addButton');gettingLinkStart=false;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();el('expander').blur();mouseAdd_Vertex(event);solved=false;}
 break;
 case '2':
-activeButton('addLinkedButton');delaunay=false;gettingLinkStart=true;canv.onpointerdown=function(event){event.preventDefault();el('expander').style.visibility='hidden';getVertexToEdit(event);solved=false;}
+activeButton('addLinkedButton');delaunay=false;gettingLinkStart=true;canv.onpointerdown=function(event){event.preventDefault();el('expander').blur();getVertexToEdit(event);solved=false;}
 break;
 case '3':
-activeButton('linkVertsButton');gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();el('expander').style.visibility='hidden';getVertexToEdit(event);solved=false;}
+activeButton('linkVertsButton');gettingLinkStart=false;startConnecting=true;delaunay=false;canv.onpointerdown=function(event){event.preventDefault();el('expander').blur();getVertexToEdit(event);solved=false;}
 break;
 case '4':
-activeButton('moveVertButton');canv.onpointerdown=function(event){event.preventDefault();el('expander').style.visibility='hidden';dragging=true;moveRaw=true;getVertexToEdit(event);solved=false;}
+activeButton('moveVertButton');canv.onpointerdown=function(event){event.preventDefault();el('expander').blur();dragging=true;moveRaw=true;getVertexToEdit(event);solved=false;}
 break;
 case '5':
 activeButton('deleteVertButton');canv.onpointerdown=function(event){event.preventDefault();delaunay=false;getVertexToEdit(event);deleteVertex(event,false);solved=false;}
@@ -2914,44 +2934,36 @@ if(isFullScreen()){exitFullScreen();
 }//end toggle full screen
 
 
-function zoomOutMousePointer(event,inz,outz){
-event.preventDefault();
-el('expander').style.visibility='hidden';
-centerX=event.pageX;
-centerY=event.pageY;
-zoomingIn=inz;
-zoomingOut=outz;
-zoomer();
-}//zoomOutMousePointer
 
 el('zoomOutButton').onpointerdown=function(event){
 activeButton('zoomOutButton');
 event.preventDefault();
+zoomingIn=false;
+zoomingOut=true;
 
 canv.onpointerdown=function(event){
-zoomOutMousePointer(event,false,true);
+event.preventDefault();
+el('expander').blur();
+centerX=event.pageX;
+centerY=event.pageY;
+zoomingIn=false;
+zoomingOut=true;
+zoomer();
 }//canv.onpointerdown
 /*
-canv.onpointerdown=function(event){
-zoomOutMousePointer(event,false,true);
-}//canv.onpointerdown
-*/
-
 canv.onpointerup=function(event){
 zoomingIn=false;
 zoomingOut=false;
-el('expander').style.visibility='visible';
-}//canv.onpointerup
-/*
-canv.onpointerup=function(event){
-zoomingIn=false;
-zoomingOut=false;
-el('expander').style.visibility='visible';
 }//canv.onpointerup
 */
 }//el('zoomOutButton').onpointerdown
 
 
+el('zoomOutButton').onpointerup=function(event){
+event.preventDefault();
+zoomingOut=false;
+zoomingIn=false;
+}//el('zoomInButton').onpointerup
 
 
 el('zoomInButton').onpointerdown=function(event){
@@ -2962,24 +2974,18 @@ zoomingOut=false;
 //zoomer(true);
 
 canv.onpointerdown=function(event){
-zoomOutMousePointer(event,true,false);
-}//canv.onpointerdown
-/*
-canv.onpointerdown=function(event){
-zoomOutMousePointer(event,true,false);
-}//canv.onpointerdown
-*/
-
-canv.onpointerup=function(event){
-zoomingIn=false;
+event.preventDefault();
+el('expander').blur();
+centerX=event.pageX;
+centerY=event.pageY;
+zoomingIn=true;
 zoomingOut=false;
-el('expander').style.visibility='visible';
-}//canv.onpointerup
+zoomer();
+}//canv.onpointerdown
 /*
 canv.onpointerup=function(event){
 zoomingIn=false;
 zoomingOut=false;
-el('expander').style.visibility='visible';
 }//canv.onpointerup
 */
 }//el('zoomInButton').onpointerdown
@@ -2998,9 +3004,9 @@ event.preventDefault();
 activeButton('panButton');
 zoomingOut=false;
 zoomingIn=false;
-panning=true;
 
 canv.onpointerdown=function(event){
+//testVars("document.activeElement",document.activeElement.id);
 event.preventDefault();
 activeButton('panButton');
 panning=true;
@@ -3009,11 +3015,15 @@ zoomingIn=false;
 lastTouchX=event.clientX;
 lastTouchY=event.clientY;
 panner(event);
-}//canv.onpointerdown
+el('expander').blur();
 
+}//canv.onpointerdown
+/*
 canv.onpointerup=function(event){
 panning=false;
+//
 }
+*/
 }//el('panButton').onpointerdown
 
 function panner(event){
@@ -3025,10 +3035,8 @@ vertices[i].y+=event.clientY-lastTouchY;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-//if(isThere(segPoints[i][s])&&!isNaN(segPoints[i][s])){
 segPoints[i][s].x+=event.clientX-lastTouchX;
 segPoints[i][s].y+=event.clientY-lastTouchY;
-//}//isThere
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -3069,11 +3077,9 @@ let segPointsTotalLength=0;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-//if(isThere(segPoints[i][s])&&!isNaN(segPoints[i][s])){
 if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
 if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
 segPointsTotalLength++;
-//}//isThere
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -3129,13 +3135,11 @@ let vstring='';
 let sumX=0;
 let sumY=0;
 for(let i=0;i<vertices.length;i++){
-if(!isNaN(vertices[i].x)&&!isNaN(vertices[i].y)){
 vertices[i].x=vertices[i].x;
 vertices[i].y=vertices[i].y;
 //vstring+='x:'+vertices[i].x+' --- y:'+vertices[i].y+'<br>';
 sumX+=vertices[i].x;
 sumY+=vertices[i].y;
-}//isNaNM`
 }//end i loop
 
 //testVars("vstring",vstring);
@@ -3146,13 +3150,11 @@ for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
 if(isThere(segPoints[i][s])){
-if(!isNaN(segPoints[i][s].x)&&!isNaN(segPoints[i][s].y)){
 segPoints[i][s].x=segPoints[i][s].x;
 segPoints[i][s].y=segPoints[i][s].y;
 sumX+=segPoints[i][s].x;
 sumY+=segPoints[i][s].y;
 segPointsTotalLength++;
-}//end !isNaN
 }//end if(isThere)
 }//end s loop
 }//end if(isThere)
@@ -3167,7 +3169,6 @@ centerY=sumY/totalLength;
 
 for(let i=0;i<vertices.length;i++){
 if(isThere(vertices[i])){
-if(!isNaN(vertices[i].x)&&!isNaN(vertices[i].y)){
 let subX=vertices[i].x-centerX;
 let subY=vertices[i].y-centerY;
 
@@ -3176,7 +3177,6 @@ let distToVert=Math.sqrt(subX*subX+subY*subY);
 
 vertices[i].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
 vertices[i].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//!isNaN
 }//isThere
 
 }//end i loop
@@ -3186,14 +3186,12 @@ for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
 if(isThere(segPoints[i][s])){
-if(!isNaN(segPoints[i][s].x)&&!isNaN(segPoints[i][s].y)){
 let subX=segPoints[i][s].x-centerX;
 let subY=segPoints[i][s].y-centerY;
 let angToVert=Math.atan2(subY,subX);
 let distToVert=Math.sqrt(subX*subX+subY*subY);
 segPoints[i][s].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
 segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//!isNaN
 }//end if(isThere)
 }//end s loop
 }//end if(isThere)
