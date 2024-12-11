@@ -158,6 +158,9 @@ var panning=false;
 var lastTouchX=null;
 var lastTouchY=null;
 var targetRatio=.075;
+var defaultRatio=targetRatio;
+var vertSizeDecrease=false;
+var vertSizeIncrease=false;
 
 var vertSize=35;
 var diam=110;
@@ -268,7 +271,7 @@ class="b">
 
 
 
-<input id="showSolving" type="button" value="Show Solving" 
+<input id="showSolving" type="button" value="Solving " 
 ontouchstart="showSolvingActions();" class="b">
 
 
@@ -278,28 +281,31 @@ ontouchstart="solveActions();" class="b">
 
 <input id="step" type="button" value="Step" ontouchstart="stepActions();" class="b">
 
-
-<br>
-
-<input id="buildRandomGraph" type="button" value="Build Graph" ontouchstart="buildGraphActions();" class="b">
-
-<input id="addVertex" type="button" value="Add Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
-class="b">
-
-
-
-<input id="moveVertex" type="button" value="Move Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;el('expander').style.visibility='hidden';dragging=true;dragStart=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
-
-<input id="deleteVertex" type="button" value="Delete Vert" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=true;canv.ontouchstart=function(e){e.preventDefault();delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
-class="b">
-
+<input id="verSizeButton" type="button" value="VertSize" ontouchstart="event.preventDefault();activeButton(this.id);showHide('vertSizeControls');" class="b" style="display:inline-block;">
 
 
 
 <br>
+ 
+<input id="buildRandomGraph" type="button" value="BuildGraph" ontouchstart="buildGraphActions();" class="b">
+
+<input id="addVertex" type="button" value="AddVert" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){e.preventDefault();delaunay=true;mouseAdd_Vertex(e);solved=false;}"    
+class="b">
+
+
+
+<input id="moveVertex" type="button" value="MoveVert" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){e.preventDefault();delaunay=true;el('expander').style.visibility='hidden';dragging=true;dragStart=true;moveRaw=false;getVertexToEdit(e);solved=false;}" class="b">
+
+<input id="deleteVertex" type="button" value="DeleteVert" 
+ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){e.preventDefault();delaunay=true;getVertexToEdit(e);deleteVertex(e,true);solved=false;}"    
+class="b">
+
+
+
+
+<br> 
 
 <input id="colorVerts" type="button" value="ColorVerts" ontouchstart="event.preventDefault();activeButton(this.id);canv.ontouchstart=function(e){e.preventDefault();getVertexToEdit(e);changeVertexColor(e);solved=false;}" class="b">
 
@@ -307,7 +313,9 @@ class="b">
 
 <input id="fpsId" type="button" value="FPS" ontouchstart=" activeButton(this.id);el('enterFPS').value=parseInt(framesPerSecond);showHideV('fpsInputDiv');" class="b">
 
-<input id="timeToSolveId" type="button" value="TimeToSolve" ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
+<input id="timeToSolveId" type="button" value="SolveTime" ontouchstart="event.preventDefault();activeButton(this.id);showMessage('Solved in: '+deltaTime+' ms<br> after '+ numSolvesCounter+' steps',2000);" class="b">
+
+
 
 
 <input id="neighs" type="button" value="Neighs" 
@@ -364,27 +372,25 @@ ontouchstart="event.preventDefault();activeButton(this.id);if(!tapMessageShown){
 <br>
 
 <input type="button" value="add" id="addButton"
-ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=false;endConnecting=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';mouseAdd_Vertex(e);solved=false;}" class="b">
 
 <input type="button" value="addLinked" id="addVertButton"
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;gettingLinkStart=true;endConnecting=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
 <input type="button" value="Link" id="linkVertsButton"
-ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
-
-
+ontouchstart="event.preventDefault();activeButton(this.id);gettingLinkStart=false;startConnecting=true;endConnecting=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';getVertexToEdit(e);solved=false;}" class="b">
 
  
 <input id="moveVertButton" type="button" value="Move" 
-ontouchstart="event.preventDefault();activeButton(this.id);delaunay=false;startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';dragging=true;dragStart=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;el('expander').style.visibility='hidden';dragging=true;dragStart=true;moveRaw=true;getVertexToEdit(e);solved=false;}" class="b">
 
 <input id="deleteVertButton" type="button" value="Delete" 
-ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;delaunay=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
+ontouchstart="event.preventDefault();activeButton(this.id);startConnecting=false;endConnecting=false;gettingLinkStart=false;canv.ontouchstart=function(e){e.preventDefault();delaunay=false;getVertexToEdit(e);deleteVertex(e,false);solved=false;}"    
 class="b">
 
 
 <input type="button" value="Tester" id="testerButton"
-ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b" style="display:inline-block;">
+ontouchstart="event.preventDefault();activeButton(this.id);showHide('tester');el('tester').scrollTop=el('tester').scrollHeight;" class="b" style="display:none;">
 
 <br>
 
@@ -433,16 +439,26 @@ FPS (1-60):
 </div>
 
 
+<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;" ontouchstart="event.preventDefault();">
+ 
+<input id="resetButton" value="Reset" type="button" ontouchstart="event.preventDefault();activeButton('resetButton');targetRatio=defaultRatio;vertScaler();render();" style="display:inline-block;font-size:60px;padding:20px;width:200px;">
+
+<input id="vertSizeDownButton" value=" - " type="button" style="display:inline-block;font-size:60px;padding:20px;font-weight:bold;width:200px;" ontouchstart="event.preventDefault();vertSizeDecrease=true;" ontouchend="vertSizeDecrease=false;">
+
+<input id="vertSizeUpButton" value=" + " type="button" style="display:inline-block;font-size:60px;padding:20px;width:200px;" ontouchstart="vertSizeIncrease=true;" ontouchend="vertSizeIncrease=false;">
+
+<input value=" X " type="button" ontouchstart="event.preventDefault();el('vertSizeControls').style.display='none';" style="display:inline-block;font-size:30px;padding:10px;position:absolute;right:0px;bottom:0px;">
+</div>
 
 
 
 
 <div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
 <div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;padding-left30px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:40px;height:60px">
-<b>&nbsp;A javascript program for four coloring any graph</b>
+<b>&nbsp;A javascript program for four coloring planar graphs</b>
 
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;font-size:13px;text-align:justify;line-height:48px">
+<div style="background-color:#ffffff;font-family:serif;padding:10px;font-size:30px;text-align:left-justify;line-height:34px">
 <br><br>
 The github files are here:<br>
 <a href="https://github.com/thismain/Four-Color-Theorem-Coloring-Tester" target="_blank">https://github.com/thismain/Four-Color-Theorem-Coloring-Tester</a>
@@ -455,7 +471,7 @@ The live Mobile demo is here:<br>
 <br><br>
 <img src="http://moygen.rf.gd/graph2/screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring planar graphs. It has solved hundreds of graphs of 600 or fewer vertices. The lowest time to solve for 600 vertices was 28ms, although the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -566,7 +582,7 @@ canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
 }//end canvSetSize
 
-canvSetSize();
+canvSetSize(); 
 
 //showHide('loadGraphButton');
 //showHide('saveGraphButton');
@@ -751,6 +767,7 @@ segPoints[i]=JSON.parse(JSON.stringify(segPointsCopy[m]));
 }//end m loop 
 }//end i loop
 }//if(isThere(segPoints)){
+
 
 }//if(dataReceive.indexOf('[')>=0){
 
@@ -1243,7 +1260,6 @@ gettingCurvedLinkStart=false;
 gettingCurvedLinkEnd=true;
 curvedLinkStart=vertexToEdit;
 segPoints[pairArr.length]=[];
-//alert(('1: '+parseInt(vertices[curvedLinkStart].x)));
 segPoints[pairArr.length][segCounter]={
 pairIndex:pairArr.length,
 x:parseInt(vertices[curvedLinkStart].x),
@@ -1273,7 +1289,6 @@ showMessage('Already Connected',3000);
 if(!alreadyConnected){
 gettingCurvedLinkEnd=false;
 settingSegPoints[pairArr.length]=false;
-//alert(('2: '+parseInt(vertices[curvedLinkEnd].x)))
 segPoints[pairArr.length][segCounter]={
 x:parseInt(vertices[curvedLinkEnd].x),
 y:parseInt(vertices[curvedLinkEnd].y)
@@ -1283,13 +1298,10 @@ y:parseInt(vertices[curvedLinkEnd].y)
 if(curvedLinkStart>=0&&curvedLinkEnd>=0){
 pairArr.push([curvedLinkStart,curvedLinkEnd]);
 removeDuplicatePairs();
-//curvedLinkStart=-1;
-//curvedLinkEnd=-1;
 curvedLinkStart=curvedLinkEnd;
 curvedLinkEnd=-1;
 segCounter=0;
 segPoints[pairArr.length]=[];
-//alert(('3: '+parseInt(vertices[curvedLinkStart].x)));
 segPoints[pairArr.length][segCounter]={
 pairIndex:pairArr.length,
 x:parseInt(vertices[curvedLinkStart].x),
@@ -1314,7 +1326,6 @@ ctx.closePath();
 
 if(!alreadyConnected){
 if(settingSegPoints[pairArr.length]){
-//alert(('4: '+parseInt(e.touches[0].pageX)));
 segPoints[pairArr.length][segCounter]={
 x:parseInt(e.touches[0].pageX),
 y:parseInt(e.touches[0].pageY)
@@ -1580,16 +1591,16 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 
 function showSolvingButton(){
-if((el('showSolving').value=='Solving...||'||el('showSolving').value=='Paused...\ > ')&&showSolving&&!stepping){
+if((el('showSolving').value=='Solving||'||el('showSolving').value=='Paused \ >')&&showSolving&&!stepping){
 pauser=!pauser;}
 stepping=false;
 solving=false;
 showSolving=true;
 showSolvingStatus();
 if(pauser){
-el('showSolving').value='Paused...\ > ';
+el('showSolving').value='Paused \ >';
 el('showSolving').style.backgroundColor='#ffd7d4';
-}else if(!pauser||streamSolving){el('showSolving').value='Solving...||';}
+}else if(!pauser||streamSolving){el('showSolving').value='Solving||';}
 }//end showSolvingButton
 
 
@@ -1598,10 +1609,10 @@ el('showSolving').style.backgroundColor='#ffd7d4';
 function showSolvingStatus(){
 if(showSolving){
 el('showSolving').style.backgroundColor='#dbedff';
-el('showSolving').value='Solving...||';
+el('showSolving').value='Solving||';
 }else{
 el('showSolving').style.backgroundColor='white';
-el('showSolving').value='Show Solving';
+el('showSolving').value='Solving';
 }
 
 if(streamSolving){
@@ -1640,6 +1651,18 @@ setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2
 }
 
 if(zoomingIn||zoomingOut){setTimeout("zoomer();",20);}
+
+
+if(vertSizeDecrease){
+if(targetRatio>.01){
+targetRatio*=.95;vertScaler();render();
+}
+}
+
+if(vertSizeIncrease){ 
+targetRatio*=1.05;vertScaler();render();
+}
+
 if(showSolving&&!pauser&&!stepping){
 recursiveNeighborSolver();
 render();
@@ -1850,7 +1873,9 @@ if(stillSearching==false){
 endTime=Date.now();
 deltaTime=endTime-startTime;
 //alert('all solved');
-if(showSolving||stepping){showMessage('All Solved',2000);}
+if(showSolving||stepping){showMessage('All Solved',2000);
+stepping=false;
+}
 if(solving){
 showMessage('Solved in: '+deltaTime+' ms',2000);
 solving=false;solveButton();
@@ -1976,7 +2001,6 @@ pairArr=[];
 segPoints=[];
 settingSegPoints=[];
 pairString='';
-//da('tester','');
 numSolves=0;
 solveCounter=0;
 chunkSolveString='';
@@ -2043,16 +2067,6 @@ hideMessage(messageTimer);
 
 var fonter=30;
 function render(){
-/*
-for(let i=0;i<segPoints.length;i++){
-if(isThere(segPoints[i])){
-for(let s=0;s<segPoints[i].length;s++){
-if(isThere(segPoints[i][s])){
-segPoints[i][s].x=parseInt(segPoints[i][s].x);
-segPoints[i][s].y=parseInt(segPoints[i][s].y);
-testVars("i",i,"s",s,"segPoints[i][s].x",segPoints[i][s].x);
-}}}}
-*/
  
 for(let v=0;v<vertices.length;v++){
 vertices[v].i=v;}
@@ -2121,7 +2135,6 @@ for(let i=0;i<pairArr.length;i++){
 if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
 
 if(isThere(segPoints[i])&&!settingSegPoints[i]){
-if(isThere(segPoints[i][0])){
 
 ctx.beginPath();
 ctx.moveTo(segPoints[i][0].x, segPoints[i][0].y);
@@ -2145,10 +2158,10 @@ segPoints[i][segPoints[i].length-1].y
 
 //ctx.closePath();
 
-}//isThere
-}else if(!isThere(segPoints[i])&&!settingSegPoints[i]){
 
+}else if(!isThere(segPoints[i])){
 
+ 
 ctx.beginPath();
 
 ctx.moveTo(
@@ -2167,7 +2180,7 @@ ctx.strokeStyle='black';
 ctx.lineWidth=1;
 ctx.stroke();
 
-}//isThere
+}//if(isThere(vertices[pairArr[i][0]])&&
 }//end i loop
 }//if !delaunay
 
@@ -2205,12 +2218,8 @@ ctx.lineWidth=5*scaleFactor;
 ctx.stroke();
 
 
-}else if(sameColorVerts[i]&&isThere(segPoints[i])){
+}else if(sameColorVerts[i]&&isThere(segPoints[i])&&!settingSegPoints[i]){
 
-
-
-if(isThere(segPoints[i])&&!settingSegPoints[i]){
-if(isThere(segPoints[i][0])){
 
 ctx.beginPath();
 ctx.moveTo(segPoints[i][0].x, segPoints[i][0].y);
@@ -2236,12 +2245,7 @@ segPoints[i][segPoints[i].length-1].y
 ctx.strokeStyle="black";
 ctx.lineWidth=5*scaleFactor;
 ctx.stroke();
-
-}//isThere
-}//isThere
-
-}//}else if(sameColorVerts[i]&&isThere(segPoints[i])){
-
+}//}else if(sameColorVerts[i]&&isThere(segPoints[i])&&!settingSegPoints[i]){{
 }//end i loop
 
 }//end if highlightSame
@@ -2268,8 +2272,6 @@ ctx.fill();
 
 
 fonter=parseInt(30*scaleFactor);
-//fonter=clamp(fonter,1,50);
-//testVars("fonter",fonter);
 
 if(showFlexibles&&flexibles[ci].avail){
 ctx.fillStyle='black';
@@ -2332,7 +2334,7 @@ ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+yOff);
 ci++;
 });//end vertices foreach
 
-//testVars("fonter",fonter,"scaleFactor",scaleFactor);
+//testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"addingVert",addingVert,"linkStart",linkStart,"linkEnd",linkEnd);
 
 }//end render
 
