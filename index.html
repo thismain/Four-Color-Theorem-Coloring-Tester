@@ -40,7 +40,7 @@ scrollbar-width: none;  /* Firefox */}
 <body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;">
 <script>
 
-var usePHP=true;
+var usePHP=true; 
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
@@ -161,6 +161,7 @@ var targetRatio=.075;
 var defaultRatio=targetRatio;
 var vertSizeDecrease=false;
 var vertSizeIncrease=false;
+var selectedLineWidth=80;
 
 var vertSize=35;
 var diam=110;
@@ -1255,6 +1256,11 @@ e.touches[0].pageY)){
 vertexToEdit=i;
 
 
+ctx.lineWidth=selectedLineWidth*scaleFactor;
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
+
+
 if(gettingCurvedLinkStart){
 gettingCurvedLinkStart=false;
 gettingCurvedLinkEnd=true;
@@ -1315,9 +1321,6 @@ gettingCurvedLinkEnd=true;
 }//end if(gettingCurvedLinkEnd){
 
 
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
 }//end if(!alreadyConnected){
 }//ctx.isPointInPath
 }//i loop
@@ -1335,7 +1338,7 @@ segCounter++;
 }//end if(!alreadyConnected){
 
 sortByNeighborCount();
-render();
+//render();
 }//end function(e)
 
 }//end curvedLink
@@ -1352,6 +1355,10 @@ ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
 
 if(ctx.isPointInPath(e.touches[0].pageX,e.touches[0].pageY)){
 vertexToEdit=i;
+
+ctx.lineWidth=selectedLineWidth*scaleFactor;
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
 
 if(!delaunay){
 if(gettingLinkStart){
@@ -1382,9 +1389,6 @@ addingVert=false;
 linkStart=vertexToEdit;
 startConnecting=false;
 endConnecting=true;
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
 
 }else if(endConnecting){
 addingVert=false;
@@ -1397,22 +1401,15 @@ segPoints.push(null);
 removeDuplicatePairs();
 
 linkStart=linkEnd;
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
 }
 sortByNeighborCount();
-render();
+//render();
 //endConnecting=false;
 
 }//end if(endConnecting){
 }//if(!delaunay
 
-if(dragStart){dragStart=false;
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
-}
+if(dragStart){dragStart=false;}
 
 }//ctx.isPointInPath
 }//i loop

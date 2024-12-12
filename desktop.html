@@ -52,11 +52,18 @@ var numPoints=50;
 let isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
 streamSolving=true;
-numPoints=50;
+numPoints=60;
 }else{
 streamSolving=false;
-numPoints=20;
+numPoints=50;
 }
+
+//ww=1366 hh=689 (on desktop at 100% browser zoom) 
+//with onlySome
+var diam=100;
+var vertSize=19;
+var maxVertSize=25;
+var minVertSize=13;
 
 var scaleFactor=1;
 var EPSILON=1.0e-6;
@@ -171,6 +178,7 @@ var animateTimer=0;clearTimeout(animateTimer);
 var typing=false;
 var resizeCanv=false;
 var streamCurrent=false;
+var selectedLineWidth=40;
 
 function getDeltaTime(){
 deltaTime=endTime-startTime;
@@ -279,6 +287,8 @@ elm.style.height=(h/scale)+"%";
 <tr><td class="t">[8] Pan Zoom</td><td class="t2">Pan and Zoom the graph
 </td></tr>
 <tr><td class="t">[R] Rotate Graph</td><td class="t2">Rotate the graph
+</td></tr>
+<tr><td class="t">[I] Vertex Size</td><td class="t2">Increase/Decrease vertex size
 </td></tr></table>
 </div>
 </div>
@@ -427,7 +437,7 @@ onpointerdown="event.preventDefault();activeButton(this.id);gettingLinkStart=fal
 
 
 <input type="button" value="curvedLink" id="addCurveButton"
-onpointerdown="event.preventDefault();activeButton(this.id);if(!tapMessageShown){tapMessageShown=true;showMessage('draw dotted<br>line between <br>nodes',3000);}gettingCurvedLinkStart=true;curvedLink();" class="b" title="[0]">
+onpointerdown="event.preventDefault();activeButton(this.id);if(!tapMessageShown){tapMessageShown=true;showMessage('Draw dotted<br>line between <br>nodes.',3000);}gettingCurvedLinkStart=true;curvedLink();" class="b" title="[0]">
 
 
 
@@ -446,7 +456,7 @@ onpointerdown="event.preventDefault();activeButton(this.id);graphRotater();canv.
 onpointerdown="event.preventDefault();activeButton('panZoomButton');showHide('panZoomControls');" class="b">
 
 
-<input id="verSizeButton" type="button" value="VertSize" ontouchstart="event.preventDefault();activeButton(this.id);showHide('vertSizeControls');" class="b" style="display:inline-block;">
+<input id="vertSizeButton" type="button" value="VertSize" onpointerdown="event.preventDefault();activeButton(this.id);showHide('vertSizeControls');" class="b" style="display:inline-block;">
 
 
 
@@ -512,15 +522,15 @@ FPS (1-60):
 
 
 
-<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:40px;padding-left:60px;padding-right:60px;border:6px solid #000000;display:none;" ontouchstart="event.preventDefault();">
+<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:40px;padding-left:60px;padding-right:60px;border:6px solid #000000;display:none;" onpointerdown="event.preventDefault();">
  
-<input id="resetButton" value="Reset" type="button" ontouchstart="event.preventDefault();activeButton('resetButton');targetRatio=defaultRatio;vertScaler();render();" style="display:inline-block;font-size:40px;padding:10px;width:150px;">
+<input id="resetButton" value="Reset" type="button" onpointerdown="event.preventDefault();activeButton('resetButton');targetRatio=defaultRatio;vertScaler();render();" style="display:inline-block;font-size:40px;padding:10px;width:150px;">
 
-<input id="vertSizeDownButton" value=" - " type="button" style="display:inline-block;font-size:40px;padding:10px;font-weight:bold;width:150px;" ontouchstart="event.preventDefault();vertSizeDecrease=true;" ontouchend="vertSizeDecrease=false;">
+<input id="vertSizeDownButton" value=" - " type="button" style="display:inline-block;font-size:40px;padding:10px;font-weight:bold;width:150px;" onpointerdown="event.preventDefault();vertSizeDecrease=true;" onpointerup="vertSizeDecrease=false;">
 
-<input id="vertSizeUpButton" value=" + " type="button" style="display:inline-block;font-size:40px;padding:10px;width:150px;" ontouchstart="vertSizeIncrease=true;" ontouchend="vertSizeIncrease=false;">
+<input id="vertSizeUpButton" value=" + " type="button" style="display:inline-block;font-size:40px;padding:10px;width:150px;" onpointerdown="vertSizeIncrease=true;" onpointerup="vertSizeIncrease=false;">
 
-<input value=" X " type="button" ontouchstart="event.preventDefault();el('vertSizeControls').style.display='none';" style="display:inline-block;font-size:25px;padding:5px;position:absolute;right:0px;bottom:0px;">
+<input value=" X " type="button" onpointerdown="event.preventDefault();el('vertSizeControls').style.display='none';" style="display:inline-block;font-size:25px;padding:5px;position:absolute;right:0px;bottom:0px;">
 </div>
 
 
@@ -922,14 +932,12 @@ graphAng=angle*Math.PI/180;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-if(isThere(segPoints[i][s])){
 let dist=Math.sqrt(segPoints[i][s].y*segPoints[i][s].y+segPoints[i][s].x*segPoints[i][s].x);
 
 let ang=Math.atan2(segPoints[i][s].y,segPoints[i][s].x);
 ang+=graphAng; 
 segPoints[i][s].y=Math.sin(ang)*dist;
 segPoints[i][s].x=Math.cos(ang)*dist;
-}//if(isThere(segPoints[i][s])){
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -1010,7 +1018,6 @@ let hRatio=(cH-margin)/(maxy+margin);//((maxy+margin)-(miny-margin));
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-if(isThere(segPoints[i][s])){
 if(wRatio<hRatio){
 segPoints[i][s].x*=wRatio;
 segPoints[i][s].y*=wRatio;
@@ -1018,7 +1025,6 @@ segPoints[i][s].y*=wRatio;
 segPoints[i][s].x*=hRatio;
 segPoints[i][s].y*=hRatio;
 }
-}//if(isThere(segPoints[i][s])){
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
@@ -1275,6 +1281,14 @@ fac*=facFac;
 }//end s loop
 
 }//end if(distToSeg0>distToSegLength){
+
+segPoints[i][0].x=vertices[vertexToEdit].x;
+segPoints[i][0].y=vertices[vertexToEdit].y;
+
+segPoints[i][segPoints[i].length-1].x=vertices[vertexToEdit].x;
+segPoints[i][segPoints[i].length-1].y=vertices[vertexToEdit].y;
+
+
 }//isThere segPoints
 }//if(pairArr[i][0]==vertexToEdit||pairArr[i][1]==vertexToEdit){
 }//end i loop
@@ -1309,11 +1323,14 @@ let alreadyConnected=false;
 
 for(let i=0;i<vertices.length;i++){
 ctx.beginPath();
-ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
+ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI*2, true);
 if(ctx.isPointInPath(event.pageX, 
 event.pageY)){
 vertexToEdit=i;
 
+ctx.lineWidth=selectedLineWidth*scaleFactor;
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
 
 if(gettingCurvedLinkStart){
 gettingCurvedLinkStart=false;
@@ -1376,10 +1393,6 @@ gettingCurvedLinkEnd=true;
 }//if(curvedLinkStart>=
 }//end if(gettingCurvedLinkEnd){
 
-
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
 }//end if(!alreadyConnected){
 }//ctx.isPointInPath
 }//i loop
@@ -1397,7 +1410,7 @@ segCounter++;
 }//end if(!alreadyConnected){
 
 sortByNeighborCount();
-render();
+//render();
 }//end function(event)
 
 }//end curvedLink
@@ -1410,9 +1423,13 @@ event.preventDefault();
 vertexToEdit=-1;
 for(let i=0;i<vertices.length;i++){
 ctx.beginPath();
-ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
+ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI*2, true);
 if(ctx.isPointInPath(event.pageX, event.pageY)){
 vertexToEdit=i;
+
+ctx.lineWidth=selectedLineWidth*scaleFactor;
+ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
+ctx.stroke();
 
 if(!delaunay){
 if(gettingLinkStart){
@@ -1443,11 +1460,8 @@ addingVert=false;
 linkStart=vertexToEdit;
 startConnecting=false;
 endConnecting=true;
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
-
 }else if(endConnecting){
+
 addingVert=false;
 delaunay=false;
 linkEnd=vertexToEdit;
@@ -1456,24 +1470,16 @@ if(linkStart>=0&&linkEnd>=0&&linkStart!=linkEnd){
 pairArr.push([linkStart,linkEnd]);
 segPoints.push(null);
 removeDuplicatePairs();
-
 linkStart=linkEnd;
-ctx.lineWidth='240';
-ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
-ctx.stroke();
 }
 sortByNeighborCount();
-render();
-
-
+//render();
 }//end if(endConnecting){
 }//if(!delaunay
-
-
 }//ctx.isPointInPath
 }//i loop
 ctx.closePath();
-testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"linkStart",linkStart,"linkEnd",linkEnd,"pairArr[pairArr.length-1][0]",pairArr[pairArr.length-1][0],"pairArr[pairArr.length-1][1]",pairArr[pairArr.length-1][1]);
+//testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"linkStart",linkStart,"linkEnd",linkEnd,"pairArr[pairArr.length-1][0]",pairArr[pairArr.length-1][0],"pairArr[pairArr.length-1][1]",pairArr[pairArr.length-1][1]);
 }//end getVertexToEdit
 
 
@@ -2122,13 +2128,7 @@ if(a<min){a=min;}else if(a>max){a=max;}
 return a;
 }//end clamp
 
-//ww=1366 hh=689 (on desktop at 100% browser zoom) 
-//with onlySome
-var numPoints=40;
-var diam=100;
-var vertSize=19;
-var maxVertSize=25;
-var minVertSize=13;
+
 
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*.29);
@@ -2837,6 +2837,9 @@ onKeyDowner=function(event){
 el('selectGraph').blur();
 if(!typing){
 switch(event.key){
+case 'i':
+event.preventDefault();activeButton('vertSizeButton');showHide('vertSizeControls');
+break;
 case 'l':
 activeButton('loadGraphButton');streamSolving=false;pauser=false;showSolvingStatus();showHide('selectGraph');
 break;
@@ -3201,13 +3204,11 @@ let segPointsTotalLength=0;
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-if(isThere(segPoints[i][s])){
 segPoints[i][s].x=segPoints[i][s].x;
 segPoints[i][s].y=segPoints[i][s].y;
 sumX+=segPoints[i][s].x;
 sumY+=segPoints[i][s].y;
 segPointsTotalLength++;
-}//end if(isThere)
 }//end s loop
 }//end if(isThere)
 }//end i loop
@@ -3237,14 +3238,12 @@ vertices[i].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-if(isThere(segPoints[i][s])){
 let subX=segPoints[i][s].x-centerX;
 let subY=segPoints[i][s].y-centerY;
 let angToVert=Math.atan2(subY,subX);
 let distToVert=Math.sqrt(subX*subX+subY*subY);
 segPoints[i][s].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
 segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//end if(isThere)
 }//end s loop
 }//end if(isThere)
 }//end i loop
@@ -3252,7 +3251,42 @@ segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
 vertScaler();
 render();
 
+
 }//end zoomer()
+
+
+canv.addEventListener('wheel',function(event){
+if(event.deltaY>0){
+el('expander').blur();
+centerX=event.pageX;
+centerY=event.pageY;
+zoomingIn=false;
+zoomingOut=true;
+zoomer();
+}else if(event.deltaY<0){
+el('expander').blur();
+centerX=event.pageX;
+centerY=event.pageY;
+zoomingIn=true;
+zoomingOut=false;
+zoomer();
+}
+zoomingIn=false;zoomingOut=false;
+});
+
+canv.addEventListener('pointerdown',(event)=>{
+if(event.button===1&&panning){
+event.preventDefault();
+activeButton('panButton');
+panning=true;
+zoomingOut=false;
+zoomingIn=false;
+lastTouchX=event.clientX;
+lastTouchY=event.clientY;
+panner(event);
+el('expander').blur();
+}
+});
 </script>
 
 </body>
