@@ -482,7 +482,6 @@ FPS (1-60):
 <div style="display:inline-block;font-size:30px;font-family:monospace;text-align:right;"> Show Solve:</div>
 
 <div style="padding:8px;display:inline-block;">
- 
 <input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
 
 <input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
@@ -495,10 +494,7 @@ FPS (1-60):
 <input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:30px;padding:20px;width:200px;">
 </div>
 
-
 <br>
-
-
 <div style="display:inline-block;font-size:30px;font-family:monospace;">Timed Sort:</div>
 
 <div style="padding:8px;display:inline-block;">
@@ -1371,7 +1367,7 @@ showSolvingActions(event);
 }//sort2DActions
 replaceDownEventById('sort2DButton',sort2DActions);
 
-
+ 
 function sortOutInActions(event){
 event.preventDefault();
 activeShuffleButton('sortOutInButton');
@@ -1417,7 +1413,7 @@ solveActions(event);
 }//sort2DTimedActions 
 replaceDownEventById('timedSort2D',sort2DTimedActions);
 
-
+ 
 function sortOutInTimedActions(event){
 event.preventDefault();
 activeShuffleButton('timedSortOutIn');
@@ -3097,7 +3093,6 @@ render();
 }//sort2D
 
 
-
 function sortOutIn(outIn){
 let outInVerts=[...vertices];
 let sumX=0;
@@ -3758,7 +3753,7 @@ randomDropping=false;
 
 
 
-//document.body.onkeydown=function(){onKeyDowner(event);}
+document.body.onkeydown=function(){onKeyDowner(event);}
 
 
 
