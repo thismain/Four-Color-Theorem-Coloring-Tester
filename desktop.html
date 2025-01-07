@@ -477,38 +477,38 @@ FPS (1-60):
 
 
 
-<div id="shuffleControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding-left:40px;padding-right:80px;padding-top:20px;padding-bottom:40px;border:6px solid #000000;display:none;text-align:right;">
+<div id="shuffleControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:20px;bottom:0px;background-color:#ffffff;padding-left:20px;padding-right:50px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:right;">
 
-<div style="display:inline-block;font-size:30px;font-family:monospace;text-align:right;"> Show Solve:</div>
+<div style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;"> Show Solve:</div>
 
 <div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
-<input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
-<input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
 
-<input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:30px;padding:20px;width:200px;">
+<input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
 
-<input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:30px;padding:20px;width:200px;">
+<input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
 </div>
 
 <br>
-<div style="display:inline-block;font-size:30px;font-family:monospace;">Timed Sort:</div>
+<div style="display:inline-block;font-size:20px;font-family:monospace;">Timed Sort:</div>
 
 <div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomTimed" value="Random" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="shuffleRandomTimed" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
-<input id="restoreNativeTimed" value="Native" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="restoreNativeTimed" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
-<input id="timedSort2D" value="Sort2D" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
+<input id="timedSort2D" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
 
-<input id="timedSortOutIn" value="SortOutIn" type="button" style="display:inline-block;font-size:30px;padding:20px;width:200px;">
+<input id="timedSortOutIn" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
 
-<input id="timedSortInOut" value="SortInOut" type="button" style="display:inline-block;font-size:30px;padding:20px;width:200px;">
+<input id="timedSortInOut" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
 
-<input id="shuffleClose" value=" X " type="button"  style="display:inline-block;font-size:30px;padding:10px;position:absolute;right:0px;bottom:0px;">
+<input id="shuffleClose" value=" X " type="button"  style="display:inline-block;font-size:20px;padding:10px;position:absolute;right:0px;bottom:0px;">
 </div>
 </div>
 
@@ -763,8 +763,8 @@ el('aboutDivHeading').style.width=ww*.85+'px';
 el('screenshot').style.width=ww*.85+'px';
 
 let rect=el('buttonHolder').getBoundingClientRect();
-el('shortcutKeys').style.height=parseInt(rect.top-rect.height)+'px';
-el('aboutDiv').style.height=parseInt(rect.top-rect.height)+'px';
+el('shortcutKeys').style.height=parseInt(rect.top-rect.height+100)+'px';
+el('aboutDiv').style.height=parseInt(rect.top-rect.height+80)+'px';
 
 el('shortcutKeys').style.width=ww*.93+'px';
 el('shortcutKeysHeading').style.width=ww*.93+'px';
@@ -1995,8 +1995,8 @@ replaceDownEventById('deleteVertButton',deleteVertButtonActions);
 function testerButtonActions(event){
 event.preventDefault();
 activeButton('testerButton');
-showHide('tester');
-el('tester').scrollTop=el('tester').scrollHeight;
+showHide('testerHolder');
+el('testerHolder').scrollTop=el('tester').scrollHeight;
 }//testerButtonActions
 replaceDownEventById('testerButton',testerButtonActions);
 
