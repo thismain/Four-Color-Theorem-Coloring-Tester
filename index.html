@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
+<meta name="viewport" content="width=1350px,initial-scale=.25"></meta>
 <!--<script src="redirectToDesktop.js"></script>-->
 <style>
 .b{
@@ -57,11 +57,11 @@ if(isLive>=0){
 showSolving=true;
 streamSolving=true;
 loading=true;
-numPoints=50;
+numPoints=60;
 }else{
-showSolving=false;
-streamSolving=false;
-loading=false;
+showSolving=true;
+streamSolving=true;
+loading=true;
 numPoints=60;
 }
 
@@ -195,11 +195,16 @@ var sorterByNeighCount=[];
 var vertSize=35;
 var fonter=30;
 var diam=110;
-var moveRaw=false;
 var randOnlySome=.29;
-var animateTimer=0;clearTimeout(animateTimer);
+var animateTimer=0;
+clearTimeout(animateTimer);
 var modifiedGraph=false;
 var solveTimer=0;
+var moveRaw=false;
+
+var waitFilenamesInt=0;
+var waitFileLoad=0;
+var waitGraphDataInt=0;
 
 function clamp(a,min,max){
 if(a<min){a=min;}else if(a>max){a=max;}
@@ -447,7 +452,6 @@ FPS (1-60):
 
 <input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:30px;padding:20px;width:150px;">
 
-
 <input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:30px;padding:20px;width:170px;">
 
 <input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:30px;padding:20px;width:170px;">
@@ -668,8 +672,6 @@ canv.style.touchAction='none';
 
 canvSetSize(); 
 
-//showHide('loadGraphButton');
-//showHide('saveGraphButton');
 
 el('data').style.width=ww*.93+'px';
 el('dataHeading').style.width=ww*.93+'px';
@@ -688,10 +690,7 @@ el('dataShowHideButton').style.display='block';
 
 
 
-
-
 function activeShuffleButton(buttonId){
-
 el(lastShuffleButton).style.backgroundColor='#eeeeee';
 el(buttonId).style.backgroundColor='#dbedff';
 lastShuffleButton=buttonId;
@@ -729,8 +728,6 @@ el('fpsInputDiv').style.bottom=parseInt(bhHeight)+200+'px';
 el('numVertsInputDiv').style.bottom=parseInt(bhHeight)+200+'px';
 
 
-var waitFilenamesInt=0;
-var waitFileLoad=0;
 
 function getGraphFilenames(){
 graphFileNames=null;
@@ -771,7 +768,7 @@ el('selectGraph').appendChild(op);
 
 
 
-var waitGraphDataInt=0;
+
 
 function getGraphData(){
 if(usePHP){
@@ -1185,20 +1182,6 @@ showHide('aboutDiv');
 replaceDownEventById('about',aboutAction);
 
 
-function sorterSwitch(){
-if( vertSortType!=''){
-if(vertSortType=='random'){
-shuffleRandomVertices();
-}else if(vertSortType=='sort2D'){
-sort2D();
-}else if(vertSortType=='native'){
-restoreNativeVertOrder();
-}
-}//if( vertSortType!=''){
-}//sorterSwitch
-
-
-
 
 
 function reSolverReset(){
@@ -1416,6 +1399,8 @@ el('solve').style.backgroundColor=B.blue;
 
 
 
+
+
 function solveActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('solve');
@@ -1465,10 +1450,10 @@ b_restoreNativeTimed=false;
 sort2D();
 b_sort2DTimed=false;
 }else if(b_sortOutInTimed){
-sortOutIn('outIn');
+sortRadial('outIn');
 b_sortOutInTimed=false;
 }else if(b_sortInOutTimed){
-sortOutIn('inOut');
+sortRadial('inOut');
 b_sortInOutTimed=false;
 }else if(b_sorterByNeighsTimed){
 sorterByNeigh();
@@ -1578,7 +1563,7 @@ replaceDownEventById('sort2DButton',sort2DActions);
 function sortOutInActions(event){
 event.preventDefault();
 activeShuffleButton('sortOutInButton');
-sortOutIn('outIn');
+sortRadial('outIn');
 showSolvingActions(event);
 }//sortOutInActions
 replaceDownEventById('sortOutInButton',sortOutInActions);
@@ -1587,7 +1572,7 @@ replaceDownEventById('sortOutInButton',sortOutInActions);
 function sortInOutActions(event){
 event.preventDefault();
 activeShuffleButton('sortInOutButton');
-sortOutIn('inOut');
+sortRadial('inOut');
 showSolvingActions(event);
 }//sortInOutActions
 replaceDownEventById('sortInOutButton',sortInOutActions);
@@ -1776,12 +1761,11 @@ event.preventDefault();
 activeButton('moveVertexDelaunay');
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=true;
 el('expander').style.visibility='hidden';
 dragging=true;
 dragStart=true;
 moveRaw=false;
-getVertexToEdit(event);
+getVertexToEdit(event,true);
 solved=false;
 });
 }//moveVertexButtonActions
@@ -1793,8 +1777,7 @@ event.preventDefault();
 activeButton('deleteVertexDelaunay');
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=true;
-getVertexToEdit(event);
+getVertexToEdit(event,true);
 deleteVertex(event,true);
 solved=false;
 });//end replaceDownEventById('canvas',function(event){
@@ -1872,7 +1855,7 @@ replaceDownEventById('fpsCancel',fpsCancelActions);
 function neighsActions(event){
 event.preventDefault();
 activeButton('neighs');
-if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}
+showNumNeigh=!showNumNeigh;
 if(showNumNeigh){listNumNeighs();}
 render();
 }//neighsActions
@@ -1916,7 +1899,7 @@ stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap
 }
 stringer+=listNumNeighsArr[i].vertCount+'<br>'
 }//i loop
-stringer+='</div>';
+stringer+='</div><br><br><center>[close]</center>';
 
 showMessage(stringer,10000000);
 }//listNumNeighs
@@ -2078,8 +2061,8 @@ gettingLinkStart=false;
 endConnecting=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
 el('expander').style.visibility='hidden';
+delaunay=false;
 mouseAdd_Vertex(event);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
@@ -2096,9 +2079,8 @@ gettingLinkStart=true;
 endConnecting=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
 el('expander').style.visibility='hidden';
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
 }//addLinkedButtonActions
@@ -2114,9 +2096,8 @@ startConnecting=true;
 endConnecting=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
 el('expander').style.visibility='hidden';
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
 }//linkVertsButtonActions
@@ -2131,12 +2112,11 @@ endConnecting=false;
 gettingLinkStart=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
 el('expander').style.visibility='hidden';
 dragging=true;
 dragStart=true;
 moveRaw=true;
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
 }//moveVertButtonActions
@@ -2151,8 +2131,7 @@ endConnecting=false;
 gettingLinkStart=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 deleteVertex(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
@@ -2195,145 +2174,6 @@ setTimeout(`addVertsAtTriangleCenters2();`,1);
 }//gen2ButtonActions
 replaceDownEventById('gen2Button',gen2ButtonActions);
 
-/*
-function gen1ButtonActions(event){
-event.preventDefault();
-activeButton('gen1Button');
-addVertsAtTriangleCenters1();
-}//gen1ButtonActions
-replaceDownEventById('gen1Button',gen1ButtonActions);
-*/
-
-function removeDuplicateTriangles(triangles){
-let uniqueTriangles=[];
-let triangleSet=new Set();
-for(let triangle of triangles){
-let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
-let triangleKey=sortedIndices.join(',');
-if(!triangleSet.has(triangleKey)){
-triangleSet.add(triangleKey);
-uniqueTriangles.push(triangle);
-}//if
-}//for
-return uniqueTriangles;
-}//removeDuplicateTriangles
-
-
-
-
-
-/*
-var foundTriangles=[];
-var nonUniqueTriangles=[];
-
-//if any of the neighbors of the neighbors of the neighbors of the vertex contain the vertex it's a triangle
-
-function addVertsAtTriangleCenters1(){
-delaunay=true;
-for(i=0;i<vertices.length;i++){
-triangles=triangulate(vertices);
-sortByNeighborCount();
-}//i loop
-
-delaunay=false;
-foundTriangles=[];
-
-for(i=0;i<vertices.length;i++){
-for(let j=0;j<vertices[i].n.length;j++){
-let n1=vertices[i].n[j];
-
-for(let k=0;k<vertices[n1].n.length;k++){
-let n2=vertices[n1].n[k];
-
-for(let m=0;m<vertices[n2].n.length;m++){
-let n3=vertices[n2].n[m];
-
-if(n3==vertices[i].nativeIndex){
-
-foundTriangles.push({
-x0:parseInt(vertices[i].x),
-y0:parseInt(vertices[i].y),
-i0:vertices[i].nativeIndex,
-x1:parseInt(vertices[n1].x),
-y1:parseInt(vertices[n1].y),
-i1:vertices[n1].nativeIndex,
-x2:parseInt(vertices[n2].x),
-y2:parseInt(vertices[n2].y),
-i2:vertices[n2].nativeIndex
-});
-}//if(n3==vertices[i].nativeIndex){
-}//m loop
-}//k loop
-}//j loop
-}//i loop
-
-
-
-nonUniqueTriangles=[...foundTriangles];
-let uniqueTriangles=[];
-let triangleSet=new Set();
-for(let triangle of foundTriangles){
-let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
-let triangleKey=sortedIndices.join(',');
-if(!triangleSet.has(triangleKey)){
-triangleSet.add(triangleKey);
-uniqueTriangles.push(triangle);
-}//if
-}//for
-foundTriangles=[...uniqueTriangles];
-
-
-for(i=0;i<foundTriangles.length;i++){
- 
-let triCenterX=(
-foundTriangles[i].x0+
-foundTriangles[i].x1+
-foundTriangles[i].x2)/3;
-
-let triCenterY=(
-foundTriangles[i].y0+
-foundTriangles[i].y1+
-foundTriangles[i].y2)/3;
-
-
-vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length,[],0,false,false,false,vertices.length));
-
-if(!delaunay){
-pairArr.push([vertices.length-1,foundTriangles[i].i0]);
-pairArr.push([vertices.length-1,foundTriangles[i].i1]);
-pairArr.push([vertices.length-1,foundTriangles[i].i2]);
-
-segPoints.push(null);
-segPoints.push(null);
-segPoints.push(null);
-}//if(!delaunay){
-
-}//i loop
-
-for(let i=vertices.length-1;i>=1;i--){
-for(let j=i-1;j>=0;j--){
-if(isThere(vertices[i])&&isThere(vertices[j])){
-if(vertices[i].x==vertices[j].x
-&&vertices[i].y==vertices[j].y){
-vertices.splice(i,1);
-}
-}//end isThere
-}//end j loop
-}//end i loop
-
-vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
-updatePairArr(vertices);
-vertScaler();
-sortByNeighborCount(); 
-render();
-modifiedGraph=true;
-}//addVertsAtTriangleCenters1
-
-*/
-
-
-
-
 
 function addVertsAtTriangleCenters2(){
 delaunay=true;
@@ -2344,15 +2184,15 @@ sortByNeighborCount();
 delaunay=false
 for(i=0;i<triangles.length;i++){
  
-let triCenterX=(
+let triCenterX=parseInt((
 triangles[i].v0.x+
 triangles[i].v1.x+
-triangles[i].v2.x)/3;
+triangles[i].v2.x)/3);
 
-let triCenterY=(
+let triCenterY=parseInt((
 triangles[i].v0.y+
 triangles[i].v1.y+
-triangles[i].v2.y)/3;
+triangles[i].v2.y)/3);
 
 vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1));
 
@@ -2563,7 +2403,7 @@ render();
 
 
 
-function getVertexToEdit(event){
+function getVertexToEdit(event,isDelaunay){
 event.preventDefault();
 let eventer=eventSwitch(event);
 vertexToEdit=-1;
@@ -2572,6 +2412,15 @@ ctx.beginPath();
 ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
 
 if(ctx.isPointInPath(eventer.pageX,eventer.pageY)){
+
+if(isThere(isDelaunay)){
+if(isDelaunay){
+delaunay=true;
+}else{
+delaunay=false;
+}
+}//if(isThere(isDelaunay)){
+
 modifiedGraph=true;
 vertexToEdit=i;
 ctx.lineWidth=selectedLineWidth*scaleFactor;
@@ -2640,10 +2489,14 @@ ctx.closePath();
 
  
 
-function deleteVertex(e,delaunay){
+function deleteVertex(e,isDelaunay){
 if(vertexToEdit>=0){
 modifiedGraph=true;
-
+if(isDelaunay){
+delaunay=true;
+}else{
+delaunay=false;
+}
 if(!delaunay){
 for(let i=pairArr.length-1;i>=0;i--){
 if(isThere(segPoints[i])){
@@ -2778,26 +2631,6 @@ sortedVerts.sort((a,b)=>b.nCount-a.nCount);
 
 
 
-
-function sorterByNeigh(){
-sortedByNeighCount=[...vertices];
-sortedByNeighCount.sort((a,b)=>b.nCount-a.nCount);
-vertices=[...sortedByNeighCount];
-
-if(delaunay){
-for(let i=0;i<vertices.length;i++){
-triangles=triangulate(vertices);
-}//i loop 
-}//if(delaunay){
-
-updatePairArr(vertices);
-vertScaler(); 
-sortByNeighborCount();
-render();
-}//sorterByNeigh
-
-
-
 function colorGraph(){
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
@@ -2816,10 +2649,6 @@ if(colorAvailable){vertices[sortedVerts[v].i].c=c;break;}
 }//end c loop
 }//end v loop
 }//end colorGraph
-
-
-
-
 
 
 
@@ -3247,7 +3076,7 @@ messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
 
 
 function hideMessage(timerId){
-clearTimeout(timerId);
+if(timerId){clearTimeout(timerId);}
 el('messageHolder').style.display='none';
 }//hide message
 
@@ -3390,6 +3219,7 @@ pairArr=[...pairArrCopy];
 
 
 
+
 function restoreNativeVertOrder(){
 vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
 if(delaunay){
@@ -3401,6 +3231,7 @@ updatePairArr(vertices);
 vertScaler();
 sortByNeighborCount();
 render();
+vertSortType='native';
 }//restoreNativeVertOrder
 
 
@@ -3425,6 +3256,7 @@ updatePairArr(shuffledVertices);
 vertScaler();
 sortByNeighborCount();
 render();
+vertSortType='random';
 }//shuffleRandomVertices 
 
 
@@ -3451,11 +3283,12 @@ updatePairArr(sortedVerts2D);
 vertScaler(); 
 sortByNeighborCount();
 render();
+vertSortType='sort2D';
 }//sort2D
 
 
 
-function sortOutIn(outIn){
+function sortRadial(outIn){
 let outInVerts=[...vertices];
 let sumX=0;
 let sumY=0;
@@ -3478,9 +3311,11 @@ outInVerts[i].distFromCenter=distFromCenter;
 
 if(outIn=='outIn'){
 outInVerts.sort((a,b)=>b.distFromCenter-a.distFromCenter);
+vertSortType='outIn';
 
 }else if(outIn=='inOut'){
 outInVerts.sort((a,b)=>a.distFromCenter-b.distFromCenter);
+vertSortType='inOut';
 }
 
 vertices=[...outInVerts];
@@ -3495,7 +3330,48 @@ updatePairArr(vertices);
 vertScaler(); 
 sortByNeighborCount();
 render();
-}//sortOutsideIn
+}//sortRadial
+
+
+
+function sorterByNeigh(){
+sortedByNeighCount=[...vertices];
+sortedByNeighCount.sort((a,b)=>b.nCount-a.nCount);
+vertices=[...sortedByNeighCount];
+
+if(delaunay){
+for(let i=0;i<vertices.length;i++){
+triangles=triangulate(vertices);
+}//i loop 
+}//if(delaunay){
+
+updatePairArr(vertices);
+vertScaler(); 
+sortByNeighborCount();
+render();
+vertSortType='neighs';
+}//sorterByNeigh
+
+
+
+
+function sorterSwitch(){
+if( vertSortType!=''){
+if(vertSortType=='random'){
+shuffleRandomVertices();
+}else if(vertSortType=='sort2D'){
+sort2D();
+}else if(vertSortType=='native'){
+restoreNativeVertOrder();
+}else if(vertSortType=='outIn'){
+sortRadial('outIn');
+}else if(vertSortType=='inOut'){
+sortRadial('inOut');
+}else if(vertSortType=='neighs'){
+sorterByNeigh();
+}
+}//if( vertSortType!=''){
+}//sorterSwitch
 
 
 
@@ -3823,7 +3699,7 @@ dy=this.center.y - miny;
 }else{
 let cx=(D * E - B * F) / G;
 let cy=(A * F - C * E) / G;
-this.center=new Vertex(cx, cy, 4);
+this.center=new Vertex(parseInt(cx), parseInt(cy), 4);
 dx=this.center.x - this.v0.x;
 dy=this.center.y - this.v0.y;
 }
@@ -3831,7 +3707,7 @@ dy=this.center.y - this.v0.y;
 //this.center.y=parseInt(this.center.y);
 
 this.radius_squared=dx * dx + dy * dy;
-this.radius=Math.sqrt(this.radius_squared);
+this.radius=parseInt(Math.sqrt(this.radius_squared));
 
 //this.radius_squared=parseInt(this.radius_squared);
 //this.radius=parseInt(this.radius);
@@ -3863,9 +3739,15 @@ if(maxy === undefined || vertex.y > maxy){ maxy=vertex.y;}
 
 let dx=(maxx - minx) * 10;
 let dy=(maxy - miny) * 10;
-let stv0=new Vertex(minx - dx, miny - dy * 3, 4);
-let stv1=new Vertex(minx - dx, maxy + dy, 4);
-let stv2=new Vertex(maxx + dx * 3, maxy + dy, 4);
+let stv0=new Vertex(
+parseInt(minx-dx), 
+parseInt(miny-dy*3), 4);
+let stv1=new Vertex(
+parseInt(minx-dx), 
+parseInt(maxy+dy), 4);
+let stv2=new Vertex(
+parseInt(maxx+dx*3), 
+parseInt(maxy+dy), 4);
 let st=new Triangle(stv0, stv1, stv2);
 triangles.push(st);
 

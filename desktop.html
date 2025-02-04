@@ -45,22 +45,33 @@ var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
 var usePHP=true;
 var serverAddress='http://moygen.rf.gd/graph2/';
-//var serverAddress='http://172.18.11.218:45267/'; 
+//var serverAddress='http://172.18.11.218:45267/';
+//var serverAddress='http://0.0.0.0:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
+var showSolving=false;
+var stepping=false;
+var solved=false;
+var solving=false;
+var pauser=false;
 var streamSolving=true;
-var numPoints=50;
-let isLive=serverAddress.indexOf('moygen');
+var loading=false;
+var loadDataFileNameAtStart=true;
+var dataFileName="pentagon.txt";
+var numPoints=0;
+var isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
+showSolving=true;
 streamSolving=true;
+loading=true;
 numPoints=60;
 }else{
-streamSolving=false;
-numPoints=50;
+showSolving=true;
+streamSolving=true;
+loading=true;
+numPoints=60;
 }
 
-//ww=1366 hh=689 (on desktop at 100% browser zoom) 
-//with onlySome
 var diam=100;
 var vertSize=19;
 var maxVertSize=25;
@@ -86,7 +97,6 @@ var altKey=false;
 var inset=125;
 var vertexToEdit=-1;
 var backgroundColor='#f5f5f5';
-var dataFileName="default.txt";
 var numSavedGraphs=0;
 var graphFileNames=[];
 var dataSend='';
@@ -124,22 +134,20 @@ var solveRemainingPass=0;
 var loopCounter=0;
 var tripleCheck=false;
 var framesPerSecond=30;
-var pauser=false;
-var showSolving=true;
 var stillSearching=false;
-var animId=0;
-var rColorGraphDone=false;
-var animSV=0;
-var stepping=false;
-var solved=false;
-var loading=true;
 var showNumNeigh=false;
-var solving=false;
-var timeToSolve=0;
-var startTime=Date.now();
-var endTime=Date.now();
-var deltaTime=endTime-startTime;
+var animId=0;
+
+
+var showSolvingTime=false;
+var totalSolveTime=0;
+var startSolveTime=[];
+var endSolveTime=[];
+var numPauses=0;
+
 var lastButton='buildRandomGraph';
+var savedButtonId=lastButton;
+var savedLastButton=lastButton;
 var messageTimer=0;
 var building=false;
 var flexibles=[];
@@ -171,10 +179,12 @@ var b_restoreNativeTimed=false;
 var b_sort2DTimed=false;
 var b_sortOutInTimed=false;
 var b_sortInOutTimed=false;
+var b_sorterByNeighsTimed=false
 var shuffledVertices=[];
 var nativeVertOrder=[];
 var nativePairArr=[];
 var sortedVerts2D=[];
+var sorterByNeighCount=[];
 var gettingLinkStart=false;
 var addingVert=false;
 var linkStart=-1;
@@ -189,12 +199,11 @@ var numVertsTimer=0;clearTimeout(numVertsTimer);
 var animateTimer=0;clearTimeout(animateTimer);
 var typing=false;
 var resizeCanv=false;
-var streamCurrent=false;
 var selectedLineWidth=40;
 
-function getDeltaTime(){
-deltaTime=endTime-startTime;
-}//end getDeltaTime
+var waitFilenamesInt=0;
+var waitFileLoad=0;
+var waitGraphDataInt=0;
 
 function zoom(elm,scale,w,h){
 elm.style.transform="scale("+scale+")";
@@ -215,6 +224,49 @@ elm.style.height=(h/scale)+"%";
 </div>
 <div id="testerCloser" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
 </div>
+
+
+
+
+<div id="shuffleControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:20px;padding-right:50px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:right;">
+
+<div style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;"> Show Solve:</div>
+
+<div style="padding:8px;display:inline-block;">
+<input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+
+<input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="sortByNeighborCountButton" value="Neighs" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+</div>
+
+<br>
+<div style="display:inline-block;font-size:20px;font-family:monospace;">Timed Sort:</div>
+
+<div style="padding:8px;display:inline-block;">
+<input id="shuffleRandomTimed" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="restoreNativeTimed" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="timedSort2D" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="timedSortOutIn" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="timedSortInOut" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="timedSortByNeighborCount" value="Neighs" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+
+<input id="shuffleClose" value=" X " type="button"  style="display:inline-block;font-size:20px;padding:10px;position:absolute;right:0px;bottom:0px;">
+</div>
+</div>
+
 
 <div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:60px;border:12px solid black;display:none;z-index:1000000;background-color:white;">
 
@@ -241,7 +293,7 @@ elm.style.height=(h/scale)+"%";
 <br><br>
 <table >
 <tr><td class="t" style="padding-top:40px;">
-[P]: Show Solving </td><td class="t2" style="padding-top:40px;">Renders each step of the 4-coloring algorithm as it solves the graph
+[P]: Anim Solving </td><td class="t2" style="padding-top:40px;">Renders each step of the 4-coloring algorithm as it solves the graph
 </td></tr>
 <tr><td class="t">
 [6]: Stream Solve Current Graph</td><td class="t2">Repeatedly solve current graph
@@ -307,10 +359,15 @@ elm.style.height=(h/scale)+"%";
 </div>
 
 
-
-<select id="selectGraph" onchange="showMessage('Loading Graph...',60000);setRandomVerts=false;dataFileName=graphFileNames[parseInt(this.options[this.selectedIndex].value)];buildAndRender();" style="z-index:10000000;font-size:25px;font-family:monospace;background-color:#ffffff;border:1px solid #000000;display:none;position:absolute;top:20px;left:20px;padding:15px;">
-<option disabled selected id="label">Load Graph</option>
+<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:100px;left:250px;">
+ 
+<select id="selectGraph" onchange="loadFile();" style="font-size:40px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
+<option style="font-size:40px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
 </select>
+
+<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+</div>
+ 
 
 
 
@@ -340,15 +397,16 @@ Filename:
  
 <input id="about" type="button" value="About" class="b">
 
-<input id="streamSolveCurrent" type="button" value="streamCurrent" class="b" title="[6]">
 
-<input id="streamSolveRandom" type="button" value="streamRandom" title="[7]" class="b">
+<input id="streamSolve" type="button" value="stream"  class="b" title="[7]">
 
-<input id="showSolving" type="button" value="Show Solving" class="b" title="[P] or spacebar">
+<input id="showSolving" type="button" value="AnimSolving" class="b" title="[P] or spacebar">
 
 <input id="solve" type="button" value="Solve"  class="b" title="[S]">
 
 <input id="step" type="button" value="Step" class="b" title="[ V ]">
+
+<input id="solveData" type="button" value="SolveData" class="b" title="[8]">
 
 
 <input id="buildRandomGraph" type="button" value="BuildGraph" class="b" title="[B]">
@@ -364,9 +422,9 @@ Filename:
 <input id="numVertsButton" type="button" value="NumVerts" class="b" title="[N]">
 
 <input id="fpsId" type="button" value="FPS"  class="b" title="[F]">
-
+<!--
 <input id="timeToSolveId" type="button" value="Time" class="b" title="[T]">
-
+-->
 <input id="neighs" type="button" value="Neighs" 
  class="b" title="[G]">
 
@@ -377,6 +435,9 @@ Filename:
 <input id="loadGraphButton" type="button" value="load"  class="b" title="[L]">
 
 <input id="saveGraphButton" type="button" value="save"  class="b" title="[E]">
+
+
+<input type="button" value="reload" id="reloadGraphButton" class="b" style="display:none;">
 
 
 <input type="button" value="Tester" id="testerButton" class="b" title="[Y]" >
@@ -419,6 +480,10 @@ Filename:
 <input id="vertSizeButton" type="button" value="VertSize" class="b" style="display:inline-block;">
 
 <input type="button" value="Sorts" id="shuffleButton" class="b" style="display:inline-block;">
+
+<input type="button" value="genVerts" id="gen2Button" class="b">
+
+<input id="clear" type="button" value="Clear" class="b" title="[9]">
 
 
 <input id="keysButton" type="button" value="Keys" class="b" title="[K]" style="display:none;">
@@ -475,42 +540,6 @@ FPS (1-60):
 <input id="panZoomClose" value=" X " type="button" style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
 </div>
 
-
-
-<div id="shuffleControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:20px;bottom:0px;background-color:#ffffff;padding-left:20px;padding-right:50px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:right;">
-
-<div style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;"> Show Solve:</div>
-
-<div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-
-<input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
-
-<input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
-</div>
-
-<br>
-<div style="display:inline-block;font-size:20px;font-family:monospace;">Timed Sort:</div>
-
-<div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomTimed" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="restoreNativeTimed" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="timedSort2D" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="timedSortOutIn" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
-
-<input id="timedSortInOut" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:200px;">
-
-<input id="shuffleClose" value=" X " type="button"  style="display:inline-block;font-size:20px;padding:10px;position:absolute;right:0px;bottom:0px;">
-</div>
-</div>
 
 
 
@@ -680,16 +709,72 @@ el(id).onmousedown=function(event){func(event);}}
 }
 
 
+/*
+
+function reSolverReset(){
+solving=false;
+solved=true;
+animSV=0;
+showSolving=false;
+pauser=false;
+showSolvingStatus();
+pairString='';
+numSolves=0;
+solveCounter=0;
+chunkSolveString='';
+loopingDetected=false;
+nIndexString='';
+solveRemainingPass=0;
+tripleCheck=false;
+pairString='';
+da('tester','');
+allSolvesString='';
+}//end resolver reset
+
+
+*/
+
+
+function reSolverReset(){
+solving=false;
+solved=false;
+showSolving=false;
+//showSolvingStatus();
+pairString='';
+numSolves=0;
+solveCounter=0;
+chunkSolveString='';
+loopingDetected=false;
+nIndexString='';
+solveRemainingPass=0;
+tripleCheck=false;
+pairString='';
+allSolvesString='';
+}//end resolver reset
+
+
+
+//green=#daf5e4
+var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
+//bcf5da
+
 
 function activeButton(buttonId){
-
 if(lastButton=='zoomInButton'||lastButton=='zoomOutButton'||lastButton=='fitButton'||lastButton=='panButton'){
 el(lastButton).style.backgroundColor='#eeeeee';
 }else{
 el(lastButton).style.backgroundColor='white';
 }
+
 el(buttonId).style.backgroundColor='#dbedff';
+if(lastButton!=buttonId){
+el(lastButton).style.backgroundColor='#ffffff';
+}
+
+savedButtonId=buttonId;
+savedLastButton=lastButton;
 lastButton=buttonId;
+
 if(lastButton!='dropRandom'){el('dataShowHideButton').style.display='none';el('data').style.display='none';}
 if(lastButton!='about'){el('aboutDiv').style.display='none';}
 if(lastButton!='curvedLink'&&gettingCurvedLinkEnd){
@@ -703,13 +788,23 @@ segCounter=0;
 render();
 }//end if(lastButton!='curvedLink'
 
+if(lastButton!='linkVertsButton'){
+startConnecting=false;
+gettingLinkStart=false;
+endConnecting=false;
+}//if(lastButton!='link'){
+
+/*
+if(solving&&buttonId!='solve'){
+el('solve').style.backgroundColor=B.blue;
+}
+*/
 }//activeButton
 
 
 
 
 function activeShuffleButton(buttonId){
-
 el(lastShuffleButton).style.backgroundColor='#eeeeee';
 el(buttonId).style.backgroundColor='#dbedff';
 lastShuffleButton=buttonId;
@@ -733,8 +828,6 @@ var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
 var cW,cH,ww,hh;
 
-
-
 function canvSetSize(){
 ww=window.innerWidth;
 hh=window.innerHeight;
@@ -752,7 +845,7 @@ scaleFactor=1;
 }
 }//end canvSetSize
 
-function init(){
+//function init(){
 canvSetSize();
 
 el('data').style.width=ww*.95+'px';
@@ -780,19 +873,24 @@ el('buttonHolderInner').style.width=ww-48+'px';
 
 el('fpsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
 el('numVertsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
+el('filenameInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
+
 
 el('testerHolder').style.width=ww*.5+'px';
 el('consoleInputDiv').style.width=ww*.9+'px';
 
+
+document.body.onload=function(){
 cancelAnimationFrame(animId);
+getGraphFilenames();
+graphRenderScaleFactors();
+if(!loadDataFileNameAtStart){
 buildAndRender();
 animInit();
-getGraphFilenames();
-//controlPanelOpenClose();
-graphRenderScaleFactors();
-}//end init
+}
+replaceDownEventById('canvas',showSolvingActions);
+}//end onload 
 
-init();
 
 function controlPanelOpenClose(){
 if(el('buttonHolder').style.display=='none'){
@@ -805,22 +903,21 @@ el('expander').value='+';
 }//end controlPanelOpenClose
 
 
-
 function getGraphFilenames(){
 graphFileNames=null;
 if(usePHP){
 el('ifr').src=serverAddress+'filenameReader.php';
 waitFilenamesInt=setInterval(function(){
-if(isThere(el('ifr').contentWindow.filenames)){ 
-
+if(isThere(el('ifr').contentWindow.filenames)){
 graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
-
 clearInterval(waitFilenamesInt);
 waitFilenamesInt=0;
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
+if(loadDataFileNameAtStart){
+loadFile();
+}//if(loadDataFileNameAtStart){
 }//if(isThere(el('ifr').contentWindow.filenames)){
-
 },50);
 }//if usePHP
 }//end get graph filenames
@@ -833,6 +930,11 @@ let op=document.createElement("option");
 op.id='op'+i;
 op.value=i;
 op.text=graphFileNames[i];
+
+if(op.text==dataFileName){
+op.selected='selected';
+}
+
 el('selectGraph').appendChild(op);
 }//end i loop
 //el('op0').selected="selected";
@@ -841,30 +943,27 @@ el('selectGraph').appendChild(op);
 
 
 
-var waitGraphDataInt=0;
+
 function getGraphData(){
 if(usePHP){
 el('ifr').src=serverAddress+"saver.php?loading=1&dataFileName="+dataFileName;
-waitGraphDataInt=setInterval("loadGraphData();",1500);
+waitGraphDataInt=setInterval("loadGraphData();",1000);
 }//usePHP
 }//end getGraphData
 
 
-
-
-
-
 function loadGraphData(){
 
-canvSetSize();
-reSolverReset();
+solved=false;
 dataReceive=null;
 dataReceive=el('ifr').contentWindow.dataSend;
 if(isThere(dataReceive)){
 
 clearInterval(waitGraphDataInt);
 waitGraphDataInt=0;
-hideMessage(messageTimer);
+
+canvSetSize();
+reSolverReset();
 
 if(dataReceive.indexOf('[')>=0){
 delaunay=false;
@@ -924,14 +1023,28 @@ triangles=triangulate(vertices);
 sortByNeighborCount();
 nativeVertOrder=[...vertices];
 nativePairArr=[...pairArr];
-autoRotate();
-graphRotater(0);
+graphRotater(90);
+graphRotater(-90);
 dataReceive=null;
 modifiedGraph=true;
+hideMessage(messageTimer);
 }//end isThere
 
 }//end loadGraphData
 
+
+
+
+
+function loadFile(){
+clearInterval(waitGraphDataInt);
+waitGraphDataInt=0;
+hideMessage(messageTimer);
+showMessage('Loading Graph...',60000);
+setRandomVerts=false;
+dataFileName=graphFileNames[parseInt(el('selectGraph').options[el('selectGraph').selectedIndex].value)];
+buildAndRender();
+}//onChangeLoadFile
 
 
 
@@ -988,8 +1101,6 @@ numSavedGraphs++;
 
 
 
-
-
 function autoRotate(){
 let miny=100000;
 let minx=100000;
@@ -1030,7 +1141,7 @@ graphRotater();}
 
 
 function graphRotater(angle){
-let margin=vertSize*3;
+let margin=vertSize*2;
 
 
 let graphAng=-90*Math.PI/180;
@@ -1168,7 +1279,6 @@ render();
 
 
 
-
 function changeVertexColor(event){
 if(isThere(vertices[vertexToEdit])){
 vertices[vertexToEdit].c++;
@@ -1267,49 +1377,183 @@ replaceDownEventById('enterGraphName',enterGraphNameAction);
 
 
 
-function sorterSwitch(){
-if( vertSortType!=''){
-if(vertSortType=='random'){
-shuffleRandomVertices();
-}else if(vertSortType=='sort2D'){
-sort2D();
-}else if(vertSortType=='native'){
-restoreNativeVertOrder();
-}
-}//if( vertSortType!=''){
-}//sorterSwitch
 
+function showSolvingButton(){
+activeButton('showSolving')
+
+if(!pauser&&showSolving){
+el('showSolving').value='AnimSolving';
+el('showSolving').style.backgroundColor=B.green;
+
+}else if(pauser&&showSolving){
+el('showSolving').value='Paused';
+el('showSolving').style.backgroundColor=B.red;
+}
+
+stepping=false;
+solving=false;
+showSolving=true;
+showSolvingStatus();
+solveButtonStatus();
+}//end showSolvingButton
+ 
+
+
+function showSolvingStatus(){
+
+if(!showSolving&&lastButton!='showSolving'){
+el('showSolving').value='AnimSolving';
+el('showSolving').style.backgroundColor=B.white;
+
+}else if(!showSolving&&lastButton=='showSolving'){
+el('showSolving').value='AnimSolving';
+el('showSolving').style.backgroundColor=B.blue;
+}
+
+if(streamSolving){
+el('streamSolve').style.backgroundColor=B.green;
+
+}else if(!streamSolving){
+el('streamSolve').style.backgroundColor=B.white;
+}
+
+}//end showSolvingStatus
 
 
 
 function showSolvingActions(event){ 
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('showSolving');
+
+if(savedLastButton!='showSolving'){
+replaceDownEventById('canvas',showSolvingActions);
+}
 sorterSwitch();
-if(!showSolving&&solved&&!stepping){
+
+if(!showSolving){
+
+
+if(!stepping&&!solving){
 reSolverReset();
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
-}//if(!showSolving&&
+}
+
+numPauses=0;
+totalSolveTime=0;
+startSolveTime=[];
+endSolveTime=[];
+solved=false;
+stepping=false;
+solving=false;
+showSolving=true;
+startSolveTime.push(Date.now());
+if(showSolvingTime){updateSolveData();}
+
+}else if(showSolving&&!pauser){
+pauser=true;
+endSolveTime[numPauses]=Date.now();
+numPauses++;
+
+}else if(showSolving&&pauser){
+pauser=false;
+startSolveTime.push(Date.now());
+endSolveTime.push(Date.now());
+if(showSolvingTime){updateSolveData();}
+}
+
 showSolvingButton();
-replaceDownEventById('canvas',showSolvingActions);
 }//end showSolvingActions
 replaceDownEventById('showSolving',showSolvingActions);
 
 
 
-function solveActions(event){
-event.preventDefault();
-activeButton('solve');
-stepping=false;
-pauser=false;
-showSolving=false;
-streamSolving=false;
-solving=true;
-solveButton();
+
+function streamSolvingActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('streamSolve');
+
+replaceDownEventById('canvas',showSolvingActions);
+
+streamSolving=!streamSolving; 
+if(streamSolving){
+showSolving=true;
+solved=false;
 for(let v=0;v<vertices.length;v++){
-vertices[v].c=4;} 
-startTime=Date.now();
+vertices[v].c=4;}
+}//if(streamSolving){
+showSolvingButton();
+}// end streamSolvingActions
+replaceDownEventById('streamSolve',streamSolvingActions);
+
+
+
+
+
+function solveButton(){
+activeButton('solve');
+if(!pauser&&solving){
+el('solve').value='Solving';
+el('solve').style.backgroundColor=B.green;
+
+}else if(pauser&&solving){
+el('solve').value='Paused';
+el('solve').style.backgroundColor=B.red;
+}
+
+}//end solveButton
+
+
+
+
+function solveButtonStatus(){
+if(solving&&solved){
+el('solve').value='Solve';
+el('solve').style.backgroundColor=B.blue;
+}
+}//solveButtonStatus
+
+
+
+function solveActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('solve');
+
+
+if(savedLastButton!='solve'){
+replaceDownEventById('canvas',solveActions);
+}
+
+if(!solving){
+if(streamSolving){streamSolvingActions();}
+
+if(!stepping&&!solving){
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}
+
+render();
+
+numPauses=0;
+totalSolveTime=0;
+startSolveTime=[];
+endSolveTime=[];
+solved=false;
+stepping=false;
+solving=true;
+showSolving=false;
+
+maxCallStackSizeExceeded=false;
+
+}else if(solving&&!pauser){
+pauser=true;
+endSolveTime[numPauses]=Date.now();
+numPauses++;
+}else if(solving&&pauser){
+pauser=false;
+}
+
 if(b_shuffleRandomTimed){
 shuffleRandomVertices();
 b_shuffleRandomTimed=false;
@@ -1320,25 +1564,87 @@ b_restoreNativeTimed=false;
 sort2D();
 b_sort2DTimed=false;
 }else if(b_sortOutInTimed){
-sortOutIn('outIn');
+sortRadial('outIn');
 b_sortOutInTimed=false;
 }else if(b_sortInOutTimed){
-sortOutIn('inOut');
+sortRadial('inOut');
 b_sortInOutTimed=false;
+}else if(b_sorterByNeighsTimed){
+sorterByNeigh();
+b_sorterByNeighsTimed=false;
 }
+
+if(solving&&!pauser){
+startSolveTime.push(Date.now());
+endSolveTime.push(Date.now());
+if(showSolvingTime){updateSolveData();}
 recursiveNeighborSolver();
-replaceDownEventById('canvas',solveActions);
+}//if(solving&&!pauser){
+
+solveButton();
+
 }//end solveActions
 replaceDownEventById('solve',solveActions);
 
- 
+
+
+
+function updateSolveData(){
+if((solving||showSolving)&&!pauser&&!solved){
+
+totalSolveTime=0;
+endSolveTime[numPauses]=Date.now();
+for(let q=0;q<startSolveTime.length;q++){
+totalSolveTime+=
+(endSolveTime[q]-startSolveTime[q]);
+}//q loop
+
+}//if(solving&&!pauser&&!solved){
+
+let vertsPerMs=(vertices.length/(totalSolveTime)).toFixed(2);
+if(vertsPerMs=='Infinity'){vertsPerMs=0;}
+let solvedOrNot='';
+if(solved){solvedOrNot=`<center><span style="background-color:MediumSeaGreen;color:white;display:block;font-family:Monospace;width:250px;padding:15px">Solved</span></center><br>`;}
+showMessage(solvedOrNot+
+`Solve Data:<br> `+totalSolveTime+` ms<br>`
++(totalSolveTime/1000).toFixed(2)+' sec<br>'
++(totalSolveTime/1000/60).toFixed(2)+' min<br>'
++ numSolvesCounter+` steps<br>`
++(vertices.length)+` Vertices<br>`
+//+(totalSolveTime/(vertices.length)).toFixed(2)+` ms/numVerts<br>`
++vertsPerMs+` verts/ms<br><br><center>[close]</center>`,2000000);
+
+}//updateSolveData
+
+
+
+
+function solveTimeActions(event){
+if(isThere(event)){event.preventDefault();}
+//activeButton('solveData');
+if(!showSolvingTime){
+el('solveData').style.backgroundColor=B.blue;
+showSolvingTime=true;
+updateSolveData();
+}else if(showSolvingTime){
+el('solveData').style.backgroundColor=B.white;
+showSolvingTime=false;
+hideMessage();
+}
+
+}//solveTimeActions
+replaceDownEventById('solveData',solveTimeActions);
+
 
 function shuffleButtonActions(event){
 event.preventDefault();
 activeButton('shuffleButton');
 showHide('shuffleControls');
+el('shuffleControls').style.left=
+(cW*.5-el('shuffleControls').getBoundingClientRect().width*.5)+'px';
 }//shuffleButtonActions
 replaceDownEventById('shuffleButton',shuffleButtonActions);
+
 
  
 function shuffleRandomActions(event){
@@ -1371,7 +1677,7 @@ replaceDownEventById('sort2DButton',sort2DActions);
 function sortOutInActions(event){
 event.preventDefault();
 activeShuffleButton('sortOutInButton');
-sortOutIn('outIn');
+sortRadial('outIn');
 showSolvingActions(event);
 }//sortOutInActions
 replaceDownEventById('sortOutInButton',sortOutInActions);
@@ -1380,10 +1686,21 @@ replaceDownEventById('sortOutInButton',sortOutInActions);
 function sortInOutActions(event){
 event.preventDefault();
 activeShuffleButton('sortInOutButton');
-sortOutIn('inOut');
+sortRadial('inOut');
 showSolvingActions(event);
 }//sortInOutActions
 replaceDownEventById('sortInOutButton',sortInOutActions);
+
+
+ 
+function sortByNeighborCountActions(event){
+event.preventDefault();
+activeShuffleButton('sortByNeighborCountButton');
+sorterByNeigh();
+showSolvingActions(event);
+}//sortByNeighborCountActions
+replaceDownEventById('sortByNeighborCountButton',sortByNeighborCountActions);
+
 
 
  
@@ -1432,6 +1749,16 @@ solveActions(event);
 replaceDownEventById('timedSortInOut',sortInOutTimedActions);
 
 
+ 
+function sorterByNeighsTimedActions(event){
+event.preventDefault();
+activeShuffleButton('timedSortByNeighborCount');
+b_sorterByNeighsTimed=true;
+solveActions(event);
+}//sorterByNeighsTimedActions 
+replaceDownEventById('timedSortByNeighborCount',sorterByNeighsTimedActions);
+
+
 
 function shuffleCloseButtonActions(event){
 event.preventDefault();
@@ -1458,7 +1785,6 @@ showSolvingStatus();
 replaceDownEventById('canvas',stepActions);
 }//end stepActions
 replaceDownEventById('step',stepActions);
-
 
 
 
@@ -1561,7 +1887,7 @@ delaunay=true;
 el('expander').blur();
 dragging=true;
 moveRaw=false;
-getVertexToEdit(event);
+getVertexToEdit(event,true);
 solved=false;
 });
 }//moveVertexButtonActions
@@ -1573,8 +1899,7 @@ event.preventDefault();
 activeButton('deleteVertexDelaunay');
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=true;
-getVertexToEdit(event);
+getVertexToEdit(event,true);
 deleteVertex(event,true);
 solved=false;
 });//end replaceDownEventById('canvas',function(event){
@@ -1685,22 +2010,79 @@ el('fpsInputDiv').style.visibility='hidden';
 }//fpsCancelActions
 replaceDownEventById('fpsCancel',fpsCancelActions);
 
-
+/*
 function solveTimeActions(event){
 event.preventDefault();
 activeButton('timeToSolveId');
 showMessage('Solved in: '+deltaTime+' ms<br>'+(deltaTime/(vertices.length)).toFixed(2)+' ms/vertex<br>'+((vertices.length)/deltaTime).toFixed(2)+' verts/ms<br> '+ numSolvesCounter+' steps<br>'+(vertices.length)+' Vertices<br><br><center>[close]</center>',20000);
 }//solveTimeActions
 replaceDownEventById('timeToSolveId',solveTimeActions);
-
+*/
 
 function neighsActions(event){
 event.preventDefault();
 activeButton('neighs');
-if(showNumNeigh){showNumNeigh=false;}else{showNumNeigh=true;}
+showNumNeigh=!showNumNeigh;
+if(showNumNeigh){listNumNeighs();}
 render();
 }//neighsActions
 replaceDownEventById('neighs',neighsActions);
+
+
+
+function listNumNeighs(){
+listNumNeighsArr=[];
+let nSortedVerts=[...vertices];
+nSortedVerts.sort((a,b)=>b.nCount-a.nCount);
+for(i=0;i<nSortedVerts.length;i++){
+if(i==0){listNumNeighsArr[0]={
+nCount:nSortedVerts[i].nCount,
+vertCount:1
+};
+}else if(i>0){
+if(nSortedVerts[i].nCount==nSortedVerts[i-1].nCount){
+listNumNeighsArr[listNumNeighsArr.length-1].vertCount++;
+}else if(nSortedVerts[i].nCount!=nSortedVerts[i-1].nCount){
+listNumNeighsArr.push({
+nCount:nSortedVerts[i].nCount,
+vertCount:1
+});
+}
+}//}else if(i>0){
+}//i loop
+
+let stringer='';
+for(i=0;i<listNumNeighsArr.length;i++){
+if(i==0){
+stringer+='<div style="display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:right;padding-right:60px;">Neighs<br>';
+}
+stringer+=listNumNeighsArr[i].nCount+'<br>';
+}//i loop
+stringer+='</div>';
+
+for(i=0;i<listNumNeighsArr.length;i++){
+if(i==0){
+stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:left;border-left:1px solid black;">Verts<br>';
+}
+stringer+=listNumNeighsArr[i].vertCount+'<br>'
+}//i loop
+stringer+='</div><br><br><center>[close]</center>';
+
+showMessage(stringer,10000000);
+}//listNumNeighs
+
+
+function clearActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('clear');
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+reSolverReset();
+vertScaler();
+sortByNeighborCount();
+render();
+}//clearActions
+replaceDownEventById('clear',clearActions);
 
 
 function flexiblesActions(event){
@@ -1782,7 +2164,9 @@ replaceDownEventById('panZoomButton',panZoomButtonActions);
 function fitButtonActions(event){
 event.preventDefault();
 activeButton('fitButton');
-graphRotater(0);
+graphRotater(90);
+graphRotater(-90);
+//graphRotater(0);
 }//fitButtonActions
 replaceDownEventById('fitButton',fitButtonActions);
 
@@ -1833,65 +2217,32 @@ el('filenameInputDiv').style.display='none';
 replaceDownEventById('cancelSave',cancelSaveButtonActions);
 
 
-function streamSolveCurrentButtonActions(event){
-event.preventDefault();
-activeButton('streamSolveCurrent');
-if(streamSolving&&!streamCurrent){
-streamCurrent=true;
-}else if(streamSolving&&streamCurrent){
-streamSolving=!streamSolving;
-}else if(!streamSolving&&!streamCurrent){
-streamCurrent=true;
-streamSolving=true;
-}else if(!streamSolving&&streamCurrent){
-streamCurrent=true;
-streamSolving=true;
-}if(streamSolving){
-solved=false;
-for(let v=0;v<vertices.length;v++){
-vertices[v].c=4;}
-}
-showSolvingButton();
-
-}//streamSolveCurrentButtonActions
-replaceDownEventById('streamSolveCurrent',streamSolveCurrentButtonActions);
-
-
-
-function streamSolveRandomButtonActions(event){
-event.preventDefault();
-activeButton('streamSolveRandom');
-setRandomVerts=true;
-if(streamSolving&&streamCurrent){
-streamCurrent=false;
-}else if(streamSolving&&!streamCurrent){
-streamSolving=!streamSolving;
-}else if(!streamSolving&&!streamCurrent){
-streamCurrent=false;
-streamSolving=true;
-}else if(!streamSolving&&streamCurrent){
-streamCurrent=false;
-streamSolving=true;
-}if(streamSolving){
-solved=false;
-for(let v=0;v<vertices.length;v++){
-vertices[v].c=4;}
-}
-showSolvingButton();
-}//streamSolveRandomButtonActions
-replaceDownEventById('streamSolveRandom',streamSolveRandomButtonActions);
-
 
 function loadButtonActions(event){
 event.preventDefault();
 activeButton('loadGraphButton');
 streamSolving=false;
-pauser=false;
 showSolvingStatus();
-showHide('selectGraph');
+showHide('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
 
+
+function closeSelectActions(event){
+el('selectGraphHolder').style.display='none';
+}//closeSelectActions
+replaceDownEventById('closeSelect',closeSelectActions);
+
+
+function reloadButtonActions(event){
+event.preventDefault();
+activeButton('reloadGraphButton');
+streamSolving=false;
+showSolvingStatus();
+loadFile();
+el('selectGraphHolder').style.display="none";
+}//reloadButtonActions
+replaceDownEventById('reloadGraphButton',reloadButtonActions);
 
 
 function curvedLinkButtonActions(event){
@@ -1968,7 +2319,7 @@ delaunay=false;
 el('expander').blur();
 dragging=true;
 moveRaw=true;
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
 }//moveVertButtonActions
@@ -1983,8 +2334,7 @@ endConnecting=false;
 gettingLinkStart=false;
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
-delaunay=false;
-getVertexToEdit(event);
+getVertexToEdit(event,false);
 deleteVertex(event,false);
 solved=false;
 });//replaceDownEventById('canvas',function(event){
@@ -2003,9 +2353,65 @@ replaceDownEventById('testerButton',testerButtonActions);
 
 
 function messageCancelActions(event){
+if(event){event.preventDefault();}
 el('messageHolder').style.display='none';
+showSolvingTime=false;
+el('solveData').style.backgroundColor=B.white;
 }//messageCancelActions
 replaceDownEventById('messageHolder',messageCancelActions);
+
+
+
+function gen2ButtonActions(event){
+event.preventDefault();
+activeButton('gen2Button');
+showMessage('Generating Vertices',10000000);
+setTimeout(`addVertsAtTriangleCenters2();`,1);
+}//gen2ButtonActions
+replaceDownEventById('gen2Button',gen2ButtonActions);
+
+
+function addVertsAtTriangleCenters2(){
+delaunay=true;
+for(i=0;i<vertices.length;i++){
+triangles=triangulate(vertices);
+sortByNeighborCount();
+}//i loop
+delaunay=false
+for(i=0;i<triangles.length;i++){
+ 
+let triCenterX=parseInt((
+triangles[i].v0.x+
+triangles[i].v1.x+
+triangles[i].v2.x)/3);
+
+let triCenterY=parseInt((
+triangles[i].v0.y+
+triangles[i].v1.y+
+triangles[i].v2.y)/3);
+
+vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1));
+
+
+pairArr.push([vertices.length-1,triangles[i].v0.i]);
+pairArr.push([vertices.length-1,triangles[i].v1.i]);
+pairArr.push([vertices.length-1,triangles[i].v2.i]);
+
+segPoints.push(null);
+segPoints.push(null);
+segPoints.push(null);
+
+}//i loop
+
+vertScaler();
+sortByNeighborCount(); 
+render();
+delaunay=false;
+modified=true;
+hideMessage(messageTimer);
+}//addVertsAtTriangleCenters2
+
+
 
 
 
@@ -2196,7 +2602,7 @@ render();
 
 
 
-function getVertexToEdit(event){
+function getVertexToEdit(event,isDelaunay){
 event.preventDefault();
 let eventer=eventSwitch(event);
 vertexToEdit=-1;
@@ -2205,6 +2611,16 @@ ctx.beginPath();
 ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
 
 if(ctx.isPointInPath(eventer.pageX,eventer.pageY)){
+
+
+if(isThere(isDelaunay)){
+if(isDelaunay){
+delaunay=true;
+}else{
+delaunay=false;
+}
+}//if(isThere(isDelaunay)){
+
 modifiedGraph=true;
 vertexToEdit=i;
 ctx.lineWidth=selectedLineWidth*scaleFactor;
@@ -2398,6 +2814,7 @@ sortedVerts.sort((a,b)=>b.nCount-a.nCount);
 
 
 
+
 function colorGraph(){
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
@@ -2421,23 +2838,6 @@ if(colorAvailable){vertices[sortedVerts[v].i].c=c;break;}
 
 
 
-
-function solveButton(){
-if(solving&&el('solve').value=='Solve'){
-//el('solve').value='Solving...';
-el('solve').style.backgroundColor='#ffd7d4';
-}
-/*
-else if(!solving&&el('solve').style.backgroundColor=='#ffd7d4'){
-//el('solve').value='Solve';
-el('solve').style.backgroundColor='#dbedff';
-}
-*/
-
-}//end solveButton
-
-
-
 function buildRandomGraphButton(){
 if(building&&el('buildRandomGraph').value=='Build Random Graph'){
 el('buildRandomGraph').value='Building..........';
@@ -2451,48 +2851,6 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 
 
-function showSolvingButton(){
-if(lastButton!='streamSolveRandom'&&lastButton!='streamSolveCurrent'&&(el('showSolving').value=='Solving...||'||el('showSolving').value=='Paused...\ > ')&&showSolving&&!stepping){
-pauser=!pauser;}
-stepping=false;
-solving=false;
-showSolving=true;
-showSolvingStatus();
-if(pauser){
-el('showSolving').value='Paused...\ > ';
-el('showSolving').style.backgroundColor='#ffd7d4';
-}else if(!pauser||streamSolving){el('showSolving').value='Solving...||';}
-}//end showSolvingButton
-
-
-
-function showSolvingStatus(){
-if(showSolving){
-el('showSolving').style.backgroundColor='#dbedff';
-el('showSolving').value='Solving...||';
-}else{
-el('showSolving').style.backgroundColor='white';
-el('showSolving').value='Show Solving';
-}
-
-if(streamSolving){
-
-if(streamCurrent){
-el('streamSolveCurrent').style.backgroundColor='#ffd7d4';
-el('streamSolveRandom').style.backgroundColor='#ffffff';
-}else if(!streamCurrent){
-el('streamSolveRandom').style.backgroundColor='#ffd7d4';
-el('streamSolveCurrent').style.backgroundColor='#ffffff';
-}
-
-}else if(!streamSolving){
-el('streamSolveRandom').style.backgroundColor='#ffffff';
-el('streamSolveCurrent').style.backgroundColor='#ffffff';
-}
-
-}//end showSolvingStatus
-
-
 function stepper(){
 showSolving=false;
 recursiveNeighborSolver();
@@ -2501,22 +2859,32 @@ render();
 
 
 
+
 //called once onload
 function animInit(){
 cancelAnimationFrame(animId);
 animId=0;
 stepping=false;
-rColorGraphDone=false;
 solved=false;
+//showSolvingStatus();
 pauser=false;
-animSV=0;
 animate();
-showSolving=true;
-activeButton('showSolving');
-showSolvingStatus();
 //setTimeout("activeButton('showSolving');showSolvingButton();",100);
 }//end animInit
 
+
+
+//called once onload
+function animInit(){
+cancelAnimationFrame(animId);
+animId=0;
+stepping=false;
+solved=false;
+//showSolvingStatus();
+pauser=false;
+animate();
+//setTimeout("activeButton('showSolving');showSolvingButton();",100);
+}//end animInit
 
 
 
@@ -2525,26 +2893,55 @@ clearTimeout(animateTimer);
 animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
 
-if(loading){solved=false;loading=false;
-buildAndRender();activeButton('showSolving');showSolvingButton();
+if(streamSolving&&loading){
+solved=false;
+loading=false;
+//buildAndRender();
+activeButton('showSolving');
+totalSolveTime=0;
+numPauses=0;
+startSolveTime=[];
+endSolveTime=[];
+startSolveTime.push(Date.now());
+showSolvingButton();
 
-}else if(streamSolving&&solved&&!streamCurrent){solved=false;setRandomVerts=true;
-setTimeout("buildAndRender();activeButton('showSolving');showSolvingButton();",2000);
+}else if(streamSolving&&solved&&!modifiedGraph){
+solved=false;
+setTimeout(`
+buildAndRender();
+totalSolveTime=0;
+numPauses=0;
+startSolveTime=[];
+endSolveTime=[];
+startSolveTime.push(Date.now());
+if(showSolvingTime){updateSolveData();}
+activeButton('showSolving');
+showSolvingButton();
+`,2000);
 
-}else if(streamSolving&&solved&&streamCurrent){solved=false;for(let v=0;v<vertices.length;v++){vertices[v].c=4;}setTimeout("activeButton('showSolving');showSolvingButton();",2000);
+}else if(streamSolving&&solved&&modifiedGraph){
+solved=false;
+setTimeout(`
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+totalSolveTime=0;
+numPauses=0;
+startSolveTime=[];
+endSolveTime=[];
+startSolveTime.push(Date.now());
+if(showSolvingTime){updateSolveData();}
+activeButton('showSolving');
+showSolvingButton();`
+,2000);
 
 }
 
-if(showSolving&&!pauser&&!stepping){
-recursiveNeighborSolver();
-render();
-}//end showSolving&&!&&pauser
 
-if(zoomingIn||zoomingOut){zoomer();}
+if(zoomingIn||zoomingOut){setTimeout("zoomer();",20);}
 
 
 if(vertSizeDecrease){
-if(targetRatio>.01){
+if(targetRatio>.001){
 targetRatio*=.95;vertScaler();render();
 }
 }
@@ -2553,69 +2950,28 @@ if(vertSizeIncrease){
 targetRatio*=1.05;vertScaler();render();
 }
 
+if(showSolving&&!pauser&&!stepping){
+recursiveNeighborSolver();
+render();
+}//end showSolving&&!&&pauser
+
 
 },1000/framesPerSecond);//end setTimeout
 }//end animate
 
 
 
-/*
-function rColorGraph(){
-if(!isThere(sortedVerts[animSV])){
-animSV=sortedVerts.length;
-}else{
 
-if(solved||stepping){
-if(animSV==0){
-rColorGraphDone=false;
-for(let v=0;v<vertices.length;v++){
-vertices[v].c=4;
-}
-}//if animSV==0
-solved=false;
-}//if solved
-
-for(let c=0;c<4;c++){
-let colorAvailable=true;
-for(let n=0;n<sortedVerts[animSV].nCount;n++){
-if(isThere(vertices[sortedVerts[animSV].n[n]])){
-if(vertices[sortedVerts[animSV].n[n]].c==c){
-colorAvailable=false;
-break;
-}
-}//isThere
-}//end n loop
-if(colorAvailable){
-vertices[sortedVerts[animSV].i].c=c;
-
-if(animSV>=sortedVerts.length-1){
-//pauser=true;
-rColorGraphDone=true;
-animSV=0;
-}
-break;
-}//if colorAvailable
-}//end c loop
-}//isThere(sortedVerts[animSV]
-}//end rColorGraph
-*/
-
-
-
-
-
-
-var checkCounter=0;
-var foundUnsolved=false;
 
 function recursiveNeighborSolver(){
+
 numSolves++; 
 numSolvesCounter=numSolves;
 
 stillSearching=false;
 let stringer='';
 let errorString='';
-checkCounter=0;
+let checkCounter=0;
 
 nonNeighbor=[];
 for(let s=0;s<lastSearcher.length;s++){
@@ -2623,6 +2979,7 @@ nonNeighbor[s]=lastSearcher[s];
 }
 searcher=[];
 lastSearcher=[];
+
 
 nextVertex:
 for(let v=0;v<vertices.length;v++){
@@ -2632,7 +2989,6 @@ let colorAvailable=[true,true,true,true];
 
 if(vertices[v].c==4||vertices[v].searching){
 stillSearching=true;
-
 
 for(let n=0;n<vertices[v].nCount;n++){
 if(isThere(vertices[vertices[v].n[n]])){
@@ -2650,7 +3006,15 @@ for(let c=0;c<4;c++){
 if(colorAvailable[c]&&c!=vertices[v].c){
 vertices[v].c=c;
 vertices[v].searching=false;
-if(showSolving||stepping){render();return;}else{
+if(showSolving||stepping){
+
+if(v==0||v%5==0){ 
+if((showSolving||solving)&&stillSearching&&!pauser&&showSolvingTime){
+updateSolveData();
+}
+}
+
+render();return;}else{
 continue nextVertex;
 }
 }//if(colorAvailable[c]
@@ -2702,17 +3066,17 @@ for(let j=0;j<neighColorCount[ind].nIndex.length;j++){
 searcher.push(neighColorCount[ind].nIndex[j]);
 
 }//end j loop
-
+ 
 lastSearcher.push(vertices[v].i);
 
-
 //for looping detection
-for(let i=0;i<neighColorCount[0].nIndex.length;i++){
+for(let i=0;i<parseInt(neighColorCount[0].nIndex.length*.5);i++){
 nIndexString+=neighColorCount[0].nIndex[i]+' ';
 }//i loop
 
 chunkSolveString+=vertices[v].i+' '+nIndexString;
 allSolvesString+=vertices[v].i+' '+nIndexString;
+
 
 solveCounter++;
 if(solveCounter==2){
@@ -2722,15 +3086,12 @@ solveCounter=0;
 let regEx=new RegExp(chunkSolveString,'g');
 let matchCount=(allSolvesString.match(regEx)||[]).length;
 
-if(matchCount>1){
-loopingDetected=true;
-}
+if(matchCount>1){loopingDetected=true;}
 
 chunkSolveString='';
 nIndexString='';
 }//end if solveCounter greater than
 //end looping detection
-
 }//isThere neighColorCount
 }//end if .c==4
 
@@ -2738,17 +3099,13 @@ nIndexString='';
 if(v==vertices.length-1&&(!stillSearching||tripleCheck)){
 
 lastSearcher=[];
-foundUnsolved=false;
+let foundUnsolved=false;
 
 for(let i=0;i<pairArr.length;i++){
 if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
 if(
-(vertices[pairArr[i][0]].c==
-vertices[pairArr[i][1]].c)
-||
-(vertices[pairArr[i][0]].c==4)
-||
-(vertices[pairArr[i][1]].c==4)
+vertices[pairArr[i][0]].c==
+vertices[pairArr[i][1]].c
 ){
 
 vertices[pairArr[i][0]].searching=true;
@@ -2757,8 +3114,6 @@ lastSearcher.push(vertices[pairArr[i][0]].i);
 lastSearcher.push(vertices[pairArr[i][1]].i);
 vertices[pairArr[i][0]].c=0;
 vertices[pairArr[i][1]].c=0;
-
-
 
 solveRemainingPass++;
 foundUnsolved=true;
@@ -2777,7 +3132,11 @@ tripleCheck=true;}
 }//if v==vertices.length-1
 //end solve remaining same colored pairs
 
+
+
+
 }//end v loop
+
 
 for(let v=0;v<vertices.length;v++){
 vertices[v].searching=false;
@@ -2787,24 +3146,46 @@ vertices[v].searching=true;
 }
 }//end s loop
 
+
+
 if(v==vertices.length-1){
 
-el('tester').scrollTop=el('tester').scrollHeight;
 
-if(stillSearching==false){ //solved
-endTime=Date.now();
-deltaTime=endTime-startTime;
-if(showSolving||stepping){showMessage('All Solved',2000);
+if((showSolving||solving)&&stillSearching&&!pauser&&showSolvingTime){
+updateSolveData();
+}
+
+
+if(stillSearching==false){
+
+
+if(solving){
+updateSolveData();
+solved=true;
+solveButtonStatus();
+if(!showSolvingTime){
+showMessage('Solved in: '+totalSolveTime+' ms',2000);
+}else{
+updateSolveData();
+}
+}//if(solving){
+
+solved=true;
+
+if(showSolving||stepping){
+updateSolveData();
+solved=true;
+if(!showSolvingTime){
+showMessage('All Solved',2000);
+}else{
+updateSolveData();
+}
 stepping=false;
 }
-if(solving){
-showMessage('Solved in: '+deltaTime+' ms',2000);
-solving=false;solveButton();
-el('solve').style.backgroundColor='#dbedff';
-}
-rColorGraphDone=false;
-solved=true;
-animSV=0;
+
+
+pauser=false;
+solving=false;
 showSolving=false;
 showSolvingStatus();
 pairString='';
@@ -2816,38 +3197,67 @@ nIndexString='';
 solveRemainingPass=0;
 tripleCheck=false;
 
-
 render();
 
 return;
 }else if(stillSearching==true){
-if(numSolves==40){
-animSV=0;
-//rColorGraph();
-}else if(numSolves==100){
-//alert('still solving after numSolves:'+numSolves);
+
+if(numSolves==100){
 tripleCheck=false;
 checkCounter=0;
-}else if(numSolves>5000){
+}else if(numSolves==100000000){
+
 alert('still solving after numSolves:'+numSolves+' so...returning.');
 return;
 }
 
+
 if(!showSolving&&!pauser&&!stepping){
+
+
+try{
+
+if(numSolves%100==0){
+clearTimeout(solveTimer);
+solveTimer=setTimeout(`
+recursiveNeighborSolver();
+render();
+`,1);
+}else{
 recursiveNeighborSolver();
 }
+
+}catch(error){
+clearTimeout(solveTimer);
+alert(error.message);
+return;
+
+if(error instanceof RangeError && error.message.includes("Maximum call stack size exceeded")){
+maxCallStackSizeExceeded=true;
+alert("Maximum call stack size exceeded");
+return;
+}//if(error 
+}//}catch(error){
+
+}//if(!showSolving&&!pauser&&!stepping){
 }//if stillSearching
 }//if(v==vertices.length-1){
 }//end v loop
 }//end recursiveNeighborSolver
 
 
+
 function showMessage(messageString,time){
 hideMessage(messageTimer);
 el('messageHolder').style.display='block';
 da('message',messageString);
+let rect=el('messageHolder').getBoundingClientRect();
+let width=rect.width;
+el('messageHolder').style.left=
+(cW*.5-width*.5)+'px';
 messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
 }//end show message
+
 
 function hideMessage(timerId){
 clearTimeout(timerId);
@@ -2855,27 +3265,6 @@ el('messageHolder').style.display='none';
 }//hide message
 
 
-
-
-function reSolverReset(){
-solving=false;
-solved=true;
-animSV=0;
-showSolving=false;
-pauser=false;
-showSolvingStatus();
-pairString='';
-numSolves=0;
-solveCounter=0;
-chunkSolveString='';
-loopingDetected=false;
-nIndexString='';
-solveRemainingPass=0;
-tripleCheck=false;
-pairString='';
-da('tester','');
-allSolvesString='';
-}//end resolver reset
 
 
 
@@ -2990,8 +3379,12 @@ if(pointCounter>=numPoints){break;}
 
 
 vertScaler();
-
 sortByNeighborCount();
+
+nativeVertOrder=[...vertices];
+nativePairArr=[...pairArr];
+
+
 if(!showSolving){
 render();
 }
@@ -3093,7 +3486,7 @@ render();
 }//sort2D
 
 
-function sortOutIn(outIn){
+function sortRadial(outIn){
 let outInVerts=[...vertices];
 let sumX=0;
 let sumY=0;
@@ -3133,8 +3526,48 @@ updatePairArr(vertices);
 vertScaler(); 
 sortByNeighborCount();
 render();
-}//sortOutsideIn
+}//sortRadial
 
+
+
+
+function sorterByNeigh(){
+sortedByNeighCount=[...vertices];
+sortedByNeighCount.sort((a,b)=>b.nCount-a.nCount);
+vertices=[...sortedByNeighCount];
+
+if(delaunay){
+for(let i=0;i<vertices.length;i++){
+triangles=triangulate(vertices);
+}//i loop 
+}//if(delaunay){
+
+updatePairArr(vertices);
+vertScaler(); 
+sortByNeighborCount();
+render();
+}//sorterByNeigh
+
+
+
+
+function sorterSwitch(){
+if( vertSortType!=''){
+if(vertSortType=='random'){
+shuffleRandomVertices();
+}else if(vertSortType=='sort2D'){
+sort2D();
+}else if(vertSortType=='native'){
+restoreNativeVertOrder();
+}else if(vertSortType=='outIn'){
+sortRadial('outIn');
+}else if(vertSortType=='inOut'){
+sortRadial('inOut');
+}else if(vertSortType=='neighs'){
+sorterByNeigh();
+}
+}//if( vertSortType!=''){
+}//sorterSwitch
 
 
 
@@ -3411,7 +3844,9 @@ ci++;
 });//end vertices foreach
 
 //testVars("fonter",fonter,"scaleFactor",scaleFactor);
-
+if(loadDataFileNameAtStart){animInit();
+loadDataFileNameAtStart=false;
+}
 }//end render
 
 
@@ -3847,9 +4282,9 @@ case '5':
 deleteVertButtonActions(event);
 break;
 case '6':
-streamSolveCurrentButtonActions(event);
+
 case '7':
-streamSolveRandomButtonActions(event);
+
 break;
 case 'r':
 rotateButtonActions(event);
