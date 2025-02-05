@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-<meta name="viewport" content="width=1350px,initial-scale=.25"></meta>
+<meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
 <!--<script src="redirectToDesktop.js"></script>-->
 <style>
 .b{
@@ -651,15 +651,13 @@ el(id).onmousedown=function(event){func(event);}}
 }
 
 
-
-var ww=window.innerWidth;
-var hh=window.innerHeight;
 var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
-var cW;
-var cH;
+var cW,cH,ww,hh;
 
 function canvSetSize(){
+ww=window.innerWidth;
+hh=window.innerHeight;
 canv.width=window.innerWidth;
 canv.height=window.innerHeight;
 cW=canv.width;
@@ -668,10 +666,16 @@ canv.style.width=cW+"px";
 canv.style.height=cH+"px";
 canv.style.left=(ww/2-cW/2)+'px';
 canv.style.touchAction='none';
+
+if(scaleFactor!=1){
+vertSize=vertSize*scaleFactor;
+scaleFactor=1;
+}
+
 }//end canvSetSize
 
-canvSetSize(); 
 
+canvSetSize();
 
 el('data').style.width=ww*.93+'px';
 el('dataHeading').style.width=ww*.93+'px';
@@ -1209,15 +1213,24 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 
 function activeButton(buttonId){
+el(buttonId).style.backgroundColor='#dbedff';
+
 if(lastButton=='zoomInButton'||lastButton=='zoomOutButton'||lastButton=='fitButton'||lastButton=='panButton'){
 el(lastButton).style.backgroundColor='#eeeeee';
-}else{
-el(lastButton).style.backgroundColor='white';
+}else if(lastButton!=buttonId&&!((solving&&lastButton=='solve')||(showSolving&&lastButton=='showSolving'))){
+el(lastButton).style.backgroundColor='#ffffff';
 }
 
-el(buttonId).style.backgroundColor='#dbedff';
-if(lastButton!=buttonId){
-el(lastButton).style.backgroundColor='#ffffff';
+
+if(lastButton=='solve'&&buttonId=='showSolving'){
+el('solve').style.backgroundColor='#ffffff';
+el('solve').value='Solve';
+}
+
+
+if(lastButton=='showSolving'&&buttonId=='solve'){
+el('showSolving').style.backgroundColor='#ffffff';
+el('showSolving').value='AnimSolving';
 }
 
 savedButtonId=buttonId;
@@ -1243,11 +1256,6 @@ gettingLinkStart=false;
 endConnecting=false;
 }//if(lastButton!='link'){
 
-/*
-if(solving&&buttonId!='solve'){
-el('solve').style.backgroundColor=B.blue;
-}
-*/
 }//activeButton
 
 
@@ -2166,6 +2174,7 @@ replaceDownEventById('buttonHolder',buttonHolderActions);
 
 
 
+
 function gen2ButtonActions(event){
 event.preventDefault();
 activeButton('gen2Button');
@@ -2179,7 +2188,6 @@ function addVertsAtTriangleCenters2(){
 delaunay=true;
 for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-sortByNeighborCount();
 }//i loop
 delaunay=false
 for(i=0;i<triangles.length;i++){
@@ -2543,28 +2551,14 @@ if(delaunay){
 pairArr=[];
 segPoints=[];
 settingSegPoints=[];
-
 for(let i=0;i<triangles.length;i++){
 pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
 pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
 pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
 }//i loop
-
-
 }//if(delaunay)
-/*
-if(!delaunay&&isThere(foundTriangles)){
-pairArr=[];
-for(let i=0;i<foundTriangles.length;i++){
-pairArr.push([foundTriangles[i].i0, foundTriangles[i].i1]);
-pairArr.push([foundTriangles[i].i0, foundTriangles[i].i2]);
-pairArr.push([foundTriangles[i].i1, foundTriangles[i].i2]);
-}//i loop
-}//if(!delaunay&&isThere(foundTriangles)){
-*/
 removeDuplicatePairs();
 }//end getVertexPairs
-
 
 
 //remove duplicate pairs
@@ -2589,7 +2583,6 @@ segPoints.splice(i,1);
 }//end isThere
 }//end j loop
 }//end i loop
-
 }//removeDuplicatePairs
 
 
@@ -2619,14 +2612,13 @@ vertices[v].nCount=vertices[v].n.length;
 
 function sortByNeighborCount(){
 getNeighbors();
-
 sortedVerts=[];
 for(let v=0;v<vertices.length;v++){
 sortedVerts[v]={nCount:vertices[v].nCount,i:vertices[v].i,n:vertices[v].n};
 }
 sortedVerts.sort((a,b)=>b.nCount-a.nCount);
-
 }//end sortByNeighborCount
+
 
 
 
@@ -3656,6 +3648,9 @@ loadDataFileNameAtStart=false;
 
 
 
+
+
+
 //Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
 
 function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex){ 
@@ -3671,7 +3666,7 @@ this.isFlexible=isFlexible;
 this.nativeIndex=nativeIndex;
 }//end Vertex
 
-      
+
 //Triangle object constructor
 //returns {v0:Vertex, v1:Vertex, v2:Vertex, center:Vertex, radius:number, radius_squared:number}
 
@@ -4153,7 +4148,6 @@ render();
 
 
 
-
 function vertScaler(){
 
 let miny=100000;
@@ -4218,8 +4212,7 @@ vertSize=Math.sqrt(graphArea*targetRatio/totalNumVerts)*.5;
 
 scaleFactor=vertSize*.03;
 }//end vertScaler
-
-
+ 
 
 
 
@@ -4309,17 +4302,28 @@ canv.focus();
 el('expander').style.visibility='hidden';
 }//end zoomer()
 
-
-
 /*
-function simulateResolution(width,height){
-window.innerWidth=width;
-window.innerHeight=height;
-window.dispatchEvent(new Event('resize'));
-}//simulateResolution
-//simulateResolution(1024, 768);
-alert(window.screen.width+'------'+window.screen.height+'-----'+window.innerWidth+'----'+window.innerHeight);
+function resizeCanvas() {
+  const canvas = document.getElementById('myCanvas');
+  const dpr = window.devicePixelRatio;
+
+  const width = 1280; // Test resolution
+  const height = 720;
+
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Redraw canvas content
+}
+
+resizeCanvas();
 */
+
 </script>
 
 </body>

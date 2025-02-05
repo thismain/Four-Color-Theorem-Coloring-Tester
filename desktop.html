@@ -204,6 +204,7 @@ var selectedLineWidth=40;
 var waitFilenamesInt=0;
 var waitFileLoad=0;
 var waitGraphDataInt=0;
+var fonter=30;
 
 function zoom(elm,scale,w,h){
 elm.style.transform="scale("+scale+")";
@@ -757,18 +758,25 @@ allSolvesString='';
 //green=#daf5e4
 var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 //bcf5da
-
-
 function activeButton(buttonId){
+el(buttonId).style.backgroundColor='#dbedff';
+
 if(lastButton=='zoomInButton'||lastButton=='zoomOutButton'||lastButton=='fitButton'||lastButton=='panButton'){
 el(lastButton).style.backgroundColor='#eeeeee';
-}else{
-el(lastButton).style.backgroundColor='white';
+}else if(lastButton!=buttonId&&!((solving&&lastButton=='solve')||(showSolving&&lastButton=='showSolving'))){
+el(lastButton).style.backgroundColor='#ffffff';
 }
 
-el(buttonId).style.backgroundColor='#dbedff';
-if(lastButton!=buttonId){
-el(lastButton).style.backgroundColor='#ffffff';
+
+if(lastButton=='solve'&&buttonId=='showSolving'){
+el('solve').style.backgroundColor='#ffffff';
+el('solve').value='Solve';
+}
+
+
+if(lastButton=='showSolving'&&buttonId=='solve'){
+el('showSolving').style.backgroundColor='#ffffff';
+el('showSolving').value='AnimSolving';
 }
 
 savedButtonId=buttonId;
@@ -794,11 +802,6 @@ gettingLinkStart=false;
 endConnecting=false;
 }//if(lastButton!='link'){
 
-/*
-if(solving&&buttonId!='solve'){
-el('solve').style.backgroundColor=B.blue;
-}
-*/
 }//activeButton
 
 
@@ -2375,7 +2378,6 @@ function addVertsAtTriangleCenters2(){
 delaunay=true;
 for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-sortByNeighborCount();
 }//i loop
 delaunay=false
 for(i=0;i<triangles.length;i++){
@@ -2404,7 +2406,7 @@ segPoints.push(null);
 }//i loop
 
 vertScaler();
-sortByNeighborCount(); 
+sortByNeighborCount();
 render();
 delaunay=false;
 modified=true;
@@ -2736,20 +2738,14 @@ if(delaunay){
 pairArr=[];
 segPoints=[];
 settingSegPoints=[];
-
 for(let i=0;i<triangles.length;i++){
 pairArr.push([triangles[i].v0.i, triangles[i].v1.i]);
 pairArr.push([triangles[i].v0.i, triangles[i].v2.i]);
 pairArr.push([triangles[i].v1.i, triangles[i].v2.i]);
 }//i loop
-
-
 }//if(delaunay)
-
 removeDuplicatePairs();
 }//end getVertexPairs
-
-
 
 
 
@@ -2857,20 +2853,6 @@ recursiveNeighborSolver();
 render();
 }//end stepper
 
-
-
-
-//called once onload
-function animInit(){
-cancelAnimationFrame(animId);
-animId=0;
-stepping=false;
-solved=false;
-//showSolvingStatus();
-pauser=false;
-animate();
-//setTimeout("activeButton('showSolving');showSolvingButton();",100);
-}//end animInit
 
 
 
@@ -3338,7 +3320,6 @@ pairArr=[];
 segPoints=[];
 settingSegPoints=[];
 pairString='';
-//da('tester','');
 numSolves=0;
 solveCounter=0;
 chunkSolveString='';
@@ -3354,6 +3335,7 @@ showSolving=false;
 linkStart=-1;
 linkEnd=-1;
 delaunay=true;
+pauser=false;
 
 let radius=diam*.5;
 let offset=.5*radius;
@@ -3572,7 +3554,7 @@ sorterByNeigh();
 
 
 
-var fonter=30;
+
 function render(){
 for(let v=0;v<vertices.length;v++){
 vertices[v].i=v;}
@@ -3852,19 +3834,24 @@ loadDataFileNameAtStart=false;
 
 
 
+
 //Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
 
-function Vertex(x,y,c,i,n,nCount,searching){ 
+function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex){ 
 this.x=x;
 this.y=y;
 this.c=c;//color
 this.i=i;//index
-this.n=n;//neighbors
+this.n=n;//array of neighbors
 this.nCount=nCount;//neighbors count
 this.searching=searching;
+this.inSameColorPair=inSameColorPair;
+this.isFlexible=isFlexible;
+this.nativeIndex=nativeIndex;
 }//end Vertex
 
-      
+
+
 //Triangle object constructor
 //returns {v0:Vertex, v1:Vertex, v2:Vertex, center:Vertex, radius:number, radius_squared:number}
 
