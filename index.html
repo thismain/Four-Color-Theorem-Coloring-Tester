@@ -49,7 +49,7 @@ var serverAddress='http://moygen.rf.gd/graph2/';
 var showSolving=true;
 var streamSolving=true;
 var loading=false;
-var loadDataFileNameAtStart=true;
+var loadDataFileNameAtStart=false;
 var dataFileName="pentagon.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
@@ -59,9 +59,9 @@ streamSolving=true;
 loading=true;
 numPoints=60;
 }else{
-showSolving=true;
-streamSolving=true;
-loading=true;
+showSolving=false;
+streamSolving=false;
+loading=false;
 numPoints=60;
 }
 
@@ -2189,6 +2189,7 @@ delaunay=true;
 for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
 }//i loop
+sortByNeighborCount();
 delaunay=false
 for(i=0;i<triangles.length;i++){
  
@@ -2222,7 +2223,6 @@ delaunay=false;
 modified=true;
 hideMessage(messageTimer);
 }//addVertsAtTriangleCenters2
-
 
 
 
