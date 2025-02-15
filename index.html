@@ -303,13 +303,13 @@ var waitGraphDataInt=0;
 </script>
 
 
-<div id="sortControls" style="font-size:35px;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:15px;padding-right:15px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:center;line-height:60px;">Sort vertices to change solve order:
+<div id="sortControls" style="font-size:35px;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:0px;padding-right:15px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:center;line-height:60px;">Sort vertices to change solve order:
 <br>
 
-<div id="sortLabelShowSolve" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;"> Show Solve:
+<div id="sortLabelShowSolve" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;padding-left:6px;margin-right:-16px;">&nbsp;Anim:
 </div> 
 
-<div style="padding:8px;display:inline-block;">
+<div style="padding-bottom:8px;display:inline-block;">
  
 <input class="s" id="shuffleRandomButton" value="Random" type="button">
 
@@ -322,12 +322,12 @@ var waitGraphDataInt=0;
 <input class="s" id="sortInOutButton" value="InOut" type="button">
 
 <input class="s" id="sortByNeighborCountButton" value="Neighs" type="button">
+</div><br>
+
+<div id="sortLabelTimedSort" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;padding-left:6px;margin-right:-16px;">Timed:
 </div>
 
-<div id="sortLabelTimedSort" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right">Timed Sort:
-</div>
-
-<div style="padding:8px;display:inline-block;">
+<div style="padding:0px;display:inline-block;">
  
 <input class="s" id="shuffleRandomTimed" value="Random" type="button">
 
@@ -466,7 +466,7 @@ Filename:
 <div id="testerHolder" style="font-size:25px;font-family:monospace;display:none;color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000000000;border:6px solid white;overflow:auto;padding:20px;">
 </div>
 
-<input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:60px;right:-20px;font-size:40px;color:black;padding:2px;height:50px;width:50px;background-color:#dddddd;border:2px solid #bbbbbb;position:absolute;z-index:1000000000000;font-family:monospace;display:none;">
+<input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:60px;right:-20px;font-size:40px;color:black;padding:0px;height:50px;width:50px;background-color:#dddddd;border:4px solid #bbbbbb;position:absolute;z-index:1000000000000;font-family:monospace;display:none;">
 
 
 
@@ -519,9 +519,9 @@ Filename:
 <input type="button" value="reload" id="reloadGraphButton" class="b" style="display:none;">
 
 
-<input type="button" value="Tester" id="testerButton" class="b" title="[Y]" style="display:none;">
+<input type="button" value="Tester" id="testerButton" class="b" title="[Y]" style="display:inline-block;">
 
-
+ 
 <input type="button" value="Console" id="consoleButton" class="b" title="[O]" style="display:inline-block">
 
 
@@ -541,7 +541,7 @@ Output:<br>
 </div>
 
 
-<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;" value="x">
+<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;" value="x">
 
 </div>
  
@@ -609,8 +609,13 @@ Number of Vertices:
 
 </div>
 
-
+<!--
 <div id="fpsInputDiv" style="white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:50px;visibility:hidden;"> 
+-->
+
+
+<div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;"> 
+
 
 
 FPS (1-60):
@@ -773,7 +778,7 @@ var savedStringVars='';
 //testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
 function testVars(...args){
 let stringVars='';
-for(let i=0;i<args.length-2;i++){
+for(let i=0;i<args.length;i++){
 if(i==0||i%2==0){
 stringVars+=args[i]+': '+args[i+1]+'<br>';
 }
@@ -942,6 +947,7 @@ vertSize=vertSize*scaleFactor;
 scaleFactor=1;
 }
 
+
 //`/script><script src='modStyles.js'>/script><script`
 
 
@@ -957,6 +963,10 @@ var bhRect=el('buttonHolder').getBoundingClientRect();
 var bhHeight=bhRect.height;
 var bhTop=bhRect.top;
 
+var bhStyle=getComputedStyle(el('buttonHolder'));
+var bhStyleHeight=parseInt(bhStyle.height);
+
+
 function modStyles(){
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww+'px';
@@ -965,6 +975,9 @@ els('buttonHolderInner').width=ww+'px';
 bhRect=el('buttonHolder').getBoundingClientRect();
 bhHeight=bhRect.height;
 bhTop=bhRect.top;
+
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleHeight=parseInt(bhStyle.height);
 
 
 els('aboutDiv').width=ww*1.02+'px';
@@ -979,6 +992,8 @@ els('shortcutKeysHeading').width=ww*.91+'px';
 els('messageHolder').left=ww*.5-220+'px';
 els('messageHolder').top=hh*.23+'px';
 els('messageHolder').border='8px solid black';
+
+
 
 
 
@@ -1008,16 +1023,14 @@ els('expander').height='120px';
 els('message').fontSize='60px';
 
 els('sortControls').paddingLeft='0px';
-els('sortControls').left='10px';
-els('sortControls').paddingRight='80px';
+els('sortControls').left='0px';
+els('sortControls').paddingRight='110px';
 els('sortControls').paddingTop='20px';
 els('sortControls').paddingBottom='40px';
 els('sortControls').fontSize='45px';
-els('sortControls').lineHeight='75px';
-
+els('sortControls').lineHeight='105px';
 els('sortLabelShowSolve').fontSize='30px';
 els('sortLabelTimedSort').fontSize='30px'; 
-
 els('sortsClose').fontSize='40px';
 
 els('panZoomClose').fontSize='30px';
@@ -1030,7 +1043,6 @@ els('consoleInputDiv').fontSize='50px';
 els('consoleInput').fontSize='40px';
 els('consoleEnterButton').fontSize='40px';
 els('consoleEnterButton').right='40px';
-
 els('consoleCloser').width='70px';
 els('consoleCloser').height='70px';
 els('consoleCloser').bottom='40px';
@@ -1050,13 +1062,18 @@ els('aboutCloser').padding='2px';
 els('selectGraph').fontSize='40px';
 els('selectGraphOption').fontSize='40px';
 els('closeSelect').fontSize='40px';
-els('fpsInputDiv').top=el('buttonHolder').getBoundingClientRect().top-260+'px'; 
-zoom(el('fpsInputDiv'),2,60,4);
-centerDiv('fpsInputDiv');
-els('numVertsInputDiv').top=el('buttonHolder').getBoundingClientRect().top-260+'px';
+
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleHeight=parseInt(bhStyle.height);
+
+el('fpsInputDiv').style.bottom=bhStyleHeight+160+'px';
+el('numVertsInputDiv').style.bottom=bhStyleHeight+160+'px';
+el('filenameInputDiv').style.bottom=bhStyleHeight+260+'px';
+
 zoom(el('filenameInputDiv'),2,80,12);
-els('filenameInputDiv').top=el('buttonHolder').getBoundingClientRect().top-560+'px';
 zoom(el('numVertsInputDiv'),2,80,4);
+zoom(el('fpsInputDiv'),2,60,4);
+
 els('testerHolder').width=ww*.91+'px';
 
 els('testerHolder').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-100+'px';
@@ -1090,12 +1107,15 @@ els('consoleCloser').fontSize='36px';
 els('selectGraph').fontSize='30px';
 els('selectGraphOption').fontSize='30px';
 els('closeSelect').fontSize='30px';
-els('fpsInputDiv').top=el('buttonHolder').getBoundingClientRect().top-110+'px';
-centerDiv('fpsInputDiv');
-els('numVertsInputDiv').top=el('buttonHolder').getBoundingClientRect().top-110+'px';
-els('filenameInputDiv').top=el('buttonHolder').getBoundingClientRect().top-170+'px';
-els('testerHolder').width=ww*.87+'px';
 
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleHeight=parseInt(bhStyle.height);
+
+el('fpsInputDiv').style.bottom=bhStyleHeight+60+'px';
+el('numVertsInputDiv').style.bottom=bhStyleHeight+60+'px';
+el('filenameInputDiv').style.bottom=bhStyleHeight+90+'px';
+
+els('testerHolder').width=ww*.87+'px';
 els('testerHolder').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-100+'px';
 
 els('testerHolder').fontSize='25px';
@@ -1735,7 +1755,7 @@ replaceDownEventById('streamSolve',streamSolvingActions);
 
 
 function solveButton(){
-activeButton('solve');
+//activeButton('solve');  
 
 if(!pauser&&solving){
 el('solve').value='Solve';
@@ -1769,13 +1789,13 @@ el('solve').style.backgroundColor=B.blue;
 function solveActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('solve');
-setTimeout(`
+//setTimeout(`
 if(savedLastButton!='solve'){
 replaceDownEventById('canvas',solveActions);
 }
 
 
-if(pauser){pauser=false;}
+if(!solving&&pauser){pauser=false;}
 
 if(!solving){
 if(streamSolving){streamSolvingActions();}
@@ -1799,7 +1819,6 @@ showSolving=false;
 
 maxCallStackSizeExceeded=false;
 
-
 }else if(solving&&!pauser&&stepping){
 
 stepping=false;
@@ -1809,6 +1828,7 @@ solving=true;
 pauser=true;
 endSolveTime[numPauses]=Date.now();
 numPauses++;
+
 }else if(solving&&pauser){
 pauser=false;
 }
@@ -1838,10 +1858,10 @@ startSolveTime.push(Date.now());
 endSolveTime.push(Date.now());
 if(showSolvingTime){updateSolveData();}
 recursiveNeighborSolver();
-}//if(solving&&!pauser){
+}//if(solving&&!pauser
 
 solveButton();
-`,20);
+//`,20);
 }//end solveActions
 replaceDownEventById('solve',solveActions);
 
@@ -2255,7 +2275,7 @@ function fpsActions(event){
 activeButton('fpsId');
 el('enterFPS').value=parseInt(framesPerSecond);
 showHideV('fpsInputDiv');
-//centerDiv('fpsInputDiv');
+centerDiv('fpsInputDiv');
 }//fpsActions
 replaceDownEventById('fpsId',fpsActions);
 
