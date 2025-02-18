@@ -1,8 +1,38 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
-<!--<script src="redirectToMobile.js"></script>-->
+<script>
+var isMobile=false;
+</script>
+<script src="detectMobile.js"></script>
 <style>
+.bm{
+font-size:40px;
+font-family:monospace;
+visibility:visible;
+position:relative;
+background-color:#ffffff;
+padding:30px;
+border:1px solid #000000;
+margin:3px;
+margin-left:-1px;
+margin-right:-1px;
+}
+.tm{
+width:30%;
+border-bottom:1px solid #cdcdcd;
+margin:0px;
+font-size:40px;
+}
+.tm2{
+width:70%;
+border-bottom:1px solid #cdcdcd;
+margin:0px;
+padding:4px;
+padding-left:0px;
+font-size:40px;
+}
+
 .b{
 font-size:18px;
 font-family:monospace;
@@ -15,9 +45,6 @@ margin-right:-4px;
 margin-left:-4px;
 display:inline-block;
 }
-
-
-
 .t{
 width:25%;
 border-bottom:1px solid #cdcdcd;
@@ -29,26 +56,83 @@ width:75%;
 border-bottom:1px solid #cdcdcd;
 margin:0px;
 padding:4px;
-padding-left:50px;
+padding-left:0px;
 font-size:22px;
 }
 
-.container::-webkit-scrollbar{display:none;}/* Safari and Chrome */
-.container{-ms-overflow-style:none; /* Internet Explorer 10+ */
-scrollbar-width: none;  /* Firefox */}
+.s{
+padding:10px;
+font-size:20px;
+display:inline-block;
+width:110px;
+
+}
+
+.sm{
+padding:20px;
+font-size:30px;
+display:inline-block;
+width:150px;
+}
+
+
+.pzm{
+display:inline-block;
+font-size:60px;
+padding:20px;
+width:200px
+}
+
+.pz{
+display:inline-block;
+font-size:20px;
+padding:20px;
+width:100px;
+}
+
+
+.vs{
+display:inline-block;
+font-size:40px;
+padding:10px;
+width:150px;
+}
+
+
+.vsm{
+display:inline-block;
+font-size:60px;
+padding:20px;
+width:200px;
+}
+
+html{
+-moz-text-size-adjust:none;
+-webkit-text-size-adjust:none;
+text-size-adjust:none;
+}
+
+.container::-webkit-scrollbar{display:none;}
+.container{
+-ms-overflow-style:none;
+scrollbar-width:none;
+}
 
 </style>
 </head>
-<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;">
+<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:hidden;display:block;">
 <script>
 var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
-var usePHP=true;
+var usePHP=true; 
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://0.0.0.0:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
+
+var fileContent=null;
+var graphData='';
 var showSolving=false;
 var stepping=false;
 var solved=false;
@@ -56,7 +140,8 @@ var solving=false;
 var pauser=false;
 var streamSolving=true;
 var loading=false;
-var loadDataFileNameAtStart=false;
+var setRandomVerts=false;
+var loadDataFileNameAtStart=!setRandomVerts;
 var dataFileName="pentagon.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
@@ -68,14 +153,23 @@ numPoints=60;
 }else{
 showSolving=false;
 streamSolving=false;
-loading=false;
+loading=true;
 numPoints=60;
 }
 
+
+var vertSize=35;
+var fonter=30;
+var diam=110;
+var randOnlySome=.29;
+/*
 var diam=100;
+var randOnlySome=.29;
 var vertSize=19;
-var maxVertSize=25;
-var minVertSize=13;
+var fonter=30;
+*/
+//var maxVertSize=25;
+//var minVertSize=13;
 
 var scaleFactor=1;
 var EPSILON=1.0e-6;
@@ -100,7 +194,7 @@ var backgroundColor='#f5f5f5';
 var numSavedGraphs=0;
 var graphFileNames=[];
 var dataSend='';
-var dataReceive=null;
+var finishedSavingFile=false;
 var getDataInterval=0;
 var stringArr=[];
 var pairArr=[];
@@ -112,7 +206,6 @@ var curvedLinkEnd=-1;
 var gettingCurvedLinkStart=false;
 var gettingCurvedLinkEnd=false;
 var tapMessageShown=false;
-var setRandomVerts=true;
 var sortedVerts=[];
 var counter=0;
 var colorSavedGraph=false;
@@ -133,7 +226,7 @@ var loopingDetected=false;
 var solveRemainingPass=0;
 var loopCounter=0;
 var tripleCheck=false;
-var framesPerSecond=30;
+var framesPerSecond=120;
 var stillSearching=false;
 var showNumNeigh=false;
 var animId=0;
@@ -193,91 +286,74 @@ var startConnecting=false;
 var endConnecting=false;
 var delaunay=true;
 var moveRaw=false;
-var buildTimer=0;clearTimeout(buildTimer);
 var solveTimer=0;clearTimeout(solveTimer);
-var numVertsTimer=0;clearTimeout(numVertsTimer);
 var animateTimer=0;clearTimeout(animateTimer);
 var typing=false;
 var resizeCanv=false;
 var selectedLineWidth=40;
+var modifiedGraph=false;
 
 var waitFilenamesInt=0;
 var waitFileLoad=0;
 var waitGraphDataInt=0;
-var fonter=30;
 
-function zoom(elm,scale,w,h){
-elm.style.transform="scale("+scale+")";
-elm.style.transformOrigin="top left";
-elm.style.width=(w/scale)+"%";
-elm.style.height=(h/scale)+"%";
-}//end zoom
+var listNeighsFontSize=25;
+var listNeighsLineHeight=30;
 
-
+//green=#daf5e4
+var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
+//bcf5da
 
 </script>
 
-<!--</div>-->
 
-<div id="testerHolder" style="background-color:black;position:absolute;left:40px;top:40px;z-index:100000000000;border:6px solid white;display:none;height:70%;overflow:auto;">
-
-<div id="tester" style="color:#00ff00;font-size:25px;word-wrap:break-word;padding:50px;padding-bottom:0px;padding-top:20px;overflow:auto;">
-</div>
-<div id="testerCloser" style="text-align:center;color:#bbbbbb;bottom:0px;right:0px;font-size:20px;color:black;padding:10px;height:20px;width:20px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
-</div>
-
-
-
-
-<div id="shuffleControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:20px;padding-right:50px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:right;">
-
-<div style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;"> Show Solve:</div>
-
-<div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomButton" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="restoreNativeButton" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="sort2DButton" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-
-<input id="sortOutInButton" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="sortInOutButton" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-
-<input id="sortByNeighborCountButton" value="Neighs" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
-</div>
-
+<div id="sortControls" style="font-size:35px;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:0px;padding-right:15px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:center;line-height:60px;">Sort vertices to change solve order:
 <br>
-<div style="display:inline-block;font-size:20px;font-family:monospace;">Timed Sort:</div>
 
-<div style="padding:8px;display:inline-block;">
-<input id="shuffleRandomTimed" value="Random" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<div id="sortLabelShowSolve" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;padding-left:6px;margin-right:-16px;">&nbsp;Anim:
+</div> 
 
-<input id="restoreNativeTimed" value="Native" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<div style="padding-bottom:8px;display:inline-block;">
+ 
+<input class="s" id="shuffleRandomButton" value="Random" type="button">
 
-<input id="timedSort2D" value="Sort2D" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<input class="s" id="restoreNativeButton" value="Native" type="button">
 
-<input id="timedSortOutIn" value="SortOutIn" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<input class="s" id="sort2DButton" value="2D" type="button">
 
-<input id="timedSortInOut" value="SortInOut" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<input class="s" id="sortOutInButton" value="OutIn" type="button">
 
-<input id="timedSortByNeighborCount" value="Neighs" type="button" style="display:inline-block;font-size:20px;padding:10px;width:150px;">
+<input class="s" id="sortInOutButton" value="InOut" type="button">
 
-<input id="shuffleClose" value=" X " type="button"  style="display:inline-block;font-size:20px;padding:10px;position:absolute;right:0px;bottom:0px;">
+<input class="s" id="sortByNeighborCountButton" value="Neighs" type="button">
+</div><br>
+
+<div id="sortLabelTimedSort" style="display:inline-block;font-size:20px;font-family:monospace;text-align:right;padding-left:6px;margin-right:-16px;">Timed:
+</div>
+
+<div style="padding:0px;display:inline-block;">
+ 
+<input class="s" id="shuffleRandomTimed" value="Random" type="button">
+
+<input class="s" id="restoreNativeTimed" value="Native" type="button">
+
+<input class="s" id="timedSort2D" value="2D" type="button">
+
+<input class="s" id="timedSortOutIn" value="OutIn" type="button">
+
+<input class="s" id="timedSortInOut" value="InOut" type="button">
+
+<input class="s" id="timedSortByNeighborCount" value="Neighs" type="button">
+
+<input id="sortsClose" value=" X " type="button"  style="display:inline-block;font-size:30px;padding:10px;position:absolute;right:0px;top:0px;">
 </div>
 </div>
 
-
-<div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:60px;border:12px solid black;display:none;z-index:1000000;background-color:white;">
+<div id="messageHolder" style="position:absolute;left:450px;top:500px;padding:60px;border:8px solid black;display:none;z-index:1000000;background-color:white;">
 
 <div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:40px;">
 </div>
 </div>
-
-
-<iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
-</iframe>
 
 
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
@@ -342,7 +418,7 @@ elm.style.height=(h/scale)+"%";
 </td></tr>
 <tr><td class="t">[W] Toggle Fullscreen</td><td class="t2">Toggle Fullscreen
 </td></tr>
-<tr><td class="t">[Y] Tester Display</td><td class="t2">In the source javascript, use da('tester',variable); to overwrite tester; use daa... to append writes
+<tr><td class="t">[Y] Tester Display</td><td class="t2">In the source javascript, use da('testerHolder',variable); to overwrite tester; use daa... to append writes
 </td></tr>
 <tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
 </td></tr>
@@ -360,19 +436,32 @@ elm.style.height=(h/scale)+"%";
 </div>
 
 
-<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:100px;left:250px;">
+
+<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;bottom:0px;left:100px;">
  
-<select id="selectGraph" onchange="loadFile();" style="font-size:40px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
-<option style="font-size:40px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
+<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
+<option id="selectGraphOption" style="font-size:30px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
 </select>
 
-<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
 </div>
+
+<!--
+<div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;">
+
+<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:100px;left:50px;">
  
+<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
+<option id="selectGraphOption" style="font-size:30px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
+</select>
+
+<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+</div>
+-->
 
 
 
-<div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;top:200px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;border:1px solid black;display:none;height:100px">
+<div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;bottom:0px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;padding-top:20px;border:4px solid black;display:none;height:80px;">
 
 
 Filename:
@@ -387,12 +476,39 @@ Filename:
 </div>
 
 
+<div id="testerHolder" style="font-size:25px;font-family:monospace;display:none;color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000000000;border:6px solid white;overflow-y:auto;overflow-x:hidden;padding:20px;word-wrap:break-word;">
+</div> 
+
+<input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:60px;right:-20px;font-size:40px;color:black;padding:0px;height:50px;width:50px;background-color:#dddddd;border:4px solid #bbbbbb;position:absolute;z-index:1000000000000;font-family:monospace;display:none;">
+
+
+
+<div id="consoleInputDiv" style="z-index:10000000000;position:absolute;left:30px;top:30px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:30px;border:4px solid #000000;visibility:hidden;">
+ 
+Enter Javascript:
+<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(triangles)</textarea>
+<br>
+<input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
+<br>
+Output:<br>
+<div id="consoleScroller" style="width:100%;height:50%;display:block;font-size:30px;background-color:black;overflow:auto;">
+ 
+<div id="consoleOutput" style="margin:20px;font-size:30px;background-color:black;color:#00ff00;word-wrap:break-word;">
+
+ 
+</div>
+
+
+<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;" value="x">
+ 
+</div>
+</div>
+ 
 
 
 
 
-
-<div id="buttonHolder" style="text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:10px;overflow:hidden;display:block;touch-action:none;">
+<div id="buttonHolder" style="left:0px;margin:0px;text-align:left;white-space:wrap;z-index:1000;position:fixed;background-color:#ffffff;padding:6px;bottom:0px;overflow:hidden;display:block;touch-action:none;width:100%">
  
 <div id="buttonHolderInner" style="width:100%;">
  
@@ -429,7 +545,7 @@ Filename:
 <input id="neighs" type="button" value="Neighs" 
  class="b" title="[G]">
 
-<input type="button" value="Flexibles" id="flexiblesButton" class="b" title="[X]">
+<input type="button" value="Flexibles" id="flexiblesButton" class="b" title="[X]" style="display:none">
 
 <input id="dropRandom" type="button" value="Random" class="b">
 
@@ -441,23 +557,10 @@ Filename:
 <input type="button" value="reload" id="reloadGraphButton" class="b" style="display:none;">
 
 
-<input type="button" value="Tester" id="testerButton" class="b" title="[Y]" >
+<input type="button" value="Tester" id="testerButton" class="b" title="[Y]" style="display:inline-block;">
 
-
-<input type="button" value="Console" id="consoleButton" class="b" title="[O]">
-
-
-<div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:50px;top:20px;width:90%;font-size:40px;font-family:monospace;background-color:#ffffff;padding:15px;border:1px solid black;visibility:hidden;height:450px;overflow:auto;">
-
-<input id="consoleInput" type="text"  value="JSON.stringify(pairArr);" style="font-family:monospace;color:black;font-size:40px;border:1px solid black;display:inline-block;padding:15px;" size="35">
-
-<input id="consoleEnterButton" value="Enter" type="button" style="display:inline-block;font-size:45px;padding:15px;">
-
-<div id="consoler" style="width:100%;height:200px;display:block;font-size:30px;margin-top:12px;background-color:white;word-wrap:break-word;">Enter a Variable</div>
-
-<div id="consoleCloser" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-right:8px;padding-left:8px;padding-bottom:8px;height:20px;width:20px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
-</div>
-
+ 
+<input type="button" value="Console" id="consoleButton" class="b" title="[O]" style="display:inline-block">
 
 
 <input type="button" value="add" id="addButton"
@@ -480,95 +583,105 @@ Filename:
 
 <input id="vertSizeButton" type="button" value="VertSize" class="b" style="display:inline-block;">
 
-<input type="button" value="Sorts" id="shuffleButton" class="b" style="display:inline-block;">
+<input type="button" value="Sorts" id="sortsButton" class="b" style="display:inline-block;">
 
 <input type="button" value="genVerts" id="gen2Button" class="b">
 
 <input id="clear" type="button" value="Clear" class="b" title="[9]">
 
 
-<input id="keysButton" type="button" value="Keys" class="b" title="[K]" style="display:none;">
+<input id="keysButton" type="button" value="Keys" class="b" title="[K]">
+
+
+<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b" title="[]">
+
 </div><!--end buttonHolder Inner-->
-<div style="width:44px;"></div>
+
 </div><!--end buttonHolder Outer-->
 
 
 
 
-<input type="button" value="K" id="shortcuts"  style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:72px;z-index:1000000000;visibility:visible;width:40px;height:34px;margin:0px;" title="[K]">
+<input type="button" value="K" id="shortcuts"  style="color:#000000;text-align:center;right:4px;position:fixed;font-weight:bold;font-size:30px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:102px;z-index:1000000000;visibility:visible;width:50px;height:44px;margin:0px;display:block;" title="[K]">
  
-<input type="button" value="[]" id="fullscreen"  style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:16px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;right:0px;bottom:34px;z-index:1000000000;visibility:visible;width:40px;height:36px;margin:0px;vertical-align:top;" title="[W]">
-
-<input type="button" value="-" id="expander"  style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:0px;z-index:100000000000;visibility:visible;width:40px;height:32px;margin:0px;" title="[H]">
+<input type="button" value="[]" id="fullscreen"  style="color:#000000;text-align:center;right:4px;position:fixed;font-weight:bold;font-size:24px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:8px;border:1px solid #000000;bottom:52px;z-index:1000000000;visibility:visible;width:50px;height:44px;margin:0px;vertical-align:top;display:block;" title="[W]">
 
 
-<div id="numVertsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
+<input type="button" value="-" id="expander"  style="color:#000000;text-align:center;right:4px;position:fixed;font-weight:bold;font-size:20px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:6px;border:1px solid #000000;bottom:4px;z-index:100000000000;visibility:visible;width:50px;height:42px;margin:0px;" title="[H]">
 
-Number of Vertices: 
-<input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:70px;padding:10px"></input>
+<!--
+<input type="button" value="-" id="expander"  style="color:#000000;text-align:center;right:0px;position:fixed;font-weight:bold;font-size:65px;font-family:monospace;white-space:nowrap;background-color:#ffffff;padding:20px;border:1px solid #000000;bottom:0px;z-index:100000000000;visibility:visible;width:120px;margin:0px;" title="[H]">
+--> 
 
-<input id="numVertsApply" value="Apply" type="button" style="display:inline-block;font-size:50px;padding:10px;">
 
-<input id="numVertsCancel" value="cancel" type="button" style="display:inline-block;font-size:50px;padding:10px;">
+
+<div id="numVertsInputDiv" style="font-size:25px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;bottom:0px;background-color:#ffffff;padding:15px;border:6px solid #000000;height:50px;">
+
+Number of Vertices:
+<input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:25px;padding:5px">
+
+<input id="numVertsApply" value="Apply" type="button" style="display:inline-block;font-size:25px;padding:5px;">
+
+<input id="numVertsCancel" value="cancel" type="button" style="display:inline-block;font-size:25px;padding:5px;">
 
 </div>
 
+<!--
+<div id="fpsInputDiv" style="white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:50px;visibility:hidden;"> 
+-->
 
-<div id="fpsInputDiv" style="font-size:50px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:30px;border:6px solid #000000;">
 
+<div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;"> 
 
 FPS (1-60):
-<input id="enterFPS" type="text" size="3" value="30" style="font-family:monospace;color:black;font-size:50px;padding:10px">
+<input id="enterFPS" type="text"  size="3" value="" style="font-family:monospace;color:white;font-size:25px;padding:5px;background-color:black;">
 
-<input id="fpsApply" value="Apply" type="button"  style="display:inline-block;font-size:50px;padding:10px;">
+<input id="fpsApply" value="Apply" type="button" style="display:inline-block;font-size:25px;padding:5px;">
 
-<input id="fpsCancel" value="cancel" type="button" style="display:inline-block;font-size:50px;padding:10px;">
+<input id="fpsCancel" value="cancel" type="button" style="display:inline-block;font-size:25px;padding:5px;">
 
 </div>
 
 
 
-<div id="panZoomControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:100px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
+
+<div id="panZoomControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
  
-<input id="fitButton" value="FIT" type="button"  style="display:inline-block;font-size:20px;padding:20px;width:100px;">
+<input id="fitButton" value="FIT" type="button" class="pz">
 
-<input id="zoomOutButton" value=" - " type="button" style="display:inline-block;font-size:20px;padding:20px;font-weight:bold;width:100px;">
+<input id="zoomOutButton" value=" - " type="button" class="pz">
 
-<input id="zoomInButton" value=" + " type="button" style="display:inline-block;font-size:20px;padding:20px;width:100px;">
+<input id="zoomInButton" value=" + " type="button" class="pz">
 
-<input id="panButton" value="PAN" type="button"  style="display:inline-block;font-size:20px;padding:20px;width:100px;">
+<input id="panButton" value="PAN" type="button"  class="pz">
 
-<input id="panZoomClose" value=" X " type="button" style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
+<input id="panZoomClose" value=" X " type="button"  style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
 </div>
 
 
-
-
-
-<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:40px;padding-left:60px;padding-right:60px;border:6px solid #000000;display:none;">
+<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
  
-<input id="vertSizeResetButton" value="Reset" type="button" style="display:inline-block;font-size:40px;padding:10px;width:150px;">
+<input id="vertSizeResetButton" value="Reset" type="button" class="vs">
 
-<input id="vertSizeDownButton" value=" - " type="button" style="display:inline-block;font-size:40px;padding:10px;font-weight:bold;width:150px;">
+<input id="vertSizeDownButton" value=" - " type="button" class="vs">
 
-<input id="vertSizeUpButton" value=" + " type="button" style="display:inline-block;font-size:40px;padding:10px;width:150px;">
+<input id="vertSizeUpButton" value=" + " type="button" class="vs">
 
-<input id="vertSizeCloseButton" value=" X " type="button" style="display:inline-block;font-size:25px;padding:5px;position:absolute;right:0px;bottom:0px;">
+<input id="vertSizeCloseButton" value=" X " type="button" style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
 </div>
 
 
 
 
-<div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:80%;overflow:auto;padding-left:40px;padding-top:20px;padding-bottom:20px;padding-right:60px;margin:0px;">
-<div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding-right:60px;padding-left:40px;padding-top:20px;padding-bottom:20px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
-<b>&nbsp;A Javascript Program for Four Coloring any Graph</b>
-
-
-<div id="aboutCloser" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:22px;color:black;padding-bottom:8px;padding-left:8px;padding-right:8px;height:22px;width:22px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
-
+<div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:12px;top:12px;z-index:10000;border:6px solid black;display:none;overflow:auto;padding:0px;margin:0px;">
+ 
+<div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;left:0px;top:0px;z-index:10001;font-size:12px;width:100%">
+<b>A Javascript 4-Coloring Program</b>
+<div id="aboutCloser" style="text-align:center;color:#bbbbbb;top:0px;right:10px;font-size:30px;color:black;padding:4px;height:38px;width:38px;background-color:#dddddd;border:2px solid #bbbbbb;position:absolute;font-family:monospace;">X
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;font-size:23px;text-align:justify;line-height:30px">
-<br><br><br>
+</div>
+
+<div id="aboutDivBody" style="background-color:#ffffff;font-family:addVertDelaunay;padding:30px;font-size:9px;text-align:justify;line-height:13px;">
 The github files are here:<br>
 <a href="https://github.com/thismain/Four-Color-Theorem-Coloring-Tester" target="_blank">https://github.com/thismain/Four-Color-Theorem-Coloring-Tester</a>
 <br><br>
@@ -578,9 +691,9 @@ The live Desktop demo is here:<br>
 The live Mobile demo is here:<br>
 <a href="http://moygen.rf.gd/graph2/index.html" target="_blank">http://moygen.rf.gd/graph2/index.html</a>
 <br><br>
-<img id="screenshot" src="http://moygen.rf.gd/graph2/screenshotter.png">
+<img id="screenshot" src="screenshotter.png">
 <br><br>
-This is a javascript program for four coloring any graph. Although it would be difficult to test on every possible graph, it has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 22ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
+This is a javascript program for four coloring any graph. It has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 22ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
 The best part of this program, I think, is watching the animation of the algorithm solving the graph at a human observable speed. 
 <br><br>
@@ -617,23 +730,25 @@ What might those modules be? Let's number them:
 <br><br>
 It turns out to have been unnecessary to worry about complexity increasing with increasing numbers of vertices and with increasing numbers of connections for each node. The hardest graph anyone can contrive will be trivial to color by a sufficient algorithm. There's always enough flexibility in the choice of colors so as to allow for changing colors along a path until a node is encountered that is only neighbored by nodes of two colors, or by one. I think it's worthwhile to mention at the start of anyone's exposure to the 4CT that if four colors are randomly dropped onto one thousand randomly built graphs, the ratio of differently colored neighbors to same colored neighbors averages out to three to one; three differently colored neighbors for every one that is the same color, or 75% different, 25% same.
 <br><br>
------------------
-<br><br>
+<hr>
+<br>
 
 After solving graphs manually and watching the algorithm solve graphs in a similar way, one develops an intuition for the reason the four color theorem is true. But articulating this feeling requires much ratiocination and accounting for all possible cases, not to mention a careful definition of terms along the way, which often interferes with the flow of the logic of one's argument. Then also, any exposition which does not rest upon quantifiable statstical relationships rings hollow. It's easy to suppose that there's a certain minimum degree of flexibility which is common to all four-colored planar graphs, where flexibility is defined as the option to be one or two colors other than one's own, without conflict. But it's not so easy to statistically quantify this minimum degree of flexibility. Everyone can see that conflicted nodes can be resolved by swapping colors along a path toward a flexible node, and it also becomes obvious that this flexibility is deriving from the inevitable isolation of every node from the rest of the graph by its neighbors. But how can one show, without testing every possible kind of case, that this local principle of isolation will always yield enough flexibility to four-color any graph?
 <br><br>
 </div>
 </div>
+ 
 
 
 
 
 <div class="container" id="data" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+ 
 <div id="dataHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
 <b>Random Drop of Colors: Data for Analysis:</b>
 
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;">
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;padding-top:60px;">
 <br><br><br>
 <table id="tableId" style="width:100%;"></table>
 </div>
@@ -642,6 +757,7 @@ After solving graphs manually and watching the algorithm solve graphs in a simil
 
 <div id="dataShowHideButton" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:12px;font-size:30px;color:black;padding-top:1px;padding-bottom:5px;padding-left:8px;padding-right:8px;height:30px;width:30px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:100002;">-</div>
 
+
 <script>
 
 
@@ -649,18 +765,30 @@ function el(a){return document.getElementById(a);}
 function da(a,b){if(el(a)){el(a).innerHTML=b;
 //el(a).style.display='block';
 }}
-function daa(a,b){if(el(a)){el(a).innerHTML+=b;
-//el(a).style.display='block';
-}}
+
+function daa(a,b){
+if(isThere(el(a))){
+el(a).innerHTML+=b;
+}//if(isThere(el(a))){
+}//function daa(a,b){
+
+
+function daar(a,b){
+if(isThere(el(a))){
+el(a).innerHTML=b+el(a).innerHTML;
+}//if(isThere(el(a))){
+}//function daar(a,b){
+
 function randRange(min, max){return Math.floor(Math.random() * (max - min + 1)) + min;}
 function degToRad(a){return a*Math.PI/180;}
 function isThere(a){return(typeof a!=="undefined"&&typeof a!==null&&(a||a==0));}
 function els(a){return document.getElementById(a).style;}
+function elc(a){return document.getElementsByClassName(a);}
 function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(a).display='block'}}
 
 function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
 
-
+var savedStringVars='';
  
 //testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
 function testVars(...args){
@@ -670,8 +798,19 @@ if(i==0||i%2==0){
 stringVars+=args[i]+': '+args[i+1]+'<br>';
 }
 }//end i loop
-daa('tester',stringVars+'<br>');
+daar('testerHolder',stringVars+'<br>');
 }//end testVars
+
+
+
+function zoom(elm,scale,w,h){ 
+
+elm.style.transform="scale("+scale+")";
+elm.style.transformOrigin="top left";
+elm.style.width=(w/scale)+"%";
+elm.style.height=(h/scale)+"%";
+
+}//end zoom
 
 
 
@@ -695,8 +834,8 @@ replaceMoveEventById=function(id,func,event){
 el(id).ontouchmove=function(event){func(event);}}
 replaceUpEventById=function(id,func,event){
 el(id).ontouchend=function(event){func(event);}}
-
 replaceDownEventById=function(id,func,event){
+if(!isThere(el(id))){alert(id);}
 el(id).ontouchstart=function(event){func(event);}}
 
 }else{
@@ -704,36 +843,11 @@ replaceMoveEventById=function(id,func,event){
 el(id).onmousemove=function(event){func(event);}}
 replaceUpEventById=function(id,func,event){
 el(id).onmouseup=function(event){func(event);}}
-
 replaceDownEventById=function(id,func,event){
+if(!isThere(el(id))){alert(id);}
 el(id).onmousedown=function(event){func(event);}}
 }
 
-
-/*
-
-function reSolverReset(){
-solving=false;
-solved=true;
-animSV=0;
-showSolving=false;
-pauser=false;
-showSolvingStatus();
-pairString='';
-numSolves=0;
-solveCounter=0;
-chunkSolveString='';
-loopingDetected=false;
-nIndexString='';
-solveRemainingPass=0;
-tripleCheck=false;
-pairString='';
-da('tester','');
-allSolvesString='';
-}//end resolver reset
-
-
-*/
 
 
 function reSolverReset(){
@@ -754,27 +868,25 @@ allSolvesString='';
 }//end resolver reset
 
 
-
-//green=#daf5e4
-var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
-//bcf5da
 function activeButton(buttonId){
 el(buttonId).style.backgroundColor='#dbedff';
 
 if(lastButton=='zoomInButton'||lastButton=='zoomOutButton'||lastButton=='fitButton'||lastButton=='panButton'){
 el(lastButton).style.backgroundColor='#eeeeee';
-}else if(lastButton!=buttonId&&!((solving&&lastButton=='solve')||(showSolving&&lastButton=='showSolving'))){
+
+}else if(lastButton!='defaultTouchButton'&&lastButton!=buttonId
+&&!((solving&&lastButton=='solve')||(showSolving&&lastButton=='showSolving'))){
 el(lastButton).style.backgroundColor='#ffffff';
 }
 
 
-if(lastButton=='solve'&&buttonId=='showSolving'){
+else if(lastButton=='solve'&&(buttonId=='showSolving'||buttonId=='step'||buttonId=='streamSolve')){
 el('solve').style.backgroundColor='#ffffff';
 el('solve').value='Solve';
 }
 
 
-if(lastButton=='showSolving'&&buttonId=='solve'){
+if(lastButton=='showSolving'&&(buttonId=='solve'||buttonId=='step'||buttonId=='streamSolve')){
 el('showSolving').style.backgroundColor='#ffffff';
 el('showSolving').value='AnimSolving';
 }
@@ -782,7 +894,7 @@ el('showSolving').value='AnimSolving';
 savedButtonId=buttonId;
 savedLastButton=lastButton;
 lastButton=buttonId;
-
+ 
 if(lastButton!='dropRandom'){el('dataShowHideButton').style.display='none';el('data').style.display='none';}
 if(lastButton!='about'){el('aboutDiv').style.display='none';}
 if(lastButton!='curvedLink'&&gettingCurvedLinkEnd){
@@ -827,11 +939,11 @@ el('dataShowHideButton').style.display='block';
 //alert(el('dataShowHideButton').style.right);
 }//end setDataShowHideButton
 
+
 var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
 var cW,cH,ww,hh;
 
-function canvSetSize(){
 ww=window.innerWidth;
 hh=window.innerHeight;
 canv.width=window.innerWidth;
@@ -840,59 +952,222 @@ cW=canv.width;
 cH=canv.height;
 canv.style.width=cW+"px";
 canv.style.height=cH+"px";
-canv.style.left=(ww/2-cW/2)+'px';
+canv.style.left='0px';
 canv.style.touchAction='none';
 if(scaleFactor!=1){
 vertSize=vertSize*scaleFactor;
 scaleFactor=1;
 }
-}//end canvSetSize
-
-//function init(){
-canvSetSize();
-
-el('data').style.width=ww*.95+'px';
-el('dataHeading').style.width=ww*.95+'px';
-el('aboutDiv').style.width=ww*.85+'px';
-el('aboutDivHeading').style.width=ww*.85+'px';
-//el('aboutDivBody').style.width=ww*.85+'px';
-el('screenshot').style.width=ww*.85+'px';
-
-let rect=el('buttonHolder').getBoundingClientRect();
-el('shortcutKeys').style.height=parseInt(rect.top-rect.height+100)+'px';
-el('aboutDiv').style.height=parseInt(rect.top-rect.height+80)+'px';
-
-el('shortcutKeys').style.width=ww*.93+'px';
-el('shortcutKeysHeading').style.width=ww*.93+'px';
-
-el('messageHolder').style.left=ww*.5-220+'px';
-el('messageHolder').style.top=hh*.23+'px';
-
-let bhStyle=getComputedStyle(el('buttonHolder'));
-let bhHeight=bhStyle.height;
-el('buttonHolder').style.width=ww+'px';
-el('buttonHolderInner').style.width=ww-48+'px';
-//el('expander').style.bottom=parseInt(bhHeight)+20+'px';
-
-el('fpsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
-el('numVertsInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
-el('filenameInputDiv').style.bottom=parseInt(bhHeight)+100+'px';
 
 
-el('testerHolder').style.width=ww*.5+'px';
-el('consoleInputDiv').style.width=ww*.9+'px';
+//`/script><script src='modStyles.js'>/script><script`
 
 
-document.body.onload=function(){
-cancelAnimationFrame(animId);
-getGraphFilenames();
-graphRenderScaleFactors();
-if(!loadDataFileNameAtStart){
-buildAndRender();
-animInit();
+function changeClass(oldClass,newClass){
+for(let i=elc(oldClass).length-1;i>=0;i--){
+elc(oldClass)[i].classList.add(newClass);
+elc(oldClass)[i].classList.remove(oldClass);
 }
-replaceDownEventById('canvas',showSolvingActions);
-}//end onload 
+}//changeClass
+
+/*
+var bhRect=el('buttonHolder').getBoundingClientRect();
+var bhHeight=bhRect.height;
+var bhBottom=bhRect.bottom;
+var bhTop=bhRect.top;
+*/
+
+var bhStyle=getComputedStyle(el('buttonHolder'));
+var bhStyleHeight=parseInt(bhStyle.height);
+var bhStyleTop=parseInt(bhStyle.top);
+
+function modStyles(){
+els('buttonHolder').width=ww+'px';
+els('buttonHolderInner').width=ww+'px';
+
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleTop=parseInt(bhStyle.top);
+
+els('shortcutKeys').height=bhStyleTop-70+'px';
+
+els('screenshot').width=ww*.85+'px';
+
+els('shortcutKeys').width=ww*.91+'px';
+els('shortcutKeysHeading').width=ww*.91+'px';
+
+els('messageHolder').left=ww*.5-220+'px';
+els('messageHolder').top=hh*.23+'px';
+els('messageHolder').border='8px solid black';
+
+
+if(isTouchDevice){
+els('defaultTouchButton').display='inline-block';
+}else{
+els('defaultTouchButton').display='none';
+}
+
+
+
+if(isMobile){
+
+changeClass('b','bm');
+changeClass('t','tm');
+changeClass('t2','tm2');
+changeClass('s','sm');
+changeClass('pz','pzm');
+changeClass('vs','vsm');
+
+els('data').width=ww*.95+'px';
+els('dataHeading').width=ww*.95+'px';
+els('dataHeading').fontSize=50+'px';
+
+els('keysButton').display='none';
+els('fullscreen').display='none';
+els('shortcuts').display='none';
+
+els('expander').fontSize='65px';
+els('expander').padding='20px';
+els('expander').width='120px';
+els('expander').height='120px';
+
+els('message').fontSize='60px';
+
+els('sortControls').paddingLeft='0px';
+els('sortControls').left='0px';
+els('sortControls').paddingRight='110px';
+els('sortControls').paddingTop='20px';
+els('sortControls').paddingBottom='40px';
+els('sortControls').fontSize='45px';
+els('sortControls').lineHeight='105px';
+els('sortLabelShowSolve').fontSize='30px';
+els('sortLabelTimedSort').fontSize='30px'; 
+els('sortsClose').fontSize='40px';
+
+els('panZoomClose').fontSize='30px';
+
+els('vertSizeCloseButton').fontSize='30';
+
+els('buttonHolder').width=ww+'px';
+els('buttonHolderInner').width=ww+'px';
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleTop=parseInt(bhStyle.top);
+bhStyleHeight=parseInt(bhStyle.height);
+
+els('selectGraph').fontSize='40px';
+els('selectGraphOption').fontSize='40px';
+els('closeSelect').fontSize='40px';
+els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
+centerDiv('selectGraphHolder');
+
+
+els('consoleInputDiv').width=ww*.90+'px';
+els('consoleInputDiv').height=bhStyleTop-100+'px';
+els('consoleInputDiv').fontSize='50px';
+els('consoleInput').fontSize='40px';
+els('consoleEnterButton').fontSize='40px';
+els('consoleEnterButton').right='40px';
+els('consoleCloser').width='70px';
+els('consoleCloser').height='70px';
+els('consoleCloser').bottom='40px';
+els('consoleCloser').right='40px';
+els('consoleCloser').fontSize='50px';
+els('consoleOutput').fontSize='40px';
+
+els('aboutDiv').width=ww*.95+'px';
+els('aboutDiv').height=bhStyleTop*.95+'px';
+els('aboutDivBody').fontSize='38px';
+els('aboutDivBody').lineHeight='46px';
+els('aboutDivHeading').fontSize='45px';
+els('aboutCloser').width='60px';
+els('aboutCloser').height='60px';
+els('aboutCloser').fontSize='50px';
+els('aboutCloser').padding='2px';
+
+el('fpsInputDiv').style.bottom=bhStyleHeight+160+'px';
+el('numVertsInputDiv').style.bottom=bhStyleHeight+160+'px';
+el('filenameInputDiv').style.bottom=bhStyleHeight+260+'px';
+
+zoom(el('filenameInputDiv'),2,80,12);
+zoom(el('numVertsInputDiv'),2,80,4);
+zoom(el('fpsInputDiv'),2,60,4);
+
+els('testerHolder').width=ww*.91+'px';
+els('testerHolder').height=bhStyleTop-100+'px';
+els('testerHolder').fontSize='35px';
+els('testerCloser').right='60px';
+els('testerCloser').fontSize='40px';
+els('testerCloser').width='80px';
+els('testerCloser').height='80px';
+
+listNeighsFontSize=50;
+listNeighsLineHeight=60;
+
+
+
+
+}else if(!isMobile){
+
+els('data').width=ww*.91+'px';
+els('dataHeading').width=ww*.91+'px';
+
+
+els('buttonHolder').width=ww+'px';
+els('buttonHolderInner').width=ww*.95+'px';
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleTop=parseInt(bhStyle.top);
+bhStyleHeight=parseInt(bhStyle.height);
+
+els('selectGraph').fontSize='30px';
+els('selectGraphOption').fontSize='30px';
+els('closeSelect').fontSize='30px';
+els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
+centerDiv('selectGraphHolder');
+
+els('consoleInputDiv').width=ww*.87+'px';
+els('consoleInputDiv').height=bhStyleTop-140+'px';
+els('consoleInputDiv').fontSize='30px';
+els('consoleEnterButton').right='40px';
+els('consoleCloser').width='50px';
+els('consoleCloser').height='50px';
+els('consoleCloser').bottom='10px';
+els('consoleCloser').right='40px';
+els('consoleCloser').fontSize='36px';
+
+
+el('fpsInputDiv').style.bottom=bhStyleHeight+60+'px';
+el('numVertsInputDiv').style.bottom=bhStyleHeight+60+'px';
+el('filenameInputDiv').style.bottom=bhStyleHeight+90+'px';
+
+els('aboutDiv').width=ww*.95+'px';
+els('aboutDiv').height=bhStyleTop*.95+'px';
+els('aboutDivBody').fontSize='21px';
+els('aboutDivBody').lineHeight='26px';
+els('aboutDivHeading').fontSize='28px';
+els('aboutCloser').width='30px';
+els('aboutCloser').height='30px';
+els('aboutCloser').fontSize='25px';
+els('aboutCloser').padding='1px';
+
+
+els('testerHolder').width=ww*.87+'px';
+els('testerHolder').height=bhStyleTop-100+'px';
+els('testerHolder').fontSize='25px';
+els('testerCloser').right='60px';
+els('testerCloser').fontSize='40px';
+els('testerCloser').width='50px';
+els('testerCloser').height='50px';
+
+listNeighsFontSize=30;
+listNeighsLineHeight=40;
+
+
+}//}else if(!isMobile){
+
+
+}//modStyles
+
+
+
 
 
 function controlPanelOpenClose(){
@@ -903,27 +1178,36 @@ el('expander').value='-';
 el('buttonHolder').style.display='none';
 el('expander').value='+';
 }
-}//end controlPanelOpenClose
+}//end controlPane lOpenClose
+ 
 
 
-function getGraphFilenames(){
+
+async function getGraphFilenames(){
 graphFileNames=null;
-if(usePHP){
-el('ifr').src=serverAddress+'filenameReader.php';
-waitFilenamesInt=setInterval(function(){
-if(isThere(el('ifr').contentWindow.filenames)){
-graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
-clearInterval(waitFilenamesInt);
-waitFilenamesInt=0;
+try{
+const response=await fetch(serverAddress+'filenameReader.php');
+
+if(!response.ok){
+//throw new Error(`HTTP error! status:${response.status}`);
+showMessage(`HTTP error! status:`+response.status,5000);
+}//if(!response.ok){
+
+graphFileNames=await response.json();
+if(isThere(graphFileNames)){
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
-if(loadDataFileNameAtStart){
-loadFile();
-}//if(loadDataFileNameAtStart){
-}//if(isThere(el('ifr').contentWindow.filenames)){
-},50);
-}//if usePHP
-}//end get graph filenames
+
+}//if(isThere(graphFileNames)){
+
+}catch(error){
+showMessage('Error fetching filenames:'+ error,5000);
+//console.error('Error fetching filenames:', error);
+}
+}//async function getGraphFilenames(){
+
+
+
 
 
 
@@ -947,55 +1231,67 @@ el('selectGraph').appendChild(op);
 
 
 
-function getGraphData(){
-if(usePHP){
-el('ifr').src=serverAddress+"saver.php?loading=1&dataFileName="+dataFileName;
-waitGraphDataInt=setInterval("loadGraphData();",1000);
-}//usePHP
-}//end getGraphData
 
 
-function loadGraphData(){
+async function loadTextFile(filePath){
+try{
+const response=await fetch(filePath);
+if(!response.ok){
+
+throw new Error(`HTTP error! status:${response.status}`);
+alert(response.status);
+}
+const text=await response.text();
+return text;
+}catch(error){
+alert('error: '+error);
+//console.error("Could not load the file:", error);
+return null;
+}//catch
+}//async function loadTextFile(filePath){
+
+
+
+
+async function processFile(fileName){
+
+showMessage('Loading Graph...',60000000);
+fileContent=await loadTextFile(fileName);
 
 solved=false;
-dataReceive=null;
-dataReceive=el('ifr').contentWindow.dataSend;
-if(isThere(dataReceive)){
 
-clearInterval(waitGraphDataInt);
-waitGraphDataInt=0;
+if(isThere(fileContent)){
 
-canvSetSize();
 reSolverReset();
 
-if(dataReceive.indexOf('[')>=0){
+if(fileContent.indexOf('[')>=0){
 delaunay=false;
 
 segPoints=[];
 let segPointString='';
 let segPointsCopy=[];
 
-if(dataReceive.lastIndexOf('] [[')>=0){
+if(fileContent.lastIndexOf('] [[')>=0){
 
-segPointString=dataReceive.substring(0,dataReceive.lastIndexOf('] [[')+1);
+segPointString=fileContent.substring(0,fileContent.lastIndexOf('] [[')+1);
 
 segPoints=JSON.parse(segPointString);
 
 segPointsCopy=JSON.parse(JSON.stringify(segPoints));
 
 if(isThere(segPoints)){
-dataReceive=
-dataReceive.replace(segPointString+' ','');
+fileContent=
+fileContent.replace(segPointString+' ','');
 }
-}//end if(dataReceive.
+}//end if(fileContent.
 
 
-let pairArrString=dataReceive.substring(0,dataReceive.lastIndexOf(']')+1);
+let pairArrString=fileContent.substring(0,fileContent.lastIndexOf(']')+1);
 pairArr=JSON.parse(pairArrString);
 
 
-dataReceive=
-dataReceive.replace(pairArrString+' ','');
+fileContent=
+fileContent.replace(pairArrString+' ','');
 
 if(isThere(segPointsCopy)){
 for(let i=0;i<pairArr.length;i++){
@@ -1009,10 +1305,10 @@ segPoints[i]=JSON.parse(JSON.stringify(segPointsCopy[m]));
 }//if(isThere(segPoints)){
 
 
-}//if(dataReceive.indexOf('[')>=0){
+}//if(fileContent.indexOf('[')>=0){
 
 
-stringArr=dataReceive.split(" ");
+stringArr=fileContent.split(" ");
 
 for(let i=0;i<stringArr.length;i+=4){
 vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3]),[],0,false,false,false,parseInt(stringArr[i+3])));
@@ -1022,28 +1318,25 @@ triangles=triangulate(vertices);
 }
 }//end i loop
 
-
+fileContent=null;
 sortByNeighborCount();
 nativeVertOrder=[...vertices];
 nativePairArr=[...pairArr];
 graphRotater(90);
 graphRotater(-90);
-dataReceive=null;
 modifiedGraph=true;
 hideMessage(messageTimer);
 }//end isThere
 
-}//end loadGraphData
 
+}//async function processFile(fileName){
 
 
 
 
 function loadFile(){
-clearInterval(waitGraphDataInt);
-waitGraphDataInt=0;
 hideMessage(messageTimer);
-showMessage('Loading Graph...',60000);
+showMessage('Loading Graph...',60000000);
 setRandomVerts=false;
 dataFileName=graphFileNames[parseInt(el('selectGraph').options[el('selectGraph').selectedIndex].value)];
 buildAndRender();
@@ -1052,9 +1345,23 @@ buildAndRender();
 
 
 
+function saveFileButtonActions(event){
+el('filenameInputDiv').style.display='none';
+showMessage('Saving Graph...',60000000);
+setTimeout(`
+typing=false;
+dataFileName=el('enterGraphName').value+'.txt';
+saveGraphData();
+`,10);
+}//saveFileButtonActions
+replaceDownEventById('saveFile',saveFileButtonActions);
+
+
+
+
 function saveGraphData(){
 if(usePHP){
-let graphData='';
+graphData='';
 for(let i=0;i<vertices.length;i++){
 graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i;
 if(i<vertices.length-1){graphData+=' ';}
@@ -1089,9 +1396,11 @@ graphData=sp+JSON.stringify(pairArr)+' '+graphData;
 }
 
 
+postTextFile();
+
+
 if(!el('op'+numSavedGraphs)){
 graphFileNames.push(dataFileName);
-el('ifr').src=serverAddress+"saver.php?graphData="+graphData+"&saving=1&dataFileName="+dataFileName;
 let op=document.createElement("option");
 op.id='op'+numSavedGraphs;
 op.value=numSavedGraphs;
@@ -1099,46 +1408,36 @@ op.text=dataFileName;
 el('selectGraph').appendChild(op);
 numSavedGraphs++;
 }//end if(!el
+
+
 }//usePHP
 }//end saveGraphData
 
 
 
-function autoRotate(){
-let miny=100000;
-let minx=100000;
-let maxy=-100000;
-let maxx=-100000;
+async function postTextFile(){
+showMessage('Saving Graph...',60000000);
 
+let response=await fetch(serverAddress+"saver.php?saving=1&dataFileName="+dataFileName,
+{
+method:'POST',
+headers:{'Content-Type':'text/plain'},
+body:graphData
+})
+.then(response=>{
+if(!response.ok){
+showMessage(`HTTP error! status:${response.status}`,2000);
+}
+return response.text(); 
+})
+.then(data=>{
 
-for(let i=0;i<segPoints.length;i++){
-if(isThere(segPoints[i])){
-for(let s=0;s<segPoints[i].length;s++){
-if(segPoints[i][s].y<miny){miny=segPoints[i][s].y;}
-if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
-
-if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
-if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
-
-}//end s loop
-}//if(isThere(segPoints[i]))
-}//end i loop
-
-
-for(let i=0;i<vertices.length;i++){
-if(vertices[i].y<miny){miny=vertices[i].y;}
-if(vertices[i].x<minx){minx=vertices[i].x;}
-if(vertices[i].y>maxy){maxy=vertices[i].y;}
-if(vertices[i].x>maxx){maxx=vertices[i].x;}
-}//end i loop
-
-let gH=maxy-miny;
-let gW=maxx-minx;
-
-if((cW>cH&&gH/gW>1)||(cW<cH&&gH/gW<1)){
-graphRotater();}
-
-}// end autoRotate
+showMessage('<center>Graph Saved as:<br><br>'+dataFileName+'</center>',2000);
+})
+.catch(error=>{
+alert('Error saving file:', error);
+});//fetch
+}//postTextFile(url,file){
 
 
 
@@ -1355,16 +1654,6 @@ showHide('aboutDiv');
 }//aboutCloserAction
 replaceDownEventById('aboutCloser',aboutCloserAction);
 
-
-
-function testerCloserAction(event){
-event.preventDefault();
-activeButton('testerCloser');
-showHide('testerHolder');
-}//testerCloserAction
-replaceDownEventById('testerCloser',testerCloserAction);
-
-
 function shortcutCloserAction(event){
 event.preventDefault();
 activeButton('shortcutCloser');
@@ -1389,9 +1678,14 @@ el('showSolving').value='AnimSolving';
 el('showSolving').style.backgroundColor=B.green;
 
 }else if(pauser&&showSolving){
-el('showSolving').value='Paused';
+el('showSolving').value='Anim Paused';
 el('showSolving').style.backgroundColor=B.red;
 }
+
+
+el('solve').style.backgroundColor='#ffffff';
+el('solve').value='Solve';
+
 
 stepping=false;
 solving=false;
@@ -1431,10 +1725,11 @@ activeButton('showSolving');
 if(savedLastButton!='showSolving'){
 replaceDownEventById('canvas',showSolvingActions);
 }
+
 sorterSwitch();
 
-if(!showSolving){
 
+if(!showSolving){
 
 if(!stepping&&!solving){
 reSolverReset();
@@ -1448,10 +1743,12 @@ startSolveTime=[];
 endSolveTime=[];
 solved=false;
 stepping=false;
+pauser=false
 solving=false;
 showSolving=true;
 startSolveTime.push(Date.now());
 if(showSolvingTime){updateSolveData();}
+
 
 }else if(showSolving&&!pauser){
 pauser=true;
@@ -1494,16 +1791,22 @@ replaceDownEventById('streamSolve',streamSolvingActions);
 
 
 function solveButton(){
-activeButton('solve');
+//activeButton('solve');  
+
 if(!pauser&&solving){
-el('solve').value='Solving';
+el('solve').value='Solve';
 el('solve').style.backgroundColor=B.green;
 
 }else if(pauser&&solving){
-el('solve').value='Paused';
+el('solve').value='Pause';
 el('solve').style.backgroundColor=B.red;
 }
 
+
+el('showSolving').style.backgroundColor='#ffffff';
+el('showSolving').value='AnimSolving';
+
+el('streamSolve').style.backgroundColor='#ffffff';
 }//end solveButton
 
 
@@ -1518,14 +1821,17 @@ el('solve').style.backgroundColor=B.blue;
 
 
 
+
 function solveActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('solve');
-
-
+//setTimeout(`
 if(savedLastButton!='solve'){
 replaceDownEventById('canvas',solveActions);
 }
+
+
+if(!solving&&pauser){pauser=false;}
 
 if(!solving){
 if(streamSolving){streamSolvingActions();}
@@ -1549,10 +1855,16 @@ showSolving=false;
 
 maxCallStackSizeExceeded=false;
 
+}else if(solving&&!pauser&&stepping){
+
+stepping=false;
+solving=true;
+
 }else if(solving&&!pauser){
 pauser=true;
 endSolveTime[numPauses]=Date.now();
 numPauses++;
+
 }else if(solving&&pauser){
 pauser=false;
 }
@@ -1582,10 +1894,10 @@ startSolveTime.push(Date.now());
 endSolveTime.push(Date.now());
 if(showSolvingTime){updateSolveData();}
 recursiveNeighborSolver();
-}//if(solving&&!pauser){
+}//if(solving&&!pauser
 
 solveButton();
-
+//`,20);
 }//end solveActions
 replaceDownEventById('solve',solveActions);
 
@@ -1622,6 +1934,28 @@ showMessage(solvedOrNot+
 
 
 
+function stepActions(event){
+event.preventDefault();
+activeButton('step');
+if(!showSolving&&solved&&!stepping){
+reSolverReset();
+for(let v=0;v<vertices.length;v++){
+vertices[v].c=4;}
+}//end if(!showSolving&
+pauser=false;
+solved=false;
+stepping=true;
+showSolving=false;
+recursiveNeighborSolver();
+render();
+showSolvingStatus();
+replaceDownEventById('canvas',stepActions);
+}//end stepActions
+replaceDownEventById('step',stepActions);
+
+
+
+
 function solveTimeActions(event){
 if(isThere(event)){event.preventDefault();}
 //activeButton('solveData');
@@ -1639,20 +1973,21 @@ hideMessage();
 replaceDownEventById('solveData',solveTimeActions);
 
 
-function shuffleButtonActions(event){
+function sortsButtonActions(event){
 event.preventDefault();
-activeButton('shuffleButton');
-showHide('shuffleControls');
-el('shuffleControls').style.left=
-(cW*.5-el('shuffleControls').getBoundingClientRect().width*.5)+'px';
-}//shuffleButtonActions
-replaceDownEventById('shuffleButton',shuffleButtonActions);
+activeButton('sortsButton');
+showHide('sortControls');
+el('sortControls').style.left=
+centerDiv('sortControls');
+}//sortsButtonActions
+replaceDownEventById('sortsButton',sortsButtonActions);
 
 
  
 function shuffleRandomActions(event){
 event.preventDefault();
 activeShuffleButton('shuffleRandomButton');
+clearActions();
 shuffleRandomVertices();
 showSolvingActions(event);
 }//shuffleRandomActions
@@ -1662,6 +1997,7 @@ replaceDownEventById('shuffleRandomButton',shuffleRandomActions);
 function restoreNativeActions(event){
 event.preventDefault();
 activeShuffleButton('restoreNativeButton');
+clearActions();
 restoreNativeVertOrder();
 showSolvingActions(event);
 }//restoreNativeActions
@@ -1671,6 +2007,7 @@ replaceDownEventById('restoreNativeButton',restoreNativeActions);
 function sort2DActions(event){
 event.preventDefault();
 activeShuffleButton('sort2DButton');
+clearActions();
 sort2D();
 showSolvingActions(event);
 }//sort2DActions
@@ -1680,6 +2017,7 @@ replaceDownEventById('sort2DButton',sort2DActions);
 function sortOutInActions(event){
 event.preventDefault();
 activeShuffleButton('sortOutInButton');
+clearActions();
 sortRadial('outIn');
 showSolvingActions(event);
 }//sortOutInActions
@@ -1689,16 +2027,17 @@ replaceDownEventById('sortOutInButton',sortOutInActions);
 function sortInOutActions(event){
 event.preventDefault();
 activeShuffleButton('sortInOutButton');
+clearActions();
 sortRadial('inOut');
 showSolvingActions(event);
 }//sortInOutActions
 replaceDownEventById('sortInOutButton',sortInOutActions);
 
-
  
 function sortByNeighborCountActions(event){
 event.preventDefault();
 activeShuffleButton('sortByNeighborCountButton');
+clearActions();
 sorterByNeigh();
 showSolvingActions(event);
 }//sortByNeighborCountActions
@@ -1763,31 +2102,11 @@ replaceDownEventById('timedSortByNeighborCount',sorterByNeighsTimedActions);
 
 
 
-function shuffleCloseButtonActions(event){
+function sortsCloseButtonActions(event){
 event.preventDefault();
-el('shuffleControls').style.display='none';
-}//end shuffleCloseButtonActions
-replaceDownEventById('shuffleClose',shuffleCloseButtonActions);
-
-
-
-
-function stepActions(event){
-event.preventDefault();
-activeButton('step');
-if(!showSolving&&solved&&!stepping){
-reSolverReset();
-for(let v=0;v<vertices.length;v++){
-vertices[v].c=4;}
-}//end if(!showSolving&
-solved=false;
-stepping=true;
-stepper();
-showSolving=false;
-showSolvingStatus();
-replaceDownEventById('canvas',stepActions);
-}//end stepActions
-replaceDownEventById('step',stepActions);
+el('sortControls').style.display='none';
+}//end sortsCloseButtonActions
+replaceDownEventById('sortsClose',sortsCloseButtonActions);
 
 
 
@@ -1795,6 +2114,7 @@ function vertSizeButtonActions(event){
 event.preventDefault();
 activeButton('vertSizeButton');
 showHide('vertSizeControls');
+centerDiv('vertSizeControls');
 }//end vertSizeButtonActions
 replaceDownEventById('vertSizeButton',vertSizeButtonActions);
 
@@ -1851,6 +2171,35 @@ activeButton('keysButton');
 showHide('shortcutKeys');
 }//end keysButtonDownActions
 replaceDownEventById('keysButton',keysButtonDownActions);
+
+var defaultTouch=false;
+
+function defaultTouchButtonActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('defaultTouchButton');
+if(els('bodyer').touchAction=='none'){
+defaultTouch=true;
+els('bodyer').touchAction='auto';
+els('canvas').touchAction='auto';
+els('buttonHolder').touchAction='auto';
+replaceDownEventById('canvas',()=>{});
+//replaceUpEventById('canvas',()=>{});
+//replaceMoveEventById('canvas',()=>{});
+controlPanelOpenClose();
+}else{
+defaultTouch=false;
+els('bodyer').touchAction='none';
+els('canvas').touchAction='none';
+els('buttonHolder').touchAction='none';
+}
+if(defaultTouch){
+els('defaultTouchButton').backgroundColor=B.blue;
+}else{
+els('defaultTouchButton').backgroundColor=B.white;
+}
+}//end defaultTouchButtonActions
+replaceDownEventById('defaultTouchButton',defaultTouchButtonActions);
+
 
 
 function buildGraphActions(event){
@@ -1937,6 +2286,7 @@ event.preventDefault();
 activeButton('numVertsButton');
 el('enterNumVerts').value=numPoints;
 showHideV('numVertsInputDiv');
+centerDiv('numVertsInputDiv');
 }//numVertsButtonActions
 replaceDownEventById('numVertsButton',numVertsButtonActions);
 
@@ -1950,7 +2300,6 @@ numPoints=parseInt(el('enterNumVerts').value);
 graphRenderScaleFactors();
 el('numVertsInputDiv').style.visibility='hidden';
 setRandomVerts=true;
-clearTimeout(numVertsTimer);
 setTimeout('buildAndRender();',100);
 }//numVertsApplyButtonActions
 replaceDownEventById('numVertsApply',numVertsApplyButtonActions);
@@ -1991,6 +2340,7 @@ function fpsActions(event){
 activeButton('fpsId');
 el('enterFPS').value=parseInt(framesPerSecond);
 showHideV('fpsInputDiv');
+centerDiv('fpsInputDiv');
 }//fpsActions
 replaceDownEventById('fpsId',fpsActions);
 
@@ -2027,6 +2377,7 @@ event.preventDefault();
 activeButton('neighs');
 showNumNeigh=!showNumNeigh;
 if(showNumNeigh){listNumNeighs();}
+else{messageCancelActions(event);}
 render();
 }//neighsActions
 replaceDownEventById('neighs',neighsActions);
@@ -2057,7 +2408,7 @@ vertCount:1
 let stringer='';
 for(i=0;i<listNumNeighsArr.length;i++){
 if(i==0){
-stringer+='<div style="display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:right;padding-right:60px;">Neighs<br>';
+stringer+='<div style="display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:'+listNeighsFontSize+'px;line-height:'+listNeighsLineHeight+'px;text-align:right;padding-right:60px;">Neighs<br>';
 }
 stringer+=listNumNeighsArr[i].nCount+'<br>';
 }//i loop
@@ -2065,19 +2416,23 @@ stringer+='</div>';
 
 for(i=0;i<listNumNeighsArr.length;i++){
 if(i==0){
-stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:left;border-left:1px solid black;">Verts<br>';
+stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:'+listNeighsFontSize+'px;line-height:'+listNeighsLineHeight+'px;text-align:left;border-left:1px solid black;">Verts<br>';
 }
 stringer+=listNumNeighsArr[i].vertCount+'<br>'
 }//i loop
-stringer+='</div><br><br><center>[close]</center>';
+stringer+='</div><br><br><center><div style="font-size:'+listNeighsFontSize+'">[close]</div></center>';
 
 showMessage(stringer,10000000);
 }//listNumNeighs
 
 
+
+
 function clearActions(event){
-if(isThere(event)){event.preventDefault();}
+if(isThere(event)){event.preventDefault();
 activeButton('clear');
+}
+
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
 reSolverReset();
@@ -2101,7 +2456,7 @@ function dropRandomActions(event){
 event.preventDefault();
 activeButton('dropRandom');
 buildGraphActions(event);
-el('selectGraph').style.display='none';
+el('selectGraphHolder').style.display='none';
 el('filenameInputDiv').style.display='none';
 randomDropping=true;
 showMessage('Running Samples',60000);
@@ -2138,7 +2493,9 @@ replaceDownEventById('consoleInput',consoleInputActions);
 
 function consoleEnterButtonActions(event){
 typing=false;
-da('tester','<br>'+eval(el('consoleInput').value));da('consoler','<br>'+eval(el('consoleInput').value));
+daar('testerHolder',eval(el('consoleInput').value)+'<br><hr><br>');
+daar('consoleOutput',eval(el('consoleInput').value)+'<br><hr><br>');
+el('consoleScroller').scrollTop=0;
 }//consoleEnterButtonActions
 replaceDownEventById('consoleEnterButton',consoleEnterButtonActions);
 
@@ -2160,6 +2517,7 @@ function panZoomButtonActions(event){
 event.preventDefault();
 activeButton('panZoomButton');
 showHide('panZoomControls');
+centerDiv('panZoomControls');
 }//panZoomButtonActions
 replaceDownEventById('panZoomButton',panZoomButtonActions);
 
@@ -2198,18 +2556,10 @@ function saveGraphButtonActions(event){
 event.preventDefault();
 activeButton('saveGraphButton');
 showHide('filenameInputDiv');
+centerDiv('filenameInputDiv');
 }//saveGraphButtonActions
 replaceDownEventById('saveGraphButton',saveGraphButtonActions);
 
-
-function saveFileButtonActions(event){
-typing=false;
-showMessage('Saving Graph...')
-dataFileName=el('enterGraphName').value+'.txt';
-el('filenameInputDiv').style.display='none';
-saveGraphData();
-}//saveFileButtonActions
-replaceDownEventById('saveFile',saveFileButtonActions);
 
 
 
@@ -2224,9 +2574,14 @@ replaceDownEventById('cancelSave',cancelSaveButtonActions);
 function loadButtonActions(event){
 event.preventDefault();
 activeButton('loadGraphButton');
+
+if(savedLastButton!='loadGraphButton'){
+replaceDownEventById('canvas',showSolvingActions);
+}
 streamSolving=false;
 showSolvingStatus();
 showHide('selectGraphHolder');
+centerDiv('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
 
@@ -2251,7 +2606,7 @@ replaceDownEventById('reloadGraphButton',reloadButtonActions);
 function curvedLinkButtonActions(event){
 event.preventDefault();
 activeButton('addCurveButton');
-if(!tapMessageShown){tapMessageShown=true;showMessage('Tap dotted<br>line between <br>unlinked nodes',3000);}
+if(!tapMessageShown){tapMessageShown=true;showMessage('<center>Tap dotted<br>line between <br>unlinked nodes</center>',3000);}
 gettingCurvedLinkStart=true;
 curvedLink();
 }//curvedLinkButtonActions
@@ -2344,14 +2699,30 @@ solved=false;
 }//deleteVertButtonActions
 replaceDownEventById('deleteVertButton',deleteVertButtonActions);
 
+var testNumber=0;
 
 function testerButtonActions(event){
 event.preventDefault();
 activeButton('testerButton');
 showHide('testerHolder');
-el('testerHolder').scrollTop=el('tester').scrollHeight;
+showHide('testerCloser');
+if(els('testerHolder').display=='block'){
+testVars("testNumber",testNumber,"solving:",solving,"solved",solved,"pauser",pauser,"showSolving",showSolving,"stepping",stepping,"loading",loading,"loadDataFileNameAtStart",loadDataFileNameAtStart,"streamSolving",streamSolving,"modifiedGraph",modifiedGraph);
+testNumber++;
+}
+
+//el('testerHolder').scrollTop=el('testerHolder').scrollHeight;
 }//testerButtonActions
 replaceDownEventById('testerButton',testerButtonActions);
+
+
+function testerCloserActions(event){
+if(isThere(event)){event.preventDefault();}
+showHide('testerHolder');
+showHide('testerCloser');
+}//testerCloserAction
+replaceDownEventById('testerCloser',testerCloserActions);
+
 
 
 
@@ -2360,14 +2731,20 @@ if(event){event.preventDefault();}
 el('messageHolder').style.display='none';
 showSolvingTime=false;
 el('solveData').style.backgroundColor=B.white;
+showNumNeigh=false;
 }//messageCancelActions
 replaceDownEventById('messageHolder',messageCancelActions);
 
 
 
 function gen2ButtonActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('gen2Button');
+
+if(savedLastButton!='gen2Button'){
+replaceDownEventById('canvas',gen2ButtonActions);
+}
+
 showMessage('Generating Vertices',10000000);
 setTimeout(`addVertsAtTriangleCenters2();`,1);
 }//gen2ButtonActions
@@ -2375,6 +2752,7 @@ replaceDownEventById('gen2Button',gen2ButtonActions);
 
 
 function addVertsAtTriangleCenters2(){
+//testVars("pauser",pauser,"solved",solved,"showSolvingTime",showSolvingTime,"showSolving",showSolving,"solving",solving);
 delaunay=true;
 for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
@@ -2848,12 +3226,18 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 
 
-function stepper(){
-showSolving=false;
-recursiveNeighborSolver();
-render();
-}//end stepper
 
+document.body.onload=function(){
+cancelAnimationFrame(animId);
+modStyles();
+getGraphFilenames();
+graphRenderScaleFactors();
+buildAndRender();
+animInit();
+showHideV('bodyer');
+//setTimeout(`showHideV('bodyer');`,200);
+replaceDownEventById('canvas',showSolvingActions);
+}//end onload 
 
 
 
@@ -2888,6 +3272,7 @@ endSolveTime=[];
 startSolveTime.push(Date.now());
 showSolvingButton();
 
+
 }else if(streamSolving&&solved&&!modifiedGraph){
 solved=false;
 setTimeout(`
@@ -2899,6 +3284,7 @@ endSolveTime=[];
 startSolveTime.push(Date.now());
 if(showSolvingTime){updateSolveData();}
 activeButton('showSolving');
+showSolving=true;
 showSolvingButton();
 `,2000);
 
@@ -2914,6 +3300,7 @@ endSolveTime=[];
 startSolveTime.push(Date.now());
 if(showSolvingTime){updateSolveData();}
 activeButton('showSolving');
+showSolving=true;
 showSolvingButton();`
 ,2000);
 
@@ -3229,15 +3616,22 @@ return;
 }//end recursiveNeighborSolver
 
 
+function centerDiv(id){
+el(id).style.left=
+(cW*.5-el(id).getBoundingClientRect().width*.5)+'px';
+}//centerDiv
 
 function showMessage(messageString,time){
 hideMessage(messageTimer);
 el('messageHolder').style.display='block';
 da('message',messageString);
+centerDiv('messageHolder');
+/*
 let rect=el('messageHolder').getBoundingClientRect();
 let width=rect.width;
 el('messageHolder').style.left=
 (cW*.5-width*.5)+'px';
+*/
 messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
 }//end show message
 
@@ -3295,26 +3689,24 @@ return a;
 }//end clamp
 
 
-
+/*
 
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*.29);
 vertSize=clamp(.22*diam,minVertSize,maxVertSize);
 }//graphRenderScaleFactors
+*/
 
 
-/*
 function graphRenderScaleFactors(){
 diam=Math.sqrt(cW*cH/numPoints*randOnlySome);
 }//graphRenderScaleFactors
-graphRenderScaleFactors();
-*/
+//graphRenderScaleFactors();
+
 
 
 
 function buildAndRender(){
-clearTimeout(buildTimer);
-canvSetSize();
 vertices=[];
 triangles=[];
 pairArr=[];
@@ -3373,9 +3765,14 @@ render();
 }
 
 }else if(!setRandomVerts&&!randomDropping){
-getGraphData();
-}
 
+if(isLive>=0){
+processFile('../graph2/data/'+dataFileName);
+}else{
+processFile('/data/'+dataFileName);
+}
+}
+ 
 building=false;
 if(setRandomVerts&&!randomDropping){
 buildRandomGraphButton();
@@ -3387,15 +3784,15 @@ hideMessage(messageTimer);
 
 
 
-function updatePairArr(array){
+function updatePairArr(vertsArray){
 if(!delaunay){
 let pairArrCopy=[]; 
 for(let p=0;p<pairArr.length;p++){
 if(!isThere(pairArrCopy[p])){
 pairArrCopy[p]=[];}
-pairArrCopy[p][0]=array.findIndex(
+pairArrCopy[p][0]=vertsArray.findIndex(
 vert=>vert.i===pairArr[p][0]);
-pairArrCopy[p][1]=array.findIndex(
+pairArrCopy[p][1]=vertsArray.findIndex(
 vert=>vert.i===pairArr[p][1]);
 }
 pairArr=[...pairArrCopy];
@@ -3406,6 +3803,7 @@ pairArr=[...pairArrCopy];
 
 
 function restoreNativeVertOrder(){
+vertices=[...nativeVertOrder];
 vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
 if(delaunay){
 for(let i=0;i<vertices.length;i++){
@@ -3556,7 +3954,10 @@ sorterByNeigh();
 
 
 
+
+
 function render(){
+
 for(let v=0;v<vertices.length;v++){
 vertices[v].i=v;}
 
@@ -3570,14 +3971,17 @@ ctx.fillStyle=backgroundColor;//d6d651
 ctx.fillRect(0, 0, cW, cH);
 ctx.closePath();
 
+/*
 //drawFrame that saves to image
 ctx.globalAlpha=.4;
 ctx.lineWidth=4;
 ctx.strokeStyle='black';
 ctx.strokeRect(0, 0, cW, cH);
-ctx.lineWidth=2;
 //end drawFrame
+*/
 
+ctx.strokeStyle='black';
+ctx.lineWidth=2*scaleFactor;
 
 if(delaunay){
 //draw triangles
@@ -3590,7 +3994,7 @@ ctx.lineTo(triangle.v1.x, triangle.v1.y);
 ctx.lineTo(triangle.v2.x, triangle.v2.y);
 ctx.closePath();
 ctx.strokeStyle="black";
-ctx.lineWidth=1;
+ctx.lineWidth=2*scaleFactor;
 ctx.stroke();
 //ctx.fillStyle='transparent';//triColors[i];
 //ctx.fill();
@@ -3614,7 +4018,7 @@ ctx.closePath();
 ctx.fillStyle='white';
 ctx.fill();
 ctx.strokeStyle='black';
-ctx.lineWidth=1;
+ctx.lineWidth=2*scaleFactor;
 ctx.stroke();
 }//end s loop
 }//if settingSegPoints[pairArr.length]
@@ -3624,7 +4028,6 @@ for(let i=0;i<pairArr.length;i++){
 if(isThere(vertices[pairArr[i][0]])&&isThere(vertices[pairArr[i][1]])){
 
 if(isThere(segPoints[i])&&!settingSegPoints[i]){
-
 
 ctx.beginPath();
 ctx.moveTo(segPoints[i][0].x, segPoints[i][0].y);
@@ -3648,9 +4051,10 @@ segPoints[i][segPoints[i].length-1].y
 
 //ctx.closePath();
 
+
 }else if(!isThere(segPoints[i])){
 
-
+ 
 ctx.beginPath();
 
 ctx.moveTo(
@@ -3666,7 +4070,7 @@ ctx.closePath();
 
 
 ctx.strokeStyle='black';
-ctx.lineWidth=1;
+ctx.lineWidth=2*scaleFactor;
 ctx.stroke();
 
 }//if(isThere(vertices[pairArr[i][0]])&&
@@ -3703,7 +4107,7 @@ ctx.moveTo(vertices[pairArr[i][0]].x, vertices[pairArr[i][0]].y);
 ctx.lineTo(vertices[pairArr[i][1]].x, vertices[pairArr[i][1]].y);
 ctx.closePath();
 ctx.strokeStyle="black";
-ctx.lineWidth=7*scaleFactor;
+ctx.lineWidth=6*scaleFactor;
 ctx.stroke();
 
 
@@ -3732,12 +4136,11 @@ segPoints[i][segPoints[i].length-1].y
 
 //ctx.closePath();
 ctx.strokeStyle="black";
-ctx.lineWidth=7*scaleFactor;
+ctx.lineWidth=6*scaleFactor;
 ctx.stroke();
-
-
-}//}else if(sameColorVerts[i]&&isThere(segPoints[i])&&!settingSegPoints[i]){
+}//}else if(sameColorVerts[i]&&isThere(segPoints[i])&&!settingSegPoints[i]){{
 }//end i loop
+
 }//end if highlightSame
 
 
@@ -3748,7 +4151,7 @@ let ci=0;
 this.vertices.forEach(function(vertex){
 ctx.beginPath();
 ctx.strokeStyle="black";
-ctx.lineWidth=1;
+ctx.lineWidth=2*scaleFactor;
 ctx.arc(vertex.x, vertex.y, vertSize, 0, Math.PI * 2, true);
 ctx.stroke();
 ctx.closePath();
@@ -3762,8 +4165,6 @@ ctx.fill();
 
 
 fonter=parseInt(30*scaleFactor);
-//fonter=clamp(fonter,1,50);
-//testVars("fonter",fonter);
 
 if(showFlexibles&&flexibles[ci].avail){
 ctx.fillStyle='black';
@@ -3773,12 +4174,12 @@ ctx.fillText(flexibles[ci
 ].colorsAvailable[c],vertex.x+parseInt(vertSize*1.3)+coff,vertex.y+parseInt(vertSize*1.1));
 }//end c loop
 ctx.strokeStyle='black';
-let flexLine=13*scaleFactor;
+let flexLine=10*scaleFactor;
 flexLine=clamp(flexLine,0,14);
 ctx.lineWidth=parseInt(flexLine);
 }else{
 ctx.strokeStyle='black';
-let regLine=1*scaleFactor;
+let regLine=2*scaleFactor;
 regLine=clamp(regLine,.5,2);
 ctx.lineWidth=parseInt(regLine);
 }
@@ -3826,11 +4227,16 @@ ctx.fillText(vertex.i,vertex.x-xOff,vertex.y+yOff);
 ci++;
 });//end vertices foreach
 
-//testVars("fonter",fonter,"scaleFactor",scaleFactor);
-if(loadDataFileNameAtStart){animInit();
+//testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"addingVert",addingVert,"linkStart",linkStart,"linkEnd",linkEnd);
+
+if(loadDataFileNameAtStart&&streamSolving){
 loadDataFileNameAtStart=false;
+setTimeout(`showSolvingActions();`,500);
 }
+
 }//end render
+
+
 
 
 
@@ -3839,8 +4245,8 @@ loadDataFileNameAtStart=false;
 //Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
 
 function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex){ 
-this.x=x;
-this.y=y;
+this.x=parseInt(x);
+this.y=parseInt(y);
 this.c=c;//color
 this.i=i;//index
 this.n=n;//array of neighbors
@@ -3874,7 +4280,7 @@ let minx=Math.min(this.v0.x, this.v1.x, this.v2.x);
 let miny=Math.min(this.v0.y, this.v1.y, this.v2.y);
 let maxx=Math.max(this.v0.x, this.v1.x, this.v2.x);
 let maxy=Math.max(this.v0.y, this.v1.y, this.v2.y);
-this.center=new Vertex((minx + maxx) / 2, (miny + maxy) / 2, 4);
+this.center=new Vertex(parseInt((minx + maxx) / 2), parseInt((miny + maxy) / 2), 4);
 dx=this.center.x - minx;
 dy=this.center.y - miny;
 }else{
@@ -3884,8 +4290,8 @@ this.center=new Vertex(cx, cy, 4);
 dx=this.center.x - this.v0.x;
 dy=this.center.y - this.v0.y;
 }
-this.radius_squared=dx * dx + dy * dy;
-this.radius=Math.sqrt(this.radius_squared);
+this.radius_squared=parseInt(dx * dx + dy * dy);
+this.radius=parseInt(Math.sqrt(this.radius_squared));
 //end calculate circumcircle;
 }//end Triangle
 
@@ -3971,9 +4377,8 @@ triangle.v2 == st.v0 || triangle.v2 == st.v1 || triangle.v2 == st.v2);
 
 return triangles;
 }//end triangulate
-
-
-
+ 
+ 
 
 
 function countOccurrences(arr,property,targetValue,conditionProperty, conditionValue){
@@ -4156,10 +4561,14 @@ let dat=[
 
 let stringer2=`<table style="width:100%;"`;
 for(let d=0;d<dat.length;d++){
+let t2='t2';
+if(isMobile){t2='tm2';}
+let t='t';
+if(isMobile){t='tm';}
 stringer2+=
-`<tr><td class="t2">`+
+`<tr><td class="`+t2+`">`+
 dat[d][0]
-+`</td><td class="t">`+
++`</td><td class="`+t+`">`+
 dat[d][1]
 ;
 }//end d loop
@@ -4234,7 +4643,7 @@ case 'c':
 colorVertsActions(event);
 break;
 case 'y':
-testerButtonActions(event);
+//testerButtonActions(event);
 break;
 case 'n':
 numVertsButtonActions(event);
@@ -4620,6 +5029,13 @@ middleButtonPan(event);});
 
 canv.addEventListener('mousedown',(event)=>{
 middleButtonPan(event);});
+
+
+
+
+
+
+
 </script>
 
 </body>
