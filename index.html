@@ -120,7 +120,7 @@ scrollbar-width:none;
 
 </style>
 </head>
-<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;">
+<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:hidden;display:block;">
 <script>
 var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
@@ -140,8 +140,9 @@ var solving=false;
 var pauser=false;
 var streamSolving=true;
 var loading=false;
-var loadDataFileNameAtStart=false;
-var dataFileName="baller.txt";
+var setRandomVerts=false;
+var loadDataFileNameAtStart=!setRandomVerts;
+var dataFileName="pentagon.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
@@ -152,7 +153,7 @@ numPoints=60;
 }else{
 showSolving=false;
 streamSolving=false;
-loading=false;
+loading=true;
 numPoints=60;
 }
 
@@ -205,7 +206,6 @@ var curvedLinkEnd=-1;
 var gettingCurvedLinkStart=false;
 var gettingCurvedLinkEnd=false;
 var tapMessageShown=false;
-var setRandomVerts=true;
 var sortedVerts=[];
 var counter=0;
 var colorSavedGraph=false;
@@ -297,8 +297,12 @@ var waitFilenamesInt=0;
 var waitFileLoad=0;
 var waitGraphDataInt=0;
 
+var listNeighsFontSize=25;
+var listNeighsLineHeight=30;
 
-
+//green=#daf5e4
+var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
+//bcf5da
 
 </script>
 
@@ -350,10 +354,6 @@ var waitGraphDataInt=0;
 <div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:40px;">
 </div>
 </div>
-
-
-<iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
-</iframe>
 
 
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
@@ -436,6 +436,19 @@ var waitGraphDataInt=0;
 </div>
 
 
+
+<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;bottom:0px;left:100px;">
+ 
+<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
+<option id="selectGraphOption" style="font-size:30px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
+</select>
+
+<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+</div>
+
+<!--
+<div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;">
+
 <div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:100px;left:50px;">
  
 <select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
@@ -444,7 +457,7 @@ var waitGraphDataInt=0;
 
 <input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
 </div>
- 
+-->
 
 
 
@@ -463,10 +476,35 @@ Filename:
 </div>
 
 
-<div id="testerHolder" style="font-size:25px;font-family:monospace;display:none;color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000000000;border:6px solid white;overflow:auto;padding:20px;">
-</div>
+<div id="testerHolder" style="font-size:25px;font-family:monospace;display:none;color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000000000;border:6px solid white;overflow-y:auto;overflow-x:hidden;padding:20px;word-wrap:break-word;">
+</div> 
 
 <input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:60px;right:-20px;font-size:40px;color:black;padding:0px;height:50px;width:50px;background-color:#dddddd;border:4px solid #bbbbbb;position:absolute;z-index:1000000000000;font-family:monospace;display:none;">
+
+
+
+<div id="consoleInputDiv" style="z-index:10000000000;position:absolute;left:30px;top:30px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:30px;border:4px solid #000000;visibility:hidden;">
+ 
+Enter Javascript:
+<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(triangles)</textarea>
+<br>
+<input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
+<br>
+Output:<br>
+<div id="consoleScroller" style="width:100%;height:50%;display:block;font-size:30px;background-color:black;overflow:auto;">
+ 
+<div id="consoleOutput" style="margin:20px;font-size:30px;background-color:black;color:#00ff00;word-wrap:break-word;">
+
+ 
+</div>
+
+
+<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;" value="x">
+ 
+</div>
+</div>
+ 
+
 
 
 
@@ -525,30 +563,6 @@ Filename:
 <input type="button" value="Console" id="consoleButton" class="b" title="[O]" style="display:inline-block">
 
 
-<div id="consoleInputDiv" style="z-index:10000000;position:fixed;left:30px;top:30px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:30px;border:4px solid #000000;visibility:hidden;overflow:scroll;">
- 
-Enter Javascript:
-<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(triangles)</textarea>
-<br>
-<input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
-<br>
-Output:<br>
-<div style="width:100%;height:50%;display:block;font-size:30px;background-color:black;overflow:auto;">
- 
-<div id="consoleOutput" style="margin:20px;font-size:30px;background-color:black;color:#00ff00;word-wrap:break-word;overflow:auto;">
- 
-</div>
-</div>
-
-
-<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;" value="x">
-
-</div>
- 
-
-
-
-
 <input type="button" value="add" id="addButton"
  class="b" title="[1]">
 
@@ -577,6 +591,9 @@ Output:<br>
 
 
 <input id="keysButton" type="button" value="Keys" class="b" title="[K]">
+
+
+<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b" title="[]">
 
 </div><!--end buttonHolder Inner-->
 
@@ -615,8 +632,6 @@ Number of Vertices:
 
 
 <div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;"> 
-
-
 
 FPS (1-60):
 <input id="enterFPS" type="text"  size="3" value="" style="font-family:monospace;color:white;font-size:25px;padding:5px;background-color:black;">
@@ -853,17 +868,13 @@ allSolvesString='';
 }//end resolver reset
 
 
-
-//green=#daf5e4
-var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
-//bcf5da
-
 function activeButton(buttonId){
 el(buttonId).style.backgroundColor='#dbedff';
 
 if(lastButton=='zoomInButton'||lastButton=='zoomOutButton'||lastButton=='fitButton'||lastButton=='panButton'){
 el(lastButton).style.backgroundColor='#eeeeee';
-}else if(lastButton!=buttonId
+
+}else if(lastButton!='defaultTouchButton'&&lastButton!=buttonId
 &&!((solving&&lastButton=='solve')||(showSolving&&lastButton=='showSolving'))){
 el(lastButton).style.backgroundColor='#ffffff';
 }
@@ -928,6 +939,7 @@ el('dataShowHideButton').style.display='block';
 //alert(el('dataShowHideButton').style.right);
 }//end setDataShowHideButton
 
+
 var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
 var cW,cH,ww,hh;
@@ -958,33 +970,27 @@ elc(oldClass)[i].classList.remove(oldClass);
 }
 }//changeClass
 
-
+/*
 var bhRect=el('buttonHolder').getBoundingClientRect();
 var bhHeight=bhRect.height;
+var bhBottom=bhRect.bottom;
 var bhTop=bhRect.top;
+*/
 
 var bhStyle=getComputedStyle(el('buttonHolder'));
 var bhStyleHeight=parseInt(bhStyle.height);
-
+var bhStyleTop=parseInt(bhStyle.top);
 
 function modStyles(){
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww+'px';
 
-
-bhRect=el('buttonHolder').getBoundingClientRect();
-bhHeight=bhRect.height;
-bhTop=bhRect.top;
-
 bhStyle=getComputedStyle(el('buttonHolder'));
-bhStyleHeight=parseInt(bhStyle.height);
+bhStyleTop=parseInt(bhStyle.top);
 
+els('shortcutKeys').height=bhStyleTop-70+'px';
 
-els('aboutDiv').width=ww*1.02+'px';
-els('aboutDiv').height=hh-bhHeight+70+'px';
 els('screenshot').width=ww*.85+'px';
-
-els('shortcutKeys').height=parseInt(bhTop-bhHeight+100)+'px';
 
 els('shortcutKeys').width=ww*.91+'px';
 els('shortcutKeysHeading').width=ww*.91+'px';
@@ -994,15 +1000,15 @@ els('messageHolder').top=hh*.23+'px';
 els('messageHolder').border='8px solid black';
 
 
+if(isTouchDevice){
+els('defaultTouchButton').display='inline-block';
+}else{
+els('defaultTouchButton').display='none';
+}
 
 
 
 if(isMobile){
-
-els('data').width=ww*.95+'px';
-els('dataHeading').width=ww*.95+'px';
-els('buttonHolderInner').width=ww+'px';
-els('dataHeading').fontSize=50+'px';
 
 changeClass('b','bm');
 changeClass('t','tm');
@@ -1010,6 +1016,10 @@ changeClass('t2','tm2');
 changeClass('s','sm');
 changeClass('pz','pzm');
 changeClass('vs','vsm');
+
+els('data').width=ww*.95+'px';
+els('dataHeading').width=ww*.95+'px';
+els('dataHeading').fontSize=50+'px';
 
 els('keysButton').display='none';
 els('fullscreen').display='none';
@@ -1034,11 +1044,24 @@ els('sortLabelTimedSort').fontSize='30px';
 els('sortsClose').fontSize='40px';
 
 els('panZoomClose').fontSize='30px';
+
 els('vertSizeCloseButton').fontSize='30';
+
+els('buttonHolder').width=ww+'px';
+els('buttonHolderInner').width=ww+'px';
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleTop=parseInt(bhStyle.top);
+bhStyleHeight=parseInt(bhStyle.height);
+
+els('selectGraph').fontSize='40px';
+els('selectGraphOption').fontSize='40px';
+els('closeSelect').fontSize='40px';
+els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
+centerDiv('selectGraphHolder');
 
 
 els('consoleInputDiv').width=ww*.90+'px';
-els('consoleInputDiv').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-100+'px';
+els('consoleInputDiv').height=bhStyleTop-100+'px';
 els('consoleInputDiv').fontSize='50px';
 els('consoleInput').fontSize='40px';
 els('consoleEnterButton').fontSize='40px';
@@ -1051,6 +1074,7 @@ els('consoleCloser').fontSize='50px';
 els('consoleOutput').fontSize='40px';
 
 els('aboutDiv').width=ww*.95+'px';
+els('aboutDiv').height=bhStyleTop*.95+'px';
 els('aboutDivBody').fontSize='38px';
 els('aboutDivBody').lineHeight='46px';
 els('aboutDivHeading').fontSize='45px';
@@ -1058,13 +1082,6 @@ els('aboutCloser').width='60px';
 els('aboutCloser').height='60px';
 els('aboutCloser').fontSize='50px';
 els('aboutCloser').padding='2px';
-
-els('selectGraph').fontSize='40px';
-els('selectGraphOption').fontSize='40px';
-els('closeSelect').fontSize='40px';
-
-bhStyle=getComputedStyle(el('buttonHolder'));
-bhStyleHeight=parseInt(bhStyle.height);
 
 el('fpsInputDiv').style.bottom=bhStyleHeight+160+'px';
 el('numVertsInputDiv').style.bottom=bhStyleHeight+160+'px';
@@ -1075,14 +1092,15 @@ zoom(el('numVertsInputDiv'),2,80,4);
 zoom(el('fpsInputDiv'),2,60,4);
 
 els('testerHolder').width=ww*.91+'px';
-
-els('testerHolder').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-100+'px';
-
+els('testerHolder').height=bhStyleTop-100+'px';
 els('testerHolder').fontSize='35px';
 els('testerCloser').right='60px';
 els('testerCloser').fontSize='40px';
 els('testerCloser').width='80px';
 els('testerCloser').height='80px';
+
+listNeighsFontSize=50;
+listNeighsLineHeight=60;
 
 
 
@@ -1091,56 +1109,65 @@ els('testerCloser').height='80px';
 
 els('data').width=ww*.91+'px';
 els('dataHeading').width=ww*.91+'px';
+
+
+els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww*.95+'px';
+bhStyle=getComputedStyle(el('buttonHolder'));
+bhStyleTop=parseInt(bhStyle.top);
+bhStyleHeight=parseInt(bhStyle.height);
+
+els('selectGraph').fontSize='30px';
+els('selectGraphOption').fontSize='30px';
+els('closeSelect').fontSize='30px';
+els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
+centerDiv('selectGraphHolder');
 
 els('consoleInputDiv').width=ww*.87+'px';
-els('consoleInputDiv').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-140+'px';
+els('consoleInputDiv').height=bhStyleTop-140+'px';
 els('consoleInputDiv').fontSize='30px';
 els('consoleEnterButton').right='40px';
-
 els('consoleCloser').width='50px';
 els('consoleCloser').height='50px';
 els('consoleCloser').bottom='10px';
 els('consoleCloser').right='40px';
 els('consoleCloser').fontSize='36px';
 
-els('selectGraph').fontSize='30px';
-els('selectGraphOption').fontSize='30px';
-els('closeSelect').fontSize='30px';
-
-bhStyle=getComputedStyle(el('buttonHolder'));
-bhStyleHeight=parseInt(bhStyle.height);
 
 el('fpsInputDiv').style.bottom=bhStyleHeight+60+'px';
 el('numVertsInputDiv').style.bottom=bhStyleHeight+60+'px';
 el('filenameInputDiv').style.bottom=bhStyleHeight+90+'px';
 
-els('testerHolder').width=ww*.87+'px';
-els('testerHolder').height=el('buttonHolder').getBoundingClientRect().bottom-el('buttonHolder').getBoundingClientRect().height-100+'px';
+els('aboutDiv').width=ww*.95+'px';
+els('aboutDiv').height=bhStyleTop*.95+'px';
+els('aboutDivBody').fontSize='21px';
+els('aboutDivBody').lineHeight='26px';
+els('aboutDivHeading').fontSize='28px';
+els('aboutCloser').width='30px';
+els('aboutCloser').height='30px';
+els('aboutCloser').fontSize='25px';
+els('aboutCloser').padding='1px';
 
+
+els('testerHolder').width=ww*.87+'px';
+els('testerHolder').height=bhStyleTop-100+'px';
 els('testerHolder').fontSize='25px';
 els('testerCloser').right='60px';
 els('testerCloser').fontSize='40px';
 els('testerCloser').width='50px';
 els('testerCloser').height='50px';
-}
+
+listNeighsFontSize=30;
+listNeighsLineHeight=40;
+
+
+}//}else if(!isMobile){
 
 
 }//modStyles
 
 
 
-document.body.onload=function(){
-cancelAnimationFrame(animId);
-modStyles();
-getGraphFilenames();
-graphRenderScaleFactors();
-if(!loadDataFileNameAtStart){
-buildAndRender();
-animInit();
-}
-replaceDownEventById('canvas',showSolvingActions);
-}//end onload 
 
 
 function controlPanelOpenClose(){
@@ -1151,27 +1178,36 @@ el('expander').value='-';
 el('buttonHolder').style.display='none';
 el('expander').value='+';
 }
-}//end controlPanelOpenClose
+}//end controlPane lOpenClose
+ 
 
 
-function getGraphFilenames(){
+
+async function getGraphFilenames(){
 graphFileNames=null;
-if(usePHP){
-el('ifr').src=serverAddress+'filenameReader.php';
-waitFilenamesInt=setInterval(function(){
-if(isThere(el('ifr').contentWindow.filenames)){
-graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
-clearInterval(waitFilenamesInt);
-waitFilenamesInt=0;
+try{
+const response=await fetch(serverAddress+'filenameReader.php');
+
+if(!response.ok){
+//throw new Error(`HTTP error! status:${response.status}`);
+showMessage(`HTTP error! status:`+response.status,5000);
+}//if(!response.ok){
+
+graphFileNames=await response.json();
+if(isThere(graphFileNames)){
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
-if(loadDataFileNameAtStart){
-loadFile();
-}//if(loadDataFileNameAtStart){
-}//if(isThere(el('ifr').contentWindow.filenames)){
-},50);
-}//if usePHP
-}//end get graph filenames
+
+}//if(isThere(graphFileNames)){
+
+}catch(error){
+showMessage('Error fetching filenames:'+ error,5000);
+//console.error('Error fetching filenames:', error);
+}
+}//async function getGraphFilenames(){
+
+
+
 
 
 
@@ -1203,6 +1239,7 @@ const response=await fetch(filePath);
 if(!response.ok){
 
 throw new Error(`HTTP error! status:${response.status}`);
+alert(response.status);
 }
 const text=await response.text();
 return text;
@@ -1217,13 +1254,13 @@ return null;
 
 
 async function processFile(fileName){
-showMessage('Loading Graph...',60000);
+
+showMessage('Loading Graph...',60000000);
 fileContent=await loadTextFile(fileName);
 
 solved=false;
-//dataReceive=el('ifr').contentWindow.dataSend;
-if(isThere(fileContent)){
 
+if(isThere(fileContent)){
 
 reSolverReset();
 
@@ -1289,7 +1326,6 @@ graphRotater(90);
 graphRotater(-90);
 modifiedGraph=true;
 hideMessage(messageTimer);
-fileContent=null;
 }//end isThere
 
 
@@ -2136,6 +2172,35 @@ showHide('shortcutKeys');
 }//end keysButtonDownActions
 replaceDownEventById('keysButton',keysButtonDownActions);
 
+var defaultTouch=false;
+
+function defaultTouchButtonActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('defaultTouchButton');
+if(els('bodyer').touchAction=='none'){
+defaultTouch=true;
+els('bodyer').touchAction='auto';
+els('canvas').touchAction='auto';
+els('buttonHolder').touchAction='auto';
+replaceDownEventById('canvas',()=>{});
+//replaceUpEventById('canvas',()=>{});
+//replaceMoveEventById('canvas',()=>{});
+controlPanelOpenClose();
+}else{
+defaultTouch=false;
+els('bodyer').touchAction='none';
+els('canvas').touchAction='none';
+els('buttonHolder').touchAction='none';
+}
+if(defaultTouch){
+els('defaultTouchButton').backgroundColor=B.blue;
+}else{
+els('defaultTouchButton').backgroundColor=B.white;
+}
+}//end defaultTouchButtonActions
+replaceDownEventById('defaultTouchButton',defaultTouchButtonActions);
+
+
 
 function buildGraphActions(event){
 event.preventDefault();
@@ -2312,6 +2377,7 @@ event.preventDefault();
 activeButton('neighs');
 showNumNeigh=!showNumNeigh;
 if(showNumNeigh){listNumNeighs();}
+else{messageCancelActions(event);}
 render();
 }//neighsActions
 replaceDownEventById('neighs',neighsActions);
@@ -2342,7 +2408,7 @@ vertCount:1
 let stringer='';
 for(i=0;i<listNumNeighsArr.length;i++){
 if(i==0){
-stringer+='<div style="display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:right;padding-right:60px;">Neighs<br>';
+stringer+='<div style="display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:'+listNeighsFontSize+'px;line-height:'+listNeighsLineHeight+'px;text-align:right;padding-right:60px;">Neighs<br>';
 }
 stringer+=listNumNeighsArr[i].nCount+'<br>';
 }//i loop
@@ -2350,14 +2416,16 @@ stringer+='</div>';
 
 for(i=0;i<listNumNeighsArr.length;i++){
 if(i==0){
-stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;line-height:60px;text-align:left;border-left:1px solid black;">Verts<br>';
+stringer+='<div style="padding-left:60px;display:inline-block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:'+listNeighsFontSize+'px;line-height:'+listNeighsLineHeight+'px;text-align:left;border-left:1px solid black;">Verts<br>';
 }
 stringer+=listNumNeighsArr[i].vertCount+'<br>'
 }//i loop
-stringer+='</div><br><br><center>[close]</center>';
+stringer+='</div><br><br><center><div style="font-size:'+listNeighsFontSize+'">[close]</div></center>';
 
 showMessage(stringer,10000000);
 }//listNumNeighs
+
+
 
 
 function clearActions(event){
@@ -2388,7 +2456,7 @@ function dropRandomActions(event){
 event.preventDefault();
 activeButton('dropRandom');
 buildGraphActions(event);
-el('selectGraph').style.display='none';
+el('selectGraphHolder').style.display='none';
 el('filenameInputDiv').style.display='none';
 randomDropping=true;
 showMessage('Running Samples',60000);
@@ -2425,8 +2493,9 @@ replaceDownEventById('consoleInput',consoleInputActions);
 
 function consoleEnterButtonActions(event){
 typing=false;
-daar('testerHolder','<br>'+eval(el('consoleInput').value));
-daar('consoleOutput','<br>'+eval(el('consoleInput').value));
+daar('testerHolder',eval(el('consoleInput').value)+'<br><hr><br>');
+daar('consoleOutput',eval(el('consoleInput').value)+'<br><hr><br>');
+el('consoleScroller').scrollTop=0;
 }//consoleEnterButtonActions
 replaceDownEventById('consoleEnterButton',consoleEnterButtonActions);
 
@@ -2505,9 +2574,14 @@ replaceDownEventById('cancelSave',cancelSaveButtonActions);
 function loadButtonActions(event){
 event.preventDefault();
 activeButton('loadGraphButton');
+
+if(savedLastButton!='loadGraphButton'){
+replaceDownEventById('canvas',showSolvingActions);
+}
 streamSolving=false;
 showSolvingStatus();
 showHide('selectGraphHolder');
+centerDiv('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
 
@@ -2532,7 +2606,7 @@ replaceDownEventById('reloadGraphButton',reloadButtonActions);
 function curvedLinkButtonActions(event){
 event.preventDefault();
 activeButton('addCurveButton');
-if(!tapMessageShown){tapMessageShown=true;showMessage('Tap dotted<br>line between <br>unlinked nodes',3000);}
+if(!tapMessageShown){tapMessageShown=true;showMessage('<center>Tap dotted<br>line between <br>unlinked nodes</center>',3000);}
 gettingCurvedLinkStart=true;
 curvedLink();
 }//curvedLinkButtonActions
@@ -2633,7 +2707,7 @@ activeButton('testerButton');
 showHide('testerHolder');
 showHide('testerCloser');
 if(els('testerHolder').display=='block'){
-testVars("testNumber",testNumber,"solving:",solving,"solved",solved,"pauser",pauser,"showSolving",showSolving,"stepping",stepping);
+testVars("testNumber",testNumber,"solving:",solving,"solved",solved,"pauser",pauser,"showSolving",showSolving,"stepping",stepping,"loading",loading,"loadDataFileNameAtStart",loadDataFileNameAtStart,"streamSolving",streamSolving,"modifiedGraph",modifiedGraph);
 testNumber++;
 }
 
@@ -2657,14 +2731,20 @@ if(event){event.preventDefault();}
 el('messageHolder').style.display='none';
 showSolvingTime=false;
 el('solveData').style.backgroundColor=B.white;
+showNumNeigh=false;
 }//messageCancelActions
 replaceDownEventById('messageHolder',messageCancelActions);
 
 
 
 function gen2ButtonActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('gen2Button');
+
+if(savedLastButton!='gen2Button'){
+replaceDownEventById('canvas',gen2ButtonActions);
+}
+
 showMessage('Generating Vertices',10000000);
 setTimeout(`addVertsAtTriangleCenters2();`,1);
 }//gen2ButtonActions
@@ -3147,6 +3227,17 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 
 
+document.body.onload=function(){
+cancelAnimationFrame(animId);
+modStyles();
+getGraphFilenames();
+graphRenderScaleFactors();
+buildAndRender();
+animInit();
+showHideV('bodyer');
+//setTimeout(`showHideV('bodyer');`,200);
+replaceDownEventById('canvas',showSolvingActions);
+}//end onload 
 
 
 
@@ -3180,6 +3271,7 @@ startSolveTime=[];
 endSolveTime=[];
 startSolveTime.push(Date.now());
 showSolvingButton();
+
 
 }else if(streamSolving&&solved&&!modifiedGraph){
 solved=false;
@@ -4136,9 +4228,12 @@ ci++;
 });//end vertices foreach
 
 //testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"addingVert",addingVert,"linkStart",linkStart,"linkEnd",linkEnd);
-if(loadDataFileNameAtStart){animInit();
+
+if(loadDataFileNameAtStart&&streamSolving){
 loadDataFileNameAtStart=false;
+setTimeout(`showSolvingActions();`,500);
 }
+
 }//end render
 
 
@@ -4150,8 +4245,8 @@ loadDataFileNameAtStart=false;
 //Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
 
 function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex){ 
-this.x=x;
-this.y=y;
+this.x=parseInt(x);
+this.y=parseInt(y);
 this.c=c;//color
 this.i=i;//index
 this.n=n;//array of neighbors
@@ -4191,7 +4286,7 @@ dy=this.center.y - miny;
 }else{
 let cx=(D * E - B * F) / G;
 let cy=(A * F - C * E) / G;
-this.center=new Vertex(parseInt(cx), parseInt(cy), 4);
+this.center=new Vertex(cx, cy, 4);
 dx=this.center.x - this.v0.x;
 dy=this.center.y - this.v0.y;
 }
@@ -4222,9 +4317,9 @@ if(maxy === undefined || vertex.y > maxy){ maxy=vertex.y;}
 });
 let dx=(maxx - minx) * 10;
 let dy=(maxy - miny) * 10;
-let stv0=new Vertex(parseInt(minx - dx), parseInt(miny - dy * 3), 4);
-let stv1=new Vertex(parseInt(minx - dx), maxy + dy, 4);
-let stv2=new Vertex(parseInt(maxx + dx * 3), maxy + dy, 4);
+let stv0=new Vertex(minx - dx, miny - dy * 3, 4);
+let stv1=new Vertex(minx - dx, maxy + dy, 4);
+let stv2=new Vertex(maxx + dx * 3, maxy + dy, 4);
 let st=new Triangle(stv0, stv1, stv2);
 triangles.push(st);
 
@@ -4935,7 +5030,12 @@ middleButtonPan(event);});
 canv.addEventListener('mousedown',(event)=>{
 middleButtonPan(event);});
 
- 
+
+
+
+
+
+
 </script>
 
 </body>
