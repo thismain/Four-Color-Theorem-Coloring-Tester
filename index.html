@@ -125,8 +125,8 @@ scrollbar-width:none;
 var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
 var usePHP=true; 
-var serverAddress='http://moygen.rf.gd/graph2/';
-//var serverAddress='http://172.18.11.218:45267/';
+//var serverAddress='http://moygen.rf.gd/graph2/';
+var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://0.0.0.0:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
@@ -157,19 +157,11 @@ loading=true;
 numPoints=60;
 }
 
-
+var zoomFactor=1;
 var vertSize=35;
 var fonter=30;
 var diam=110;
 var randOnlySome=.29;
-/*
-var diam=100;
-var randOnlySome=.29;
-var vertSize=19;
-var fonter=30;
-*/
-//var maxVertSize=25;
-//var minVertSize=13;
 
 var scaleFactor=1;
 var EPSILON=1.0e-6;
@@ -230,7 +222,6 @@ var framesPerSecond=120;
 var stillSearching=false;
 var showNumNeigh=false;
 var animId=0;
-
 
 var showSolvingTime=false;
 var totalSolveTime=0;
@@ -645,7 +636,8 @@ FPS (1-60):
 
 
 
-<div id="panZoomControls" style="font-size:20px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
+<div id="panZoomControls" style="font-size:30px;font-family:monospace;line-height:100px;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
+ <center>PanZoom Controls:</center>
  
 <input id="fitButton" value="FIT" type="button" class="pz">
 
@@ -655,19 +647,21 @@ FPS (1-60):
 
 <input id="panButton" value="PAN" type="button"  class="pz">
 
-<input id="panZoomClose" value=" X " type="button"  style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
+<input id="panZoomClose" value=" X " type="button"  style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;top:0px;">
 </div>
 
 
-<div id="vertSizeControls" style="font-size:50px;font-family:monospace;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
+<div id="vertSizeControls" style="font-size:50px;font-family:monospace;line-height:100px;z-index:1000000;position:fixed;left:200px;bottom:0px;background-color:#ffffff;padding:80px;padding-top:20px;padding-bottom:20px;border:6px solid #000000;display:none;">
  
+ <center>VertSize Controls:</center>
+
 <input id="vertSizeResetButton" value="Reset" type="button" class="vs">
 
 <input id="vertSizeDownButton" value=" - " type="button" class="vs">
 
 <input id="vertSizeUpButton" value=" + " type="button" class="vs">
 
-<input id="vertSizeCloseButton" value=" X " type="button" style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;bottom:0px;">
+<input id="vertSizeCloseButton" value=" X " type="button" style="display:inline-block;font-size:15px;padding:10px;position:absolute;right:0px;top:0px;">
 </div>
 
 
@@ -1043,9 +1037,13 @@ els('sortLabelShowSolve').fontSize='30px';
 els('sortLabelTimedSort').fontSize='30px'; 
 els('sortsClose').fontSize='40px';
 
-els('panZoomClose').fontSize='30px';
+els('panZoomControls').fontSize='50px';
+els('panZoomControls').lineHeight='100px';
+els('panZoomClose').fontSize='60px';
 
-els('vertSizeCloseButton').fontSize='30';
+els('vertSizeControls').fontSize='50px';
+els('vertSizeControls').lineHeight='100px';
+els('vertSizeCloseButton').fontSize='60px';
 
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww+'px';
@@ -1117,9 +1115,17 @@ bhStyle=getComputedStyle(el('buttonHolder'));
 bhStyleTop=parseInt(bhStyle.top);
 bhStyleHeight=parseInt(bhStyle.height);
 
+els('panZoomControls').fontSize='30px';
+els('panZoomControls').lineHeight='60px';
+els('panZoomClose').fontSize='30px';
+
+els('vertSizeControls').fontSize='30px';
+els('vertSizeControls').lineHeight='60px';
+els('vertSizeCloseButton').fontSize='30px';
+
 els('selectGraph').fontSize='30px';
 els('selectGraphOption').fontSize='30px';
-els('closeSelect').fontSize='30px';
+els('closeSelect').fontSize='40px';
 els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
 centerDiv('selectGraphHolder');
 
@@ -1189,8 +1195,10 @@ try{
 const response=await fetch(serverAddress+'filenameReader.php');
 
 if(!response.ok){
-//throw new Error(`HTTP error! status:${response.status}`);
-showMessage(`HTTP error! status:`+response.status,5000);
+showMessage(`<center>HTTP Error 1:<br>`+response.status+`</center>`,50000);
+throw new Error(`HTTP Error 1: ${response.status}`);
+//console.error('HTTP Error 1:', response.status);
+//alert('HTTP Error 1:<br>'+response.status);
 }//if(!response.ok){
 
 graphFileNames=await response.json();
@@ -1201,8 +1209,10 @@ initSelectGraph();
 }//if(isThere(graphFileNames)){
 
 }catch(error){
-showMessage('Error fetching filenames:'+ error,5000);
-//console.error('Error fetching filenames:', error);
+showMessage('<center>Fetching Error 1:<br>'+ error+`</center>`,50000);
+throw new Error(`Fetching Error 1: ${error}`);
+//console.error('Fetching Error 1: ', error);
+//alert(`Fetching Error 1:<br>`+error);
 }
 }//async function getGraphFilenames(){
 
@@ -1237,18 +1247,22 @@ async function loadTextFile(filePath){
 try{
 const response=await fetch(filePath);
 if(!response.ok){
-
-throw new Error(`HTTP error! status:${response.status}`);
-alert(response.status);
+showMessage(`<center>HTTP Error 2:<br>`+response.status+`</center>`,50000);
+throw new Error(`HTTP Error 2: ${response.status}`);
+//console.error('HTTP Error 2:', response.status);
+//alert('HTTP Error 2:<br>'+response.status);
 }
 const text=await response.text();
 return text;
 }catch(error){
-alert('error: '+error);
-//console.error("Could not load the file:", error);
+showMessage(`<center>Loading Error 1:<br>`+error+`</center>`,50000);
+throw new Error(`Loading Error 1: ${error}`);
+//console.error('Loading Error 1:', error);
+//alert(`Loading Error 1:<br>`+error);
 return null;
 }//catch
 }//async function loadTextFile(filePath){
+
 
 
 
@@ -1621,6 +1635,10 @@ else if(panning){
 el('expander').blur();
 panner(event);
 }//if(panning)
+else if(zoomingIn||zoomingOut){
+centerX=event.pageX;
+centerY=event.pageY;
+}
 }//end eventMove
 replaceMoveEventById('canvas',eventMove)
 
@@ -2191,6 +2209,7 @@ defaultTouch=false;
 els('bodyer').touchAction='none';
 els('canvas').touchAction='none';
 els('buttonHolder').touchAction='none';
+replaceDownEventById('canvas',showSolvingActions);
 }
 if(defaultTouch){
 els('defaultTouchButton').backgroundColor=B.blue;
@@ -4732,14 +4751,55 @@ if(isFullScreen()){exitFullScreen();
 
 
 
+function zoomer(onGraphCenter){
+if(zoomingIn){
+zoomFactor=1.05;
+}else if(zoomingOut){
+zoomFactor=.95;
+}else{
+zoomFactor=1;
+}
+
+for(let i=0;i<vertices.length;i++){
+if(isThere(vertices[i])){
+let subX=vertices[i].x-centerX;
+let subY=vertices[i].y-centerY;
+
+let angToVert=Math.atan2(subY,subX);
+let distToVert=Math.sqrt(subX*subX+subY*subY);
+
+vertices[i].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
+vertices[i].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
+}//isThere
+
+}//end i loop
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+let subX=segPoints[i][s].x-centerX;
+let subY=segPoints[i][s].y-centerY;
+let angToVert=Math.atan2(subY,subX);
+let distToVert=Math.sqrt(subX*subX+subY*subY);
+segPoints[i][s].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
+segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
+}//end s loop
+}//end if(isThere)
+}//end i loop
+
+vertScaler();
+render();
+}//end zoomer()
+
+
 
 
 function zoomOutButtonDownActions(event){
 activeButton('zoomOutButton');
 event.preventDefault();
 zoomingIn=false;
-zoomingOut=true;
-zoomer(true);
+//zoomingOut=true;
+//zoomer(true);
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
 el('expander').blur();
@@ -4765,13 +4825,12 @@ replaceUpEventById('zoomOutButton',zoomOutButtonUpActions);
 
 
 
-
 function zoomInButtonDownActions(event){
 event.preventDefault();
 activeButton('zoomInButton');
-zoomingIn=true;
+//zoomingIn=true;
 zoomingOut=false;
-zoomer(true);
+//zoomer(true);
 replaceDownEventById('canvas',function(event){
 event.preventDefault();
 el('expander').blur();
@@ -4912,84 +4971,6 @@ scaleFactor=vertSize*.03;
 
 
 
-
-function zoomer(onGraphCenter){
-let zoomFactor=1;
-
-if(zoomingIn){
-zoomFactor=1.05;
-}else if(zoomingOut){
-zoomFactor=.95;
-}
-
-if(onGraphCenter){
-let vstring='';
-let sumX=0;
-let sumY=0;
-for(let i=0;i<vertices.length;i++){
-vertices[i].x=vertices[i].x;
-vertices[i].y=vertices[i].y;
-//vstring+='x:'+vertices[i].x+' --- y:'+vertices[i].y+'<br>';
-sumX+=vertices[i].x;
-sumY+=vertices[i].y;
-}//end i loop
-
-//testVars("vstring",vstring);
-//testVars("sumX",sumX);
-
-let segPointsTotalLength=0;
-for(let i=0;i<segPoints.length;i++){
-if(isThere(segPoints[i])){
-for(let s=0;s<segPoints[i].length;s++){
-segPoints[i][s].x=segPoints[i][s].x;
-segPoints[i][s].y=segPoints[i][s].y;
-sumX+=segPoints[i][s].x;
-sumY+=segPoints[i][s].y;
-segPointsTotalLength++;
-}//end s loop
-}//end if(isThere)
-}//end i loop
-
-let totalLength=
-vertices.length+segPointsTotalLength;
-
-centerX=sumX/totalLength;
-centerY=sumY/totalLength;
-}//end onGraphCenter
-
-for(let i=0;i<vertices.length;i++){
-if(isThere(vertices[i])){
-let subX=vertices[i].x-centerX;
-let subY=vertices[i].y-centerY;
-
-let angToVert=Math.atan2(subY,subX);
-let distToVert=Math.sqrt(subX*subX+subY*subY);
-
-vertices[i].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
-vertices[i].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//isThere
-
-}//end i loop
-
-
-for(let i=0;i<segPoints.length;i++){
-if(isThere(segPoints[i])){
-for(let s=0;s<segPoints[i].length;s++){
-let subX=segPoints[i][s].x-centerX;
-let subY=segPoints[i][s].y-centerY;
-let angToVert=Math.atan2(subY,subX);
-let distToVert=Math.sqrt(subX*subX+subY*subY);
-segPoints[i][s].x=centerX+Math.cos(angToVert)*(distToVert*zoomFactor);
-segPoints[i][s].y=centerY+Math.sin(angToVert)*(distToVert*zoomFactor);
-}//end s loop
-}//end if(isThere)
-}//end i loop
-
-vertScaler();
-render();
-}//end zoomer()
-
-
 canv.addEventListener('wheel',function(event){
 if(event.deltaY>0){
 el('expander').blur();
@@ -5029,9 +5010,6 @@ middleButtonPan(event);});
 
 canv.addEventListener('mousedown',(event)=>{
 middleButtonPan(event);});
-
-
-
 
 
 
