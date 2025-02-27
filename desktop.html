@@ -6,6 +6,21 @@ var isMobile=false;
 </script>
 <script src="detectMobile.js"></script>
 <style>
+#loading-overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background-color:rgba(255,255,255,0.8);
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:100px;
+font-family:sans-serif;
+z-index:99999;
+}
+
 .bm{
 font-size:40px;
 font-family:monospace;
@@ -32,7 +47,7 @@ padding:4px;
 padding-left:0px;
 font-size:40px;
 }
-
+ 
 .b{
 font-size:18px;
 font-family:monospace;
@@ -120,17 +135,25 @@ scrollbar-width:none;
 
 </style>
 </head>
-<body id="bodyer" style="font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:hidden;display:block;">
+<body id="bodyer" style="background-color:#bbbbbb;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
+ 
+<div id="loading-overlay">Loading...</div>
 <script>
+window.addEventListener('load',function(){
+const loadingOverlay=document.getElementById('loading-overlay');
+loadingOverlay.style.display='none';
+});
+
 var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
-var usePHP=true; 
+var usePHP=true;  
 var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://0.0.0.0:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
 
+var saveAttempts=1;
 var fileContent=null;
 var graphData='';
 var showSolving=false;
@@ -140,7 +163,7 @@ var solving=false;
 var pauser=false;
 var streamSolving=true;
 var loading=false;
-var setRandomVerts=false;
+var setRandomVerts=true;
 var loadDataFileNameAtStart=!setRandomVerts;
 var dataFileName="pentagon.txt";
 var numPoints=0;
@@ -151,7 +174,7 @@ streamSolving=true;
 loading=true;
 numPoints=60;
 }else{
-showSolving=false;
+showSolving=true;
 streamSolving=false;
 loading=true;
 numPoints=60;
@@ -287,9 +310,19 @@ var modifiedGraph=false;
 var waitFilenamesInt=0;
 var waitFileLoad=0;
 var waitGraphDataInt=0;
+var waitFileSavedInt=null;
+var waitGraphFileNames=null;
 
 var listNeighsFontSize=25;
 var listNeighsLineHeight=30;
+
+
+var numFileSizeChecks=0;
+var lastFileSize=0;
+var fileDoneSaving=false;
+var fileSaving=false;
+var numFileSavedChecks=0;
+var pollingInterval=0;
 
 //green=#daf5e4
 var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
@@ -346,6 +379,9 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 </div>
 </div>
 
+
+<iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
+</iframe>
 
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
 
@@ -430,39 +466,28 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 <div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;bottom:0px;left:100px;">
  
-<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
-<option id="selectGraphOption" style="font-size:30px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
-</select>
-
-<input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
-</div>
-
-<!--
-<div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;">
-
-<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:100px;left:50px;">
+<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;overflow-x:hidden;">
  
-<select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;">
-<option id="selectGraphOption" style="font-size:30px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
+<option id="selectGraphOption" style="font-size:20px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
 </select>
 
 <input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
 </div>
--->
 
 
 
-<div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;bottom:0px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:40px;padding-top:20px;border:4px solid black;display:none;height:80px;">
+<div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;bottom:0px;font-size:25px;font-family:monospace;background-color:#ffffff;padding:40px;padding-top:20px;border:4px solid black;display:none;height:80px;">
 
 
-Filename:
-<input id="enterGraphName" type="text" value="" style="display:inline-block;font-family:monospace;color:black;font-size:30px;border:1px solid black;" size="30">
+Filename: 
+<input id="enterGraphName" type="text" value="" style="display:inline-block;font-family:monospace;color:black;font-size:25px;border:1px solid black;" size="22">
 
 <br>
 
-<input id="saveFile" value="save" type="button" style="display:inline-block;font-size:30px;margin-top:12px;">
+<input id="saveFile" value="save" type="button" style="display:inline-block;font-size:25px;margin-top:12px;">
 
-<input id="cancelSave" value="cancel" type="button" style="display:inline-block;font-size:30px;margin-top:12px;">
+<input id="cancelSave" value="cancel" type="button" style="display:inline-block;font-size:25px;margin-top:12px;"> (max 20 characters)
+
 
 </div>
 
@@ -477,7 +502,7 @@ Filename:
 <div id="consoleInputDiv" style="z-index:10000000000;position:absolute;left:30px;top:30px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:30px;border:4px solid #000000;visibility:hidden;">
  
 Enter Javascript:
-<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(triangles)</textarea>
+<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(graphFileNames)</textarea>
 <br>
 <input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
 <br>
@@ -584,7 +609,10 @@ Output:<br>
 <input id="keysButton" type="button" value="Keys" class="b" title="[K]">
 
 
-<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b" title="[]">
+<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b">
+
+
+<input id="hardReload" type="button" value="hardReload" class="b">
 
 </div><!--end buttonHolder Inner-->
 
@@ -782,8 +810,13 @@ function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(
 
 function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
 
+
+
+
+
+
+
 var savedStringVars='';
- 
 //testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
 function testVars(...args){
 let stringVars='';
@@ -793,6 +826,7 @@ stringVars+=args[i]+': '+args[i+1]+'<br>';
 }
 }//end i loop
 daar('testerHolder',stringVars+'<br>');
+daar('consoleOutput',stringVars+'<br>');
 }//end testVars
 
 
@@ -940,8 +974,8 @@ var cW,cH,ww,hh;
 
 ww=window.innerWidth;
 hh=window.innerHeight;
-canv.width=window.innerWidth;
-canv.height=window.innerHeight;
+canv.width=ww;
+canv.height=hh;
 cW=canv.width;
 cH=canv.height;
 canv.style.width=cW+"px";
@@ -975,6 +1009,7 @@ var bhStyle=getComputedStyle(el('buttonHolder'));
 var bhStyleHeight=parseInt(bhStyle.height);
 var bhStyleTop=parseInt(bhStyle.top);
 
+
 function modStyles(){
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww+'px';
@@ -992,7 +1027,7 @@ els('shortcutKeysHeading').width=ww*.91+'px';
 els('messageHolder').left=ww*.5-220+'px';
 els('messageHolder').top=hh*.23+'px';
 els('messageHolder').border='8px solid black';
-
+els('message').fontSize='40px';
 
 if(isTouchDevice){
 els('defaultTouchButton').display='inline-block';
@@ -1085,7 +1120,17 @@ el('fpsInputDiv').style.bottom=bhStyleHeight+160+'px';
 el('numVertsInputDiv').style.bottom=bhStyleHeight+160+'px';
 el('filenameInputDiv').style.bottom=bhStyleHeight+260+'px';
 
-zoom(el('filenameInputDiv'),2,80,12);
+/*
+els('filenameInputDiv').bottom=bhStyleHeight+30+'px';
+els('filenameInputDiv').height=110+'px';
+els('filenameInputDiv').fontSize='25px';
+els('enterGraphName').fontSize='25px';
+els('saveFile').fontSize='25px';
+els('cancelSave').fontSize='25px';
+centerDiv('filenameInputDiv');
+*/
+ 
+zoom(el('filenameInputDiv'),2,70,8);
 zoom(el('numVertsInputDiv'),2,80,4);
 zoom(el('fpsInputDiv'),2,60,4);
 
@@ -1109,6 +1154,11 @@ els('data').width=ww*.91+'px';
 els('dataHeading').width=ww*.91+'px';
 
 
+//els('messageHolder').left=ww*.5-220+'px';
+els('messageHolder').top=hh*.05+'px';
+els('messageHolder').border='4px solid black';
+els('message').fontSize='30px';
+
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww*.95+'px';
 bhStyle=getComputedStyle(el('buttonHolder'));
@@ -1123,9 +1173,11 @@ els('vertSizeControls').fontSize='30px';
 els('vertSizeControls').lineHeight='60px';
 els('vertSizeCloseButton').fontSize='30px';
 
-els('selectGraph').fontSize='30px';
-els('selectGraphOption').fontSize='30px';
-els('closeSelect').fontSize='40px';
+els('selectGraph').fontSize='20px';
+els('selectGraph').padding='20px';
+els('selectGraphOption').fontSize='20px';
+els('closeSelect').fontSize='20px';
+els('closeSelect').padding='20px';
 els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
 centerDiv('selectGraphHolder');
 
@@ -1140,9 +1192,10 @@ els('consoleCloser').right='40px';
 els('consoleCloser').fontSize='36px';
 
 
-el('fpsInputDiv').style.bottom=bhStyleHeight+60+'px';
-el('numVertsInputDiv').style.bottom=bhStyleHeight+60+'px';
-el('filenameInputDiv').style.bottom=bhStyleHeight+90+'px';
+els('fpsInputDiv').bottom=bhStyleHeight+60+'px';
+els('numVertsInputDiv').bottom=bhStyleHeight+60+'px';
+
+el('filenameInputDiv').style.bottom=bhStyleHeight+40+'px';
 
 els('aboutDiv').width=ww*.95+'px';
 els('aboutDiv').height=bhStyleTop*.95+'px';
@@ -1184,38 +1237,63 @@ el('expander').value='-';
 el('buttonHolder').style.display='none';
 el('expander').value='+';
 }
-}//end controlPane lOpenClose
+}//end controlPanelOpenClose
  
 
 
 
+/*
 async function getGraphFilenames(){
 graphFileNames=null;
 try{
 const response=await fetch(serverAddress+'filenameReader.php');
 
 if(!response.ok){
-showMessage(`<center>HTTP Error 1:<br>`+response.status+`</center>`,50000);
-throw new Error(`HTTP Error 1: ${response.status}`);
-//console.error('HTTP Error 1:', response.status);
-//alert('HTTP Error 1:<br>'+response.status);
-}//if(!response.ok){
+alert(response.status);
+showMessage('HTTP Error 1:<br>'+response.status,50000);
+}//if(!response.ok)
 
 graphFileNames=await response.json();
+
 if(isThere(graphFileNames)){
+clearInterval(waitGraphFileNames);
+waitGraphFileNames=null;
 numSavedGraphs=graphFileNames.length;
 initSelectGraph();
 
-}//if(isThere(graphFileNames)){
+}//if(isThere(graphFileNames))
 
 }catch(error){
-showMessage('<center>Fetching Error 1:<br>'+ error+`</center>`,50000);
-throw new Error(`Fetching Error 1: ${error}`);
-//console.error('Fetching Error 1: ', error);
-//alert(`Fetching Error 1:<br>`+error);
+//alert(error);
+waitGraphFileNames=setInterval(`getGraphFilenames();`,1000);
+
+//showMessage('Fetching Error 1:<br>'+ error,50000); 
 }
 }//async function getGraphFilenames(){
+*/
 
+
+
+function getGraphFilenames(){
+graphFileNames=null;
+if(usePHP){
+el('ifr').src=serverAddress+'filenameReader.php';
+waitFilenamesInt=setInterval(function(){
+if(isThere(el('ifr').contentWindow.filenames)){
+graphFileNames=JSON.parse(el('ifr').contentWindow.filenames);
+clearInterval(waitFilenamesInt);
+waitFilenamesInt=0;
+numSavedGraphs=graphFileNames.length;
+initSelectGraph();
+
+if(loadDataFileNameAtStart){
+loadFile();
+}//if(loadDataFileNameAtStart){
+
+}//if(isThere(el('ifr').contentWindow.filenames)){
+},50);
+}//if usePHP
+}//end get graph filenames
 
 
 
@@ -1233,6 +1311,7 @@ op.selected='selected';
 }
 
 el('selectGraph').appendChild(op);
+
 }//end i loop
 //el('op0').selected="selected";
 }//end init select graph
@@ -1247,18 +1326,13 @@ async function loadTextFile(filePath){
 try{
 const response=await fetch(filePath);
 if(!response.ok){
-showMessage(`<center>HTTP Error 2:<br>`+response.status+`</center>`,50000);
-throw new Error(`HTTP Error 2: ${response.status}`);
-//console.error('HTTP Error 2:', response.status);
-//alert('HTTP Error 2:<br>'+response.status);
+showMessage('HTTP Error 2:<br>'+response.status,50000);
 }
 const text=await response.text();
 return text;
 }catch(error){
-showMessage(`<center>Loading Error 1:<br>`+error+`</center>`,50000);
-throw new Error(`Loading Error 1: ${error}`);
-//console.error('Loading Error 1:', error);
-//alert(`Loading Error 1:<br>`+error);
+alert(error);
+showMessage('Loading Error 1:<br>'+error,50000);
 return null;
 }//catch
 }//async function loadTextFile(filePath){
@@ -1328,7 +1402,7 @@ for(let i=0;i<stringArr.length;i+=4){
 vertices.push(new Vertex(parseInt(stringArr[i]),parseInt(stringArr[i+1]),parseInt(stringArr[i+2]),parseInt(stringArr[i+3]),[],0,false,false,false,parseInt(stringArr[i+3])));
 
 if(delaunay){
-triangles=triangulate(vertices);
+//triangles=triangulate(vertices);
 }
 }//end i loop
 
@@ -1336,14 +1410,15 @@ fileContent=null;
 sortByNeighborCount();
 nativeVertOrder=[...vertices];
 nativePairArr=[...pairArr];
-graphRotater(90);
-graphRotater(-90);
+autoRotate();
 modifiedGraph=true;
 hideMessage(messageTimer);
 }//end isThere
 
-
 }//async function processFile(fileName){
+
+
+
 
 
 
@@ -1358,9 +1433,54 @@ buildAndRender();
 
 
 
+function sanitizeFilename(){
+let forbiddenChars = /[\\/:*?"<>|#%&{}$!@'+`=]/;
+let isValidFilename=!forbiddenChars.test(el('enterGraphName').value);
+if(!isValidFilename){
+el('enterGraphName').value=el('enterGraphName').value.replace(/[\\/:*?"<>|#%&{}$!@'+`=]/g, "");
+}
+}//sanitizeFilename
+
+
+
+var filenameMaxLength=20;
+
+el('enterGraphName').addEventListener('input', function(){
+typing=true;
+if(el('enterGraphName').value.length>filenameMaxLength){
+alert('Filename cannot exceed '+filenameMaxLength+' characters.');
+el('enterGraphName').value=el('enterGraphName').value.slice(0,filenameMaxLength);
+}
+});
+
+ 
+
+function enterGraphNameAction(event){
+typing=true;
+}//enterGraphNameAction
+replaceDownEventById('enterGraphName',enterGraphNameAction);
+
+
 
 function saveFileButtonActions(event){
+if(isThere(event)){event.preventDefault();
+typing=true;
+}
 el('filenameInputDiv').style.display='none';
+sanitizeFilename();
+
+
+let options=el('selectGraph').options;
+for(let i=0;i<options.length;i++){
+if(options[i].text==el('enterGraphName').value+'.txt'){
+showMessage('<center>'+el('enterGraphName').value+'.txt<br><br>already exists.<br>Not saved. <br><br> [close]</center>',10000);
+return;
+}
+}//i loop
+
+
+fileSaving=true;
+saveAttempts=1;
 showMessage('Saving Graph...',60000000);
 setTimeout(`
 typing=false;
@@ -1373,6 +1493,7 @@ replaceDownEventById('saveFile',saveFileButtonActions);
 
 
 
+
 function saveGraphData(){
 if(usePHP){
 graphData='';
@@ -1381,7 +1502,7 @@ graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c
 if(i<vertices.length-1){graphData+=' ';}
 }//end i loop
 
-if(!delaunay){
+//if(!delaunay){
 removeDuplicatePairs();
 let segPointsCopy=[];
 for(let i=0;i<segPoints.length;i++){
@@ -1405,12 +1526,81 @@ segPointsCopy[i][s].y=parseInt(segPointsCopy[i][s].y);
 }//end i loop
 
 sp=JSON.stringify(segPointsCopy)+' ';
-}
+}//if(isThere(segPointsCopy)){
 graphData=sp+JSON.stringify(pairArr)+' '+graphData;
-}
-
+//}//if(!delaunay){
 
 postTextFile();
+
+}//usePHP
+}//end saveGraphData
+
+
+var statusResult=null;
+
+
+async function postTextFile(){
+clearInterval(pollingInterval);
+pollingInterval=null;
+statusResult=null;
+
+fileDoneSaving=false;
+showMessage('Saving Graph...',60000000);
+
+let response=await fetch(serverAddress+"saver.php?saving=1&dataFileName="+dataFileName,
+{
+method:'POST',
+headers:{'Content-Type':'application/octet-stream'},
+body:graphData
+})
+.then(response=>{
+if(response.ok){
+fileSaving=true;
+let showSaveAttemps='';
+if(saveAttempts>1){
+showSaveAttemps='<br>Try '+saveAttempts;
+}
+showMessage('<center>Graph Saving as:<br><br>'+dataFileName+showSaveAttemps+'</center>',2000000,saveFileButtonActions);
+canv.focus();
+}else if(!response.ok){
+showMessage('HTTP Error:<br>'+response.status,2000);
+}
+
+return response.text(); 
+})
+.then(data=>{
+
+fileSaving=true;
+const timeoutDuration=60000;
+let elapsedTime=0;
+let numTries=0;
+statusResponse=null;
+
+//start of interval function
+const checkFileStatus=async()=>{
+
+
+if(numTries>0&&numTries%3==0){
+showMessage('Save Attempts: '+numTries,60000);
+clearInterval(pollingInterval);
+pollingInterval=0;
+saveAttempts++;
+//postTextFile();
+saveFileButtonActions();
+}
+
+const statusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+lastFileSize+'&numFileSizeChecks='+numFileSizeChecks+'&dataFileName='+dataFileName);
+
+numFileSizeChecks++;
+
+statusResult=await statusResponse.json();
+
+lastFileSize=statusResult.lastFileSize;
+
+if(statusResult.status==='done_saving'){
+
+clearInterval(pollingInterval);
+showMessage('File saved successfully!',2000);
 
 
 if(!el('op'+numSavedGraphs)){
@@ -1424,47 +1614,90 @@ numSavedGraphs++;
 }//end if(!el
 
 
-}//usePHP
-}//end saveGraphData
+fileSaving=false;
+statusResult=null;
 
+}else if(statusResult.status==='save_error'){
+showMessage('Save error, retrying...<br>'+numTries+' of 60 tries.',60000);
+clearInterval(pollingInterval);
+pollingInterval=0;
+//postTextFile();
+saveFileButtonActions();
+saveAttempts++;
+return;
+}else if(statusResult.status==='in_progress'){
+showMessage('File save in progress...',60000);
+}else{
+clearInterval(pollingInterval);
+pollingInterval=0.
+alert('Unexpected file status.');
 
-
-async function postTextFile(){
-showMessage('Saving Graph...',60000000);
-
-let response=await fetch(serverAddress+"saver.php?saving=1&dataFileName="+dataFileName,
-{
-method:'POST',
-headers:{'Content-Type':'text/plain'},
-body:graphData
-})
-.then(response=>{
-if(!response.ok){
-showMessage(`HTTP error! status:${response.status}`,2000);
 }
-return response.text(); 
-})
-.then(data=>{
 
-showMessage('<center>Graph Saved as:<br><br>'+dataFileName+'</center>',2000);
+elapsedTime+=1000;
+numTries++;
+
+if(elapsedTime>=timeoutDuration){
+clearInterval(pollingInterval);
+showMessage('Save failed.<br>'+(timeoutDuration/1000)+' seconds timeout.')
+//throw new Error((timeoutDuration/1000)+' seconds timeout waiting for save.');
+}
+};//const checkFileStatus=async()=>{
+
+pollingInterval=setInterval(checkFileStatus, 1000); 
+
 })
 .catch(error=>{
-alert('Error saving file:', error);
+showMessage('Error saving file:<br>Retrying...'+ error,60000);
+clearInterval(pollingInterval);
+pollingInterval=0.
+saveAttempts++;
+//postTextFile();
+saveFileButtonActions();
+//alert('Error saving file:', error);
 });//fetch
 }//postTextFile(url,file){
+
+
+/*
+
+window.addEventListener('blur',function(){
+if(fileSaving){
+//showMessage('<center>File Save Interupted<br>Not Saved<br></center>',6000000);
+clearInterval(pollingInterval);
+pollingInterval=0;
+}
+});
+
+*/
+
+
+
+
+
+
+var wRatio=1;
+var hRatio=1;
+var graphMargin=vertSize*2;
+
+function calcMargin(){
+graphMargin=vertSize*2;
+}
+
+
+
+
 
 
 
 
 function graphRotater(angle){
-let margin=vertSize*2;
-
+calcMargin();
 
 let graphAng=-90*Math.PI/180;
 if(isThere(angle)){
 graphAng=angle*Math.PI/180;
 }
-
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
@@ -1481,8 +1714,6 @@ segPoints[i][s].x=Math.cos(ang)*dist;
 }//if(isThere(segPoints[i]))
 }//end i loop
 
-
-
 for(let i=0;i<vertices.length;i++){
 let dist=Math.sqrt(vertices[i].y*vertices[i].y+vertices[i].x*vertices[i].x)
 let ang=Math.atan2(vertices[i].y,vertices[i].x);
@@ -1491,12 +1722,10 @@ vertices[i].y=Math.sin(ang)*dist;
 vertices[i].x=Math.cos(ang)*dist;
 }//end i loop
 
-
 let miny=100000;
 let minx=100000;
 let maxy=-100000;
 let maxx=-100000;
-
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
@@ -1507,32 +1736,24 @@ if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
 }//if(isThere(segPoints[i]))
 }//end i loop
 
-
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y<miny){miny=vertices[i].y;}
 if(vertices[i].x<minx){minx=vertices[i].x;}
 }//end i loop
 
-
-
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
 for(let s=0;s<segPoints[i].length;s++){
-
-segPoints[i][s].y-=miny-margin;
-segPoints[i][s].x-=minx-margin;
-
+segPoints[i][s].y-=miny-graphMargin;
+segPoints[i][s].x-=minx-graphMargin;
 }//end s loop
 }//if(isThere(segPoints[i]))
 }//end i loop
 
-
 for(let i=0;i<vertices.length;i++){
-vertices[i].y-=miny-margin;
-vertices[i].x-=minx-margin;
+vertices[i].y-=miny-graphMargin;
+vertices[i].x-=minx-graphMargin;
 }
-
-
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
@@ -1545,17 +1766,14 @@ if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
 }//if(isThere(segPoints[i]))
 }//end i loop
 
-
 for(let i=0;i<vertices.length;i++){
 if(vertices[i].y>maxy){maxy=vertices[i].y;}
 if(vertices[i].x>maxx){maxx=vertices[i].x;}
 }//end i loop
 
-
-
-let wRatio=(cW-margin)/(maxx+margin);//((maxx+margin)-(minx-margin));
-let hRatio=(cH-margin)/(maxy+margin);//((maxy+margin)-(miny-margin));
-
+//fill screen with graph as much as possible
+wRatio=(cW-graphMargin)/(maxx+graphMargin);
+hRatio=(cH-graphMargin)/(maxy+graphMargin);
 
 for(let i=0;i<segPoints.length;i++){
 if(isThere(segPoints[i])){
@@ -1573,7 +1791,6 @@ segPoints[i][s].y*=hRatio;
 }//if(isThere(segPoints[i]))
 }//end i loop
 
-
 for(let i=0;i<vertices.length;i++){
 if(wRatio<hRatio){
 vertices[i].x*=wRatio;
@@ -1584,11 +1801,112 @@ vertices[i].y*=hRatio;
 }
 }//end i loop
 
+centerGraph();
 sorterSwitch();
 vertScaler();
 render();
 
 }//end graphRotater
+
+
+
+
+
+
+
+function centerGraph(){
+calcMargin();
+
+let miny=100000;
+let minx=100000;
+let maxy=-100000;
+let maxx=-100000;
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(segPoints[i][s].y<miny){miny=segPoints[i][s].y;}
+if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
+if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
+if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+let gW=maxx-minx;
+let gH=maxy-miny;
+
+let lefter=((cW-gW)*.5)-minx;
+let topper=-miny+graphMargin*2;
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+segPoints[i][s].y+=topper;
+segPoints[i][s].x+=lefter;
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+vertices[i].y+=topper;
+vertices[i].x+=lefter;
+}
+
+}//end centerGraph
+
+
+
+
+
+
+
+
+
+function autoRotate(){
+
+let miny=100000;
+let minx=100000;
+let maxy=-100000;
+let maxx=-100000;
+
+for(let i=0;i<segPoints.length;i++){
+if(isThere(segPoints[i])){
+for(let s=0;s<segPoints[i].length;s++){
+if(segPoints[i][s].y<miny){miny=segPoints[i][s].y;}
+if(segPoints[i][s].x<minx){minx=segPoints[i][s].x;}
+if(segPoints[i][s].y>maxy){maxy=segPoints[i][s].y;}
+if(segPoints[i][s].x>maxx){maxx=segPoints[i][s].x;}
+}//end s loop
+}//if(isThere(segPoints[i]))
+}//end i loop
+
+for(let i=0;i<vertices.length;i++){
+if(vertices[i].y<miny){miny=vertices[i].y;}
+if(vertices[i].x<minx){minx=vertices[i].x;}
+if(vertices[i].y>maxy){maxy=vertices[i].y;}
+if(vertices[i].x>maxx){maxx=vertices[i].x;}
+}//end i loop
+
+let gH=maxy-miny;
+let gW=maxx-minx;
+
+if((cW>cH&&gH/gW>1)||(cW<cH&&gH/gW<1)){
+graphRotater(0);
+graphRotater();
+}else{
+graphRotater(-90);
+graphRotater(90);
+}
+}// end autoRotate
+
 
 
 
@@ -1680,10 +1998,6 @@ showHide('shortcutKeys');
 replaceDownEventById('shortcutCloser',shortcutCloserAction);
 
 
-function enterGraphNameAction(event){
-typing=true;
-}//enterGraphNameAction
-replaceDownEventById('enterGraphName',enterGraphNameAction);
 
 
 
@@ -2593,7 +2907,8 @@ replaceDownEventById('cancelSave',cancelSaveButtonActions);
 function loadButtonActions(event){
 event.preventDefault();
 activeButton('loadGraphButton');
-
+clearInterval(waitGraphFileNames);
+waitGraphFileNames=0;
 if(savedLastButton!='loadGraphButton'){
 replaceDownEventById('canvas',showSolvingActions);
 }
@@ -2603,6 +2918,8 @@ showHide('selectGraphHolder');
 centerDiv('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
+
+
 
 
 function closeSelectActions(event){
@@ -2620,6 +2937,13 @@ loadFile();
 el('selectGraphHolder').style.display="none";
 }//reloadButtonActions
 replaceDownEventById('reloadGraphButton',reloadButtonActions);
+
+
+function hardReloadActions(event){
+location.reload(true);
+//location.href='http://moygen.rf.gd/graph2/index.html?i='+randRange(29,1000000);
+}//hardReloadActions
+replaceDownEventById('hardReload',hardReloadActions);
 
 
 function curvedLinkButtonActions(event){
@@ -3005,6 +3329,7 @@ function getVertexToEdit(event,isDelaunay){
 event.preventDefault();
 let eventer=eventSwitch(event);
 vertexToEdit=-1;
+//alert('x: '+parseInt(eventer.pageX)+' y: '+parseInt(eventer.pageY)); 
 for(let i=0;i<vertices.length;i++){
 ctx.beginPath();
 ctx.arc(vertices[i].x, vertices[i].y, vertSize*2, 0, Math.PI * 2, true);
@@ -3252,7 +3577,10 @@ getGraphFilenames();
 graphRenderScaleFactors();
 buildAndRender();
 animInit();
-showHideV('bodyer');
+if(loadDataFileNameAtStart){
+showMessage('Loading Graph...',60000000);
+}
+//showHideV('bodyer');
 //setTimeout(`showHideV('bodyer');`,200);
 replaceDownEventById('canvas',showSolvingActions);
 }//end onload 
@@ -3639,19 +3967,21 @@ el(id).style.left=
 (cW*.5-el(id).getBoundingClientRect().width*.5)+'px';
 }//centerDiv
 
-function showMessage(messageString,time){
+
+
+
+function showMessage(messageString,time,saverFunc){
 hideMessage(messageTimer);
 el('messageHolder').style.display='block';
 da('message',messageString);
 centerDiv('messageHolder');
-/*
-let rect=el('messageHolder').getBoundingClientRect();
-let width=rect.width;
-el('messageHolder').style.left=
-(cW*.5-width*.5)+'px';
-*/
+if(!saverFunc){
 messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
+}else{
+messageTimer=setTimeout("el('messageHolder').style.display='none';saveFileButtonActions();",6000);
+}
 }//end show message
+
 
 
 function hideMessage(timerId){
