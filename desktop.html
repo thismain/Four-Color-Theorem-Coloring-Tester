@@ -64,14 +64,16 @@ display:inline-block;
 width:25%;
 border-bottom:1px solid #cdcdcd;
 margin:0px;
+padding:14px;
+padding-left:0px;
 font-size:22px;
 }
 .t2{
 width:75%;
 border-bottom:1px solid #cdcdcd;
 margin:0px;
-padding:4px;
-padding-left:0px;
+padding:14px;
+padding-left:10px;
 font-size:22px;
 }
 
@@ -136,7 +138,6 @@ scrollbar-width:none;
 </style>
 </head>
 <body id="bodyer" style="background-color:#bbbbbb;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
- 
 <div id="loading-overlay">Loading...</div>
 <script>
 window.addEventListener('load',function(){
@@ -147,7 +148,13 @@ loadingOverlay.style.display='none';
 var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
 var usePHP=true;  
-var serverAddress='http://moygen.rf.gd/graph2/';
+var origin=window.location.origin; //ex: http://172.18.11.218:45267
+var dir='';
+if(origin.indexOf('moygen')>=0||origin.indexOf('localhost')>=0){
+dir='graph2/';
+}
+var serverAddress=origin+'/'+dir;
+//var serverAddress='http://moygen.rf.gd/graph2/';
 //var serverAddress='http://172.18.11.218:45267/';
 //var serverAddress='http://0.0.0.0:45267/';
 //var serverAddress='http://48.52.212.109:45267/';
@@ -174,7 +181,7 @@ streamSolving=true;
 loading=true;
 numPoints=60;
 }else{
-showSolving=true;
+showSolving=false;
 streamSolving=false;
 loading=true;
 numPoints=60;
@@ -202,8 +209,6 @@ var fourColorShort=['R','Y','G','B','W'];
 var savedData=[];
 var triColors=[];
 var dragging=false;
-var altKey=false;
-var inset=125;
 var vertexToEdit=-1;
 var backgroundColor='#f5f5f5';
 var numSavedGraphs=0;
@@ -315,7 +320,7 @@ var waitGraphFileNames=null;
 
 var listNeighsFontSize=25;
 var listNeighsLineHeight=30;
-
+var listNeighs=false;
 
 var numFileSizeChecks=0;
 var lastFileSize=0;
@@ -329,6 +334,23 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 //bcf5da
 
 </script>
+
+<div id="testerHolder" style="font-size:25px;font-family:monospace;color:#00ff00;background-color:black;position:absolute;left:15px;top:15px;z-index:100000000;border:6px solid white;padding:0px;visibility:hidden;overflow-x:hidden;overflow-y:auto;">
+ 
+
+<div id="testerHeading" style="font-size:25px;font-family:monospace;color:#000000;background-color:#cdcdcd;left:0px;top:0px;z-index:100000000;border:none;padding:20px;display:inline-block;width:100%">Test Variables
+ 
+ 
+ <input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:40px;color:black;padding:0px;height:50px;width:50px;background-color:#dddddd;border:4px solid #bbbbbb;position:absolute;font-family:monospace;display:inline-block;z-index:10000000000">
+</div>
+
+<div id="testerContent" style="font-size:25px;font-family:monospace;color:#00ff00;background-color:black;left:15px;top:15px;z-index:100000000;border:none;overflow-y:auto;overflow-x:hidden;padding:20px;word-wrap:break-word;">
+</div>
+</div>
+
+
+
+
 
 
 <div id="sortControls" style="font-size:35px;z-index:1000000;position:fixed;left:0px;bottom:0px;background-color:#ffffff;padding-left:0px;padding-right:15px;padding-top:10px;padding-bottom:10px;border:6px solid #000000;display:none;text-align:center;line-height:60px;">Sort vertices to change solve order:
@@ -386,9 +408,9 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
 
 
-<div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;overflow:auto;padding:10px;margin:0px;">
+<div class="container" id="shortcutKeys" style="background-color:white;position:absolute;left:10px;top:10px;z-index:10000;border:2px solid black;display:none;overflow:auto;padding:10px;margin:0px;">
  
-<div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:40px;">
+<div id="shortcutKeysHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:10px;top:10px;z-index:10001;font-size:40px;">
 <b>Shortcut Keys:</b>
 
 <div id="shortcutCloser" style="text-align:center;color:#bbbbbb;top:6px;right:6px;font-size:20px;color:black;padding-bottom:8px;padding-left:8px;padding-right:8px;height:18px;width:18px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;">x</div>
@@ -397,74 +419,150 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 <br><br>
 <table >
 <tr><td class="t" style="padding-top:40px;">
+
 [P]: Anim Solving </td><td class="t2" style="padding-top:40px;">Renders each step of the 4-coloring algorithm as it solves the graph
 </td></tr>
-<tr><td class="t">
-[6]: Stream Solve Current Graph</td><td class="t2">Repeatedly solve current graph
+
+<tr><td class="t">[S]: Solve </td><td class="t2">Renders easy graphs immediately and harder graphs in 100 step increments
 </td></tr>
 <tr><td class="t">
-[7]: Stream Solve Random Graphs</td><td class="t2">Continuously solve random graphs
+
+[T]: Solve Time</td><td class="t2">Displays time to solve in milliseconds, seconds, and minutes, the number of steps, where each step is one recursive call of the solver function, and the number of vertices solved per millisecond
 </td></tr>
-<tr><td class="t">[S]: Solve </td><td class="t2">Renders result of solve and displays time in milliseconds
+<tr><td class="t">
+
+[6]: Stream Solve Current Graph</td><td class="t2">Repeatedly show animated solving of  random graphs, or the same graph if it has been modified
 </td></tr>
-<tr><td class="t">[V]: Step </td><td class="t2">Advance one step of algorithm solving at a time 
+<tr><td class="t">
+
+[V]: Step </td><td class="t2">Advance one step of algorithm solving at a time 
 </td></tr>
-<tr><td class="t">[B]: Build Random Graph </td><td class="t2">Build a random graph with delaunay triangulation
+<tr><td class="t">
+
+[B]: Build Random Graph </td><td class="t2">Build a random graph with delaunay triangulation
 </td></tr>
-<tr><td class="t">[H]: Show/Hide Buttons </td><td class="t2">Show/Hide buttons for all functions
+<tr><td class="t">
+
+[H]: Show/Hide Buttons </td><td class="t2">Show/Hide buttons for all functions
 </td></tr>
-<tr><td class="t">[A]: Add Vertex </td><td class="t2">Click on graph to add a vertex with delaunay triangulation connecting it to surrounding Vertices
+<tr><td class="t">
+
+[9]: Generate Vertices </td><td class="t2">Generate vertices at the centers of triangles. The graph will first be delauneated.
 </td></tr>
-<tr><td class="t">[M]: Move Vertex </td><td class="t2">Click on a vertex and drag it to move it with delaunay triangulation adjusting connections 
+<tr><td class="t">
+
+[A]: Add Vertex </td><td class="t2">Click on graph to add a vertex with delaunay triangulation connecting it to surrounding Vertices
 </td></tr>
-<tr><td class="t">[D]: Delete Vertex </td><td class="t2">Click on a vertex to delete it with delaunay triangulation modifying surrounding connections
+<tr><td class="t">
+
+[M]: Move Vertex </td><td class="t2">Click on a vertex and drag it to move it with delaunay triangulation adjusting connections 
 </td></tr>
-<tr><td class="t">[C] Color Vertex </td><td class="t2">Click on a vertex to change the color in cycles of red, yellow, green and blue
+<tr><td class="t">
+
+[D]: Delete Vertex </td><td class="t2">Click on a vertex to delete it with delaunay triangulation modifying surrounding connections
 </td></tr>
-<tr><td class="t">[N] Number of Vertices</td><td class="t2">Set number of vertices
+<tr><td class="t">
+
+[C] Color Vertex </td><td class="t2">Click on a vertex to change the color in cycles of red, yellow, green and blue
 </td></tr>
-<tr><td class="t">[F] Frames Per Second</td><td class="t2">Set frames per second of animation when showing Solving
+<tr><td class="t">
+
+[N] Number of Vertices</td><td class="t2">Set number of vertices
 </td></tr>
-<tr><td class="t">[T] Time to Solve</td><td class="t2">Display time to solve in milliseconds and number of steps
+<tr><td class="t">
+
+[F] Frames Per Second</td><td class="t2">Set frames per second of animation when showing Solving
 </td></tr>
-<tr><td class="t">[G] Number of Neighbors</td><td class="t2">Display numbers of neighbors on each vertex
+<tr><td class="t">
+
+[G] Number of Neighbors</td><td class="t2">Display numbers of neighbors on each vertex
 </td></tr>
-<tr><td class="t">[X] Flexibles</td><td class="t2">Highlight the vertices which can be another color and list possible colors
+<tr><td class="t">
+
+[7] List Neighbors</td><td class="t2">Display a list of the number of vertices having N neighbors, sorted from highest to lowest
 </td></tr>
-<tr><td class="t">[O] Console</td><td class="t2">Enter a variable and hit enter to see the value of a global variable
+<tr><td class="t">
+
+[X] Flexibles</td><td class="t2">Highlight the vertices which can be another color and list possible colors
 </td></tr>
-<tr><td class="t">[1] Add Vertex<br>(no delaunay)</td><td class="t2">Click the graph to add a vertex without delaunay triangulation
+<tr><td class="t">
+
+[o](the letter) Console</td><td class="t2">Enter a variable and hit enter to see the value of a global variable, or call a function, etc.
 </td></tr>
-<tr><td class="t">[2] Add a Linked Vertex<br>(no delaunay)</td><td class="t2">Click a starting vertex and then a free space to add a linked vertex without delaunay triangulation
+<tr><td class="t">
+
+[1] Add Vertex<br>(no delaunay)</td><td class="t2">Click the graph to add a vertex without delaunay triangulation
 </td></tr>
-<tr><td class="t">[3] Link Vertices<br>(no delaunay)</td><td class="t2">Click a vertex to which to link, and then another vertex to link them, without delaunay triangulation
+<tr><td class="t">
+
+[2] Add a Linked Vertex<br>(no delaunay)</td><td class="t2">Click a starting vertex and then free space to add a linked vertex without delaunay triangulation
 </td></tr>
-<tr><td class="t">[4] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
+<tr><td class="t">
+
+[3] Link Vertices<br>(no delaunay)</td><td class="t2">Click a vertex to which to link, and then another vertex to link them, without delaunay triangulation
 </td></tr>
-<tr><td class="t">[5] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
+<tr><td class="t">
+
+[Q] Add a Curved Link Between Vertices<br>(no delaunay)</td><td class="t2">Click a vertex to which to link, and then tap a dotted on a curving trajectory to another vertex to link them, without delaunay triangulation
 </td></tr>
-<tr><td class="t">[W] Toggle Fullscreen</td><td class="t2">Toggle Fullscreen
+<tr><td class="t">
+
+[4] Move a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex and drag to move a vertex without delaunay triangulation
 </td></tr>
-<tr><td class="t">[Y] Tester Display</td><td class="t2">In the source javascript, use da('testerHolder',variable); to overwrite tester; use daa... to append writes
+<tr><td class="t">
+
+[5] Delete a Vertex<br>(no delaunay)</td><td class="t2">Click a vertex to delete it without any delaunay triangulation
 </td></tr>
-<tr><td class="t">[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
+<tr><td class="t">
+
+[W] Toggle Fullscreen</td><td class="t2">Toggle Fullscreen
 </td></tr>
-<tr><td class="t">[L] Load Graph</td><td class="t2">Load a graph file (someName.txt) from the server
+<tr><td class="t">
+
+[Y] Tester Display</td><td class="t2">In the source javascript, use da('testerHolder',variable); to overwrite tester; use daa... to append writes
 </td></tr>
-<tr><td class="t">[E] Save Graph</td><td class="t2">Save a graph file (someName.txt) to the server
+<tr><td class="t">
+
+[K] Shortcut Keys</td><td class="t2">Toggle shortcut key list with descriptions
 </td></tr>
-<tr><td class="t">[8] Pan Zoom</td><td class="t2">Pan and Zoom the graph
+<tr><td class="t">
+
+[L] Load Graph</td><td class="t2">Load a graph file (.txt) from the server
 </td></tr>
-<tr><td class="t">[R] Rotate Graph</td><td class="t2">Rotate the graph
+<tr><td class="t">
+
+[E] Save Graph</td><td class="t2">Save a graph file (.txt) to the server
 </td></tr>
-<tr><td class="t">[I] Vertex Size</td><td class="t2">Increase/Decrease vertex size
+<tr><td class="t">
+
+[8] Pan Zoom</td><td class="t2">Pan and Zoom the graph, using scroll wheel on mouse to zoom, and left or middle mouse buttons to pan
+</td></tr>
+<tr><td class="t">
+
+[R] Rotate Graph</td><td class="t2">Rotate the graph in 90 degree increments
+</td></tr>
+<tr><td class="t">
+
+[Z] Random Drop</td><td class="t2">Randomly drop colors onto the graph to see what statistical relationships might emerge before any algorithm is applied
+</td></tr>
+<tr><td class="t">
+
+[U] Clear Graph</td><td class="t2">Clear all colors from vertices
+</td></tr>
+<tr><td class="t">
+<!--
+[J] Reload Page</td><td class="t2">Reload Page
+</td></tr>
+<tr><td class="t">
+-->
+[I] Vertex Size</td><td class="t2">Increase/Decrease rendered vertex size
 </td></tr></table>
 </div>
 </div>
 
 
 
-<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;bottom:0px;left:100px;">
+<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:10px;left:10px;">
  
 <select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;overflow-x:hidden;">
  
@@ -492,31 +590,23 @@ Filename:
 </div>
 
 
-<div id="testerHolder" style="font-size:25px;font-family:monospace;display:none;color:#00ff00;background-color:black;position:absolute;left:40px;top:40px;z-index:10000000000;border:6px solid white;overflow-y:auto;overflow-x:hidden;padding:20px;word-wrap:break-word;">
-</div> 
-
-<input type="button" value="X" id="testerCloser" style="text-align:center;color:#bbbbbb;top:60px;right:-20px;font-size:40px;color:black;padding:0px;height:50px;width:50px;background-color:#dddddd;border:4px solid #bbbbbb;position:absolute;z-index:1000000000000;font-family:monospace;display:none;">
 
 
 
-<div id="consoleInputDiv" style="z-index:10000000000;position:absolute;left:30px;top:30px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:30px;border:4px solid #000000;visibility:hidden;">
+<div id="consoleInputDiv" style="z-index:10000000000;position:absolute;left:10px;top:10px;font-size:30px;font-family:monospace;background-color:#ffffff;padding:10px;border:4px solid #000000;visibility:hidden;overflow:hidden;">
  
+<input type="button" id="consoleCloser" style="top:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;display:inline-block;" value="x">
+
 Enter Javascript:
 <textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(graphFileNames)</textarea>
 <br>
 <input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
 <br>
 Output:<br>
-<div id="consoleScroller" style="width:100%;height:50%;display:block;font-size:30px;background-color:black;overflow:auto;">
+<div id="consoleScroller" style="width:100%;height:60%;display:block;font-size:30px;background-color:black;overflow:auto;">
  
 <div id="consoleOutput" style="margin:20px;font-size:30px;background-color:black;color:#00ff00;word-wrap:break-word;">
-
- 
 </div>
-
-
-<input type="button" id="consoleCloser" style="bottom:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;" value="x">
- 
 </div>
 </div>
  
@@ -561,6 +651,9 @@ Output:<br>
 <input id="neighs" type="button" value="Neighs" 
  class="b" title="[G]">
 
+<input id="listNeighs" type="button" value="listNeighs" 
+ class="b" title="[G]">
+
 <input type="button" value="Flexibles" id="flexiblesButton" class="b" title="[X]" style="display:none">
 
 <input id="dropRandom" type="button" value="Random" class="b">
@@ -603,7 +696,7 @@ Output:<br>
 
 <input type="button" value="genVerts" id="gen2Button" class="b">
 
-<input id="clear" type="button" value="Clear" class="b" title="[9]">
+<input id="clear" type="button" value="Clear" class="b" title="[U]">
 
 
 <input id="keysButton" type="button" value="Keys" class="b" title="[K]">
@@ -612,7 +705,7 @@ Output:<br>
 <input id="defaultTouchButton" type="button" value="DefaultTouch" class="b">
 
 
-<input id="hardReload" type="button" value="hardReload" class="b">
+<input id="hardReload" type="button" value="hardReload" class="b" style="display:none">
 
 </div><!--end buttonHolder Inner-->
 
@@ -696,11 +789,13 @@ FPS (1-60):
 
 
 <div class="container" id="aboutDiv" style="background-color:white;position:absolute;left:12px;top:12px;z-index:10000;border:6px solid black;display:none;overflow:auto;padding:0px;margin:0px;">
- 
+
 <div id="aboutDivHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;left:0px;top:0px;z-index:10001;font-size:12px;width:100%">
 <b>A Javascript 4-Coloring Program</b>
-<div id="aboutCloser" style="text-align:center;color:#bbbbbb;top:0px;right:10px;font-size:30px;color:black;padding:4px;height:38px;width:38px;background-color:#dddddd;border:2px solid #bbbbbb;position:absolute;font-family:monospace;">X
+
+<div id="aboutCloser" style="text-align:center;color:#bbbbbb;top:0px;right:4px;font-size:30px;color:black;padding:4px;height:38px;width:38px;background-color:#dddddd;border:2px solid #bbbbbb;font-family:monospace;display:inline-block;position:absolute;">X
 </div>
+
 </div>
 
 <div id="aboutDivBody" style="background-color:#ffffff;font-family:addVertDelaunay;padding:30px;font-size:9px;text-align:justify;line-height:13px;">
@@ -764,20 +859,19 @@ After solving graphs manually and watching the algorithm solve graphs in a simil
 
 
 
-<div class="container" id="data" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;height:70%;overflow:auto;padding:10px;margin:0px;">
+<div class="container" id="data" style="background-color:white;position:absolute;left:30px;top:30px;z-index:10000;border:2px solid black;display:none;overflow-y:auto;overflow-x:hidden;padding:0px;margin:0px;">
  
-<div id="dataHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;position:fixed;left:30px;top:30px;z-index:10001;font-size:30px;">
+<div id="dataHeading" style="border:2px solid black;color:white;background-color:#000000;font-family:monospace;padding:10px;margin:0px;font-size:30px;width:100%">
 <b>Random Drop of Colors: Data for Analysis:</b>
-
 </div>
-<div style="background-color:#ffffff;font-family:monospace;padding:10px;padding-top:60px;">
-<br><br><br>
+
+<div style="background-color:#ffffff;font-family:monospace;padding:10px;padding-top:10px;">
+
 <table id="tableId" style="width:100%;"></table>
 </div>
-
 </div>
 
-<div id="dataShowHideButton" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:12px;font-size:30px;color:black;padding-top:1px;padding-bottom:5px;padding-left:8px;padding-right:8px;height:30px;width:30px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:100002;">-</div>
+<div id="dataShowHideButton" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:90px;font-size:30px;color:black;padding-top:1px;padding-bottom:5px;padding-left:8px;padding-right:8px;height:30px;width:30px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:100002;">-</div>
 
 
 <script>
@@ -825,7 +919,7 @@ if(i==0||i%2==0){
 stringVars+=args[i]+': '+args[i+1]+'<br>';
 }
 }//end i loop
-daar('testerHolder',stringVars+'<br>');
+daar('testerContent',stringVars+'<br>');
 daar('consoleOutput',stringVars+'<br>');
 }//end testVars
 
@@ -956,12 +1050,12 @@ lastShuffleButton=buttonId;
 activeShuffleButton('restoreNativeButton');
 
 
-window.onresize=function(){setTimeout("render();",200);};
+window.onresize=function(){setTimeout("modStyles();render();",200);};
 
 
 function setDataShowHideButton(){
 let dataRect=el('data').getBoundingClientRect();
-el('dataShowHideButton').style.right=parseInt(ww-dataRect.width-16)+'px';
+el('dataShowHideButton').style.right=parseInt(ww-dataRect.width+10)+'px';
 el('dataShowHideButton').style.top=parseInt(dataRect.top+6)+'px';
 el('dataShowHideButton').style.display='block';
 //alert(el('dataShowHideButton').style.right);
@@ -972,6 +1066,7 @@ var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
 var cW,cH,ww,hh;
 
+function init(){
 ww=window.innerWidth;
 hh=window.innerHeight;
 canv.width=ww;
@@ -986,9 +1081,48 @@ if(scaleFactor!=1){
 vertSize=vertSize*scaleFactor;
 scaleFactor=1;
 }
+}//init
+
+init();
+
+window.addEventListener('resize',function(){
+init();
+vertScaler();
+render();
+});//addEventListener('resize'
 
 
-//`/script><script src='modStyles.js'>/script><script`
+
+function setDivHeightAboveButtons(id){
+els(id).height=hh-parseInt(el('buttonHolder').getBoundingClientRect().height)-(parseInt(els(id).padding)*2)-(parseInt(els(id).borderWidth)*2)-parseInt(els(id).top)+'px';
+}//setDivHeightAboveButtons
+
+
+var idArray=['aboutDiv','data','testerHolder','consoleInputDiv','shortcutKeys'];
+
+function setDivHeightAboveButtonsA(idA){
+for(let i=0;i<idA.length;i++){
+els(idA[i]).height=hh-parseInt(el('buttonHolder').getBoundingClientRect().height)-(parseInt(els(idA[i]).padding)*2)-(parseInt(els(idA[i]).borderWidth)*2)-parseInt(els(idA[i]).top)+'px';
+}//i loop
+}//setDivHeightAboveButtons
+
+
+function controlPanelOpenClose(){
+if(els('buttonHolder').display=='none'){
+els('buttonHolder').height='';
+els('buttonHolder').display='block';
+setDivHeightAboveButtonsA(idArray);
+el('expander').value='-';
+}else{
+els('buttonHolder').height='0px';
+setDivHeightAboveButtonsA(idArray);
+els('buttonHolder').display='none';
+el('expander').value='+';
+}
+
+}//end controlPanelOpenClose
+ 
+
 
 
 function changeClass(oldClass,newClass){
@@ -1017,12 +1151,9 @@ els('buttonHolderInner').width=ww+'px';
 bhStyle=getComputedStyle(el('buttonHolder'));
 bhStyleTop=parseInt(bhStyle.top);
 
-els('shortcutKeys').height=bhStyleTop-70+'px';
-
 els('screenshot').width=ww*.85+'px';
-
-els('shortcutKeys').width=ww*.91+'px';
-els('shortcutKeysHeading').width=ww*.91+'px';
+els('shortcutKeysHeading').width=ww*.96+'px';
+els('shortcutKeys').width=ww*.96+'px';
 
 els('messageHolder').left=ww*.5-220+'px';
 els('messageHolder').top=hh*.23+'px';
@@ -1089,25 +1220,25 @@ bhStyleHeight=parseInt(bhStyle.height);
 els('selectGraph').fontSize='40px';
 els('selectGraphOption').fontSize='40px';
 els('closeSelect').fontSize='40px';
-els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
-centerDiv('selectGraphHolder');
+//els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
+//centerDiv('selectGraphHolder');
 
 
-els('consoleInputDiv').width=ww*.90+'px';
-els('consoleInputDiv').height=bhStyleTop-100+'px';
-els('consoleInputDiv').fontSize='50px';
-els('consoleInput').fontSize='40px';
+els('consoleInputDiv').width=ww*.96+'px';
+els('consoleInputDiv').fontSize='55px';
 els('consoleEnterButton').fontSize='40px';
-els('consoleEnterButton').right='40px';
+els('consoleEnterButton').right='10px';
 els('consoleCloser').width='70px';
 els('consoleCloser').height='70px';
-els('consoleCloser').bottom='40px';
-els('consoleCloser').right='40px';
+els('consoleCloser').top='2px';
+els('consoleCloser').right='10px';
 els('consoleCloser').fontSize='50px';
+els('consoleInput').height='25%';
+els('consoleInput').fontSize='40px';
+els('consoleOutput').height='100%';
 els('consoleOutput').fontSize='40px';
 
-els('aboutDiv').width=ww*.95+'px';
-els('aboutDiv').height=bhStyleTop*.95+'px';
+els('aboutDiv').width=ww*.96+'px';
 els('aboutDivBody').fontSize='38px';
 els('aboutDivBody').lineHeight='46px';
 els('aboutDivHeading').fontSize='45px';
@@ -1120,27 +1251,18 @@ el('fpsInputDiv').style.bottom=bhStyleHeight+160+'px';
 el('numVertsInputDiv').style.bottom=bhStyleHeight+160+'px';
 el('filenameInputDiv').style.bottom=bhStyleHeight+260+'px';
 
-/*
-els('filenameInputDiv').bottom=bhStyleHeight+30+'px';
-els('filenameInputDiv').height=110+'px';
-els('filenameInputDiv').fontSize='25px';
-els('enterGraphName').fontSize='25px';
-els('saveFile').fontSize='25px';
-els('cancelSave').fontSize='25px';
-centerDiv('filenameInputDiv');
-*/
- 
 zoom(el('filenameInputDiv'),2,70,8);
 zoom(el('numVertsInputDiv'),2,80,4);
 zoom(el('fpsInputDiv'),2,60,4);
 
-els('testerHolder').width=ww*.91+'px';
-els('testerHolder').height=bhStyleTop-100+'px';
 els('testerHolder').fontSize='35px';
-els('testerCloser').right='60px';
+els('testerCloser').right='6px';
 els('testerCloser').fontSize='40px';
 els('testerCloser').width='80px';
 els('testerCloser').height='80px';
+els('testerHeading').fontSize='40px';
+els('testerContent').fontSize='40px';
+els('testerHolder').width=ww*.95+'px';
 
 listNeighsFontSize=50;
 listNeighsLineHeight=60;
@@ -1148,22 +1270,24 @@ listNeighsLineHeight=60;
 
 
 
+
+
 }else if(!isMobile){
 
-els('data').width=ww*.91+'px';
-els('dataHeading').width=ww*.91+'px';
-
-
-//els('messageHolder').left=ww*.5-220+'px';
 els('messageHolder').top=hh*.05+'px';
 els('messageHolder').border='4px solid black';
 els('message').fontSize='30px';
+els('messageHolder').padding='30px';
 
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww*.95+'px';
 bhStyle=getComputedStyle(el('buttonHolder'));
 bhStyleTop=parseInt(bhStyle.top);
 bhStyleHeight=parseInt(bhStyle.height);
+
+els('data').width=ww*.98+'px';
+els('data').top='10px';
+els('data').left='10px';
 
 els('panZoomControls').fontSize='30px';
 els('panZoomControls').lineHeight='60px';
@@ -1174,31 +1298,34 @@ els('vertSizeControls').lineHeight='60px';
 els('vertSizeCloseButton').fontSize='30px';
 
 els('selectGraph').fontSize='20px';
-els('selectGraph').padding='20px';
+els('selectGraph').padding='10px';
 els('selectGraphOption').fontSize='20px';
 els('closeSelect').fontSize='20px';
-els('closeSelect').padding='20px';
-els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
-centerDiv('selectGraphHolder');
+els('closeSelect').padding='10px';
+//els('selectGraphHolder').bottom=bhStyleHeight+'px';
+//centerDiv('selectGraphHolder');
 
-els('consoleInputDiv').width=ww*.87+'px';
-els('consoleInputDiv').height=bhStyleTop-140+'px';
+els('consoleInputDiv').width=ww*.96+'px';
 els('consoleInputDiv').fontSize='30px';
 els('consoleEnterButton').right='40px';
-els('consoleCloser').width='50px';
-els('consoleCloser').height='50px';
-els('consoleCloser').bottom='10px';
-els('consoleCloser').right='40px';
-els('consoleCloser').fontSize='36px';
-
+els('consoleCloser').width='40px';
+els('consoleCloser').height='35px';
+els('consoleCloser').top='4px';
+els('consoleCloser').right='10px';
+els('consoleCloser').fontSize='25px';
+els('consoleCloser').padding='0px';
+els('consoleEnterButton').right='10px';
+els('consoleEnterButton').padding='4px';
+els('consoleInput').height='25%';
+els('consoleInput').fontSize='24px';
+els('consoleOutput').height='100%';
+els('consoleOutput').fontSize='24px';
 
 els('fpsInputDiv').bottom=bhStyleHeight+60+'px';
 els('numVertsInputDiv').bottom=bhStyleHeight+60+'px';
-
 el('filenameInputDiv').style.bottom=bhStyleHeight+40+'px';
 
 els('aboutDiv').width=ww*.95+'px';
-els('aboutDiv').height=bhStyleTop*.95+'px';
 els('aboutDivBody').fontSize='21px';
 els('aboutDivBody').lineHeight='26px';
 els('aboutDivHeading').fontSize='28px';
@@ -1208,69 +1335,26 @@ els('aboutCloser').fontSize='25px';
 els('aboutCloser').padding='1px';
 
 
-els('testerHolder').width=ww*.87+'px';
-els('testerHolder').height=bhStyleTop-100+'px';
-els('testerHolder').fontSize='25px';
-els('testerCloser').right='60px';
+els('testerHolder').height=bhStyleTop*.98+'px';
+els('testerHolder').fontSize='20px';
+els('testerCloser').top='4px';
+els('testerCloser').right='4px';
 els('testerCloser').fontSize='40px';
 els('testerCloser').width='50px';
 els('testerCloser').height='50px';
+els('testerHolder').width=ww*.97+'px';
 
 listNeighsFontSize=30;
 listNeighsLineHeight=40;
 
+}//}else if(!isMobile)
 
-}//}else if(!isMobile){
 
 
+setDivHeightAboveButtonsA(idArray);
 }//modStyles
 
 
-
-
-
-function controlPanelOpenClose(){
-if(el('buttonHolder').style.display=='none'){
-el('buttonHolder').style.display='block';
-el('expander').value='-';
-}else{
-el('buttonHolder').style.display='none';
-el('expander').value='+';
-}
-}//end controlPanelOpenClose
- 
-
-
-
-/*
-async function getGraphFilenames(){
-graphFileNames=null;
-try{
-const response=await fetch(serverAddress+'filenameReader.php');
-
-if(!response.ok){
-alert(response.status);
-showMessage('HTTP Error 1:<br>'+response.status,50000);
-}//if(!response.ok)
-
-graphFileNames=await response.json();
-
-if(isThere(graphFileNames)){
-clearInterval(waitGraphFileNames);
-waitGraphFileNames=null;
-numSavedGraphs=graphFileNames.length;
-initSelectGraph();
-
-}//if(isThere(graphFileNames))
-
-}catch(error){
-//alert(error);
-waitGraphFileNames=setInterval(`getGraphFilenames();`,1000);
-
-//showMessage('Fetching Error 1:<br>'+ error,50000); 
-}
-}//async function getGraphFilenames(){
-*/
 
 
 
@@ -1469,16 +1553,16 @@ typing=true;
 el('filenameInputDiv').style.display='none';
 sanitizeFilename();
 
-
+let filenameUsed=false;
 let options=el('selectGraph').options;
 for(let i=0;i<options.length;i++){
 if(options[i].text==el('enterGraphName').value+'.txt'){
+filenameUsed=true;
 showMessage('<center>'+el('enterGraphName').value+'.txt<br><br>already exists.<br>Not saved. <br><br> [close]</center>',10000);
-return;
 }
 }//i loop
 
-
+if(!filenameUsed){
 fileSaving=true;
 saveAttempts=1;
 showMessage('Saving Graph...',60000000);
@@ -1487,8 +1571,27 @@ typing=false;
 dataFileName=el('enterGraphName').value+'.txt';
 saveGraphData();
 `,10);
+}//if(!filenameUsed){
 }//saveFileButtonActions
 replaceDownEventById('saveFile',saveFileButtonActions);
+
+
+
+
+function removeDuplicatesFromSelect(){
+const seenValues=new Set();
+const options=el('selectGraph').options;
+
+for(let i=options.length-1;i>=0;i--){
+if(seenValues.has(options[i].text)){alert('fish');
+el('selectGraph').remove(i);
+numSavedGraphs--;
+}else{
+seenValues.add(options[i].text);
+}
+}//i loop
+}//removeDuplicatesFromSelect
+
 
 
 
@@ -1611,6 +1714,7 @@ op.value=numSavedGraphs;
 op.text=dataFileName;
 el('selectGraph').appendChild(op);
 numSavedGraphs++;
+setTimeout(`removeDuplicatesFromSelect();`,1000);
 }//end if(!el
 
 
@@ -2115,6 +2219,9 @@ for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
 }//if(streamSolving){
 showSolvingButton();
+let onOff='Off';
+if(streamSolving){onOff='On';}
+showMessage("StreamSolving "+onOff,2000);
 }// end streamSolvingActions
 replaceDownEventById('streamSolve',streamSolvingActions);
 
@@ -2709,11 +2816,22 @@ function neighsActions(event){
 event.preventDefault();
 activeButton('neighs');
 showNumNeigh=!showNumNeigh;
-if(showNumNeigh){listNumNeighs();}
-else{messageCancelActions(event);}
 render();
 }//neighsActions
 replaceDownEventById('neighs',neighsActions);
+
+function listNeighsActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('listNeighs');
+listNeighs=!listNeighs;
+if(listNeighs){
+listNumNeighs();
+}else{
+messageCancelActions(event);
+}
+render();
+}//listNeighsActions
+replaceDownEventById('listNeighs',listNeighsActions);
 
 
 
@@ -2786,7 +2904,7 @@ replaceDownEventById('flexiblesButton',flexiblesActions);
 
 
 function dropRandomActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('dropRandom');
 buildGraphActions(event);
 el('selectGraphHolder').style.display='none';
@@ -2826,7 +2944,7 @@ replaceDownEventById('consoleInput',consoleInputActions);
 
 function consoleEnterButtonActions(event){
 typing=false;
-daar('testerHolder',eval(el('consoleInput').value)+'<br><hr><br>');
+daar('testerContent',eval(el('consoleInput').value)+'<br><hr><br>');
 daar('consoleOutput',eval(el('consoleInput').value)+'<br><hr><br>');
 el('consoleScroller').scrollTop=0;
 }//consoleEnterButtonActions
@@ -2915,7 +3033,7 @@ replaceDownEventById('canvas',showSolvingActions);
 streamSolving=false;
 showSolvingStatus();
 showHide('selectGraphHolder');
-centerDiv('selectGraphHolder');
+//centerDiv('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
 
@@ -2947,7 +3065,7 @@ replaceDownEventById('hardReload',hardReloadActions);
 
 
 function curvedLinkButtonActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('addCurveButton');
 if(!tapMessageShown){tapMessageShown=true;showMessage('<center>Tap dotted<br>line between <br>unlinked nodes</center>',3000);}
 gettingCurvedLinkStart=true;
@@ -3042,28 +3160,32 @@ solved=false;
 }//deleteVertButtonActions
 replaceDownEventById('deleteVertButton',deleteVertButtonActions);
 
+
+
+
 var testNumber=0;
 
 function testerButtonActions(event){
 event.preventDefault();
 activeButton('testerButton');
-showHide('testerHolder');
-showHide('testerCloser');
-if(els('testerHolder').display=='block'){
+showHideV('testerHolder');
+
+
+if(els('testerHolder').visibility=='visible'){
 testVars("testNumber",testNumber,"solving:",solving,"solved",solved,"pauser",pauser,"showSolving",showSolving,"stepping",stepping,"loading",loading,"loadDataFileNameAtStart",loadDataFileNameAtStart,"streamSolving",streamSolving,"modifiedGraph",modifiedGraph);
 testNumber++;
 }
 
-//el('testerHolder').scrollTop=el('testerHolder').scrollHeight;
+//el('testerContent').scrollTop=el('testerContent').scrollHeight;
 }//testerButtonActions
 replaceDownEventById('testerButton',testerButtonActions);
 
 
+
 function testerCloserActions(event){
 if(isThere(event)){event.preventDefault();}
-showHide('testerHolder');
-showHide('testerCloser');
-}//testerCloserAction
+showHideV('testerHolder');
+}//testerCloserActions
 replaceDownEventById('testerCloser',testerCloserActions);
 
 
@@ -3073,24 +3195,25 @@ function messageCancelActions(event){
 if(event){event.preventDefault();}
 el('messageHolder').style.display='none';
 showSolvingTime=false;
+listNeighs=false;
 el('solveData').style.backgroundColor=B.white;
 }//messageCancelActions
 replaceDownEventById('messageHolder',messageCancelActions);
 
 
 
-function gen2ButtonActions(event){
+function genVertsButtonActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('gen2Button');
 
 if(savedLastButton!='gen2Button'){
-replaceDownEventById('canvas',gen2ButtonActions);
+replaceDownEventById('canvas',genVertsButtonActions);
 }
 
 showMessage('Generating Vertices',10000000);
 setTimeout(`addVertsAtTriangleCenters2();`,1);
-}//gen2ButtonActions
-replaceDownEventById('gen2Button',gen2ButtonActions);
+}//genVertsButtonActions
+replaceDownEventById('gen2Button',genVertsButtonActions);
 
 
 function addVertsAtTriangleCenters2(){
@@ -4116,10 +4239,19 @@ render();
 
 if(isLive>=0){
 processFile('../graph2/data/'+dataFileName);
-}else{
+}else if(
+serverAddress.indexOf('172.18.11.218')>=0
+||serverAddress.indexOf('48.52.212.109')>=0
+||serverAddress.indexOf('0.0.0.0')>=0
+){
+//hopweb
 processFile('/data/'+dataFileName);
+}else if(serverAddress.indexOf('localhost')>=0){
+//localhost
+processFile('../graph2/data/'+dataFileName);
 }
-}
+
+}//if(!setRandomVerts&&!randomDropping)
  
 building=false;
 if(setRandomVerts&&!randomDropping){
@@ -4942,6 +5074,18 @@ onKeyDowner=function(event){
 if(!typing){
 el('selectGraph').blur();
 switch(event.key){
+case '9':
+genVertsButtonActions(event);
+break;
+case 'u':
+clearActions(event);
+break;
+case 'q':
+curvedLinkButtonActions(event);
+break;
+case 'z':
+dropRandomActions(event);
+break;
 case 'i':
 vertSizeButtonActions(event);
 break;
@@ -4991,7 +5135,7 @@ case 'c':
 colorVertsActions(event);
 break;
 case 'y':
-//testerButtonActions(event);
+testerButtonActions(event);
 break;
 case 'n':
 numVertsButtonActions(event);
@@ -4999,8 +5143,8 @@ break;
 case 'f':
 fpsActions(event);
 break;
-case 't':
-solveTimeActions(event);
+case '7':
+listNeighsActions(event);
 break;
 case 'g':
 neighsActions(event);
@@ -5009,7 +5153,7 @@ case 'x':
 flexiblesActions(event);
 break;j
 case 'o':
-consoleInputActions(event);
+consoleButtonActions(event);
 break;
 case '1':
 addVertButtonActions(event);
@@ -5027,9 +5171,9 @@ case '5':
 deleteVertButtonActions(event);
 break;
 case '6':
-
-case '7':
-
+streamSolvingActions(event);
+case 'T':
+solveTimeActions(event);
 break;
 case 'r':
 rotateButtonActions(event);
