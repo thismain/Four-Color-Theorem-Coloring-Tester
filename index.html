@@ -1,6 +1,6 @@
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=.25"></meta>
+<meta id="viewport" name="viewport" content="width=device-width,initial-scale=.25"></meta>
 <script>
 var isMobile=false;
 </script>
@@ -139,6 +139,7 @@ scrollbar-width:none;
 </head>
 <body id="bodyer" style="background-color:#bbbbbb;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
 <div id="loading-overlay">Loading...</div>
+
 <script>
 window.addEventListener('load',function(){
 const loadingOverlay=document.getElementById('loading-overlay');
@@ -266,6 +267,7 @@ var flexibles=[];
 var showFlexibles=true;
 var flexibleColor='#db37d9';
 var numSolvesCounter=0;
+var solvedVerts=0;
 var flexiblesCount=0;
 var diffColorPairsCount=0;
 var sameColorPairsCount=0;
@@ -600,7 +602,12 @@ Filename:
 Enter Javascript:
 <textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(graphFileNames)</textarea>
 <br>
-<input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;">
+<!--
+<input id="consolePasteButton" value=" Paste " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;display:inline-block;">-->
+
+<input id="consoleClearButton" value=" Clear " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;display:inline-block;">
+
+<input id="consoleEnterButton" value=" Enter " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;display:inline-block;">
 <br>
 Output:<br>
 <div id="consoleScroller" style="width:100%;height:60%;display:block;font-size:30px;background-color:black;overflow:auto;">
@@ -705,8 +712,6 @@ Output:<br>
 <input id="defaultTouchButton" type="button" value="DefaultTouch" class="b">
 
 
-<input id="hardReload" type="button" value="hardReload" class="b" style="display:none">
-
 </div><!--end buttonHolder Inner-->
 
 </div><!--end buttonHolder Outer-->
@@ -799,6 +804,7 @@ FPS (1-60):
 </div>
 
 <div id="aboutDivBody" style="background-color:#ffffff;font-family:addVertDelaunay;padding:30px;font-size:9px;text-align:justify;line-height:13px;">
+ <!--
 The github files are here:<br>
 <a href="https://github.com/thismain/Four-Color-Theorem-Coloring-Tester" target="_blank">https://github.com/thismain/Four-Color-Theorem-Coloring-Tester</a>
 <br><br>
@@ -808,7 +814,9 @@ The live Desktop demo is here:<br>
 The live Mobile demo is here:<br>
 <a href="http://moygen.rf.gd/graph2/index.html" target="_blank">http://moygen.rf.gd/graph2/index.html</a>
 <br><br>
+-->
 <img id="screenshot" src="screenshotter.png">
+<!--
 <br><br>
 This is a javascript program for four coloring any graph. It has solved hundreds of 600 or fewer vertices. The lowest time to solve for 600 vertices was 22ms, though the average is around 300ms. I use delaunay triangulation, from <a href="https://travellermap.com/tmp/delaunay.js" target="_blank">Joshua Bell's code</a>, to generate random graphs, and these graphs may be modified, either with or without delaunay triangulation. 
 <br><br>
@@ -852,6 +860,7 @@ It turns out to have been unnecessary to worry about complexity increasing with 
 
 After solving graphs manually and watching the algorithm solve graphs in a similar way, one develops an intuition for the reason the four color theorem is true. But articulating this feeling requires much ratiocination and accounting for all possible cases, not to mention a careful definition of terms along the way, which often interferes with the flow of the logic of one's argument. Then also, any exposition which does not rest upon quantifiable statstical relationships rings hollow. It's easy to suppose that there's a certain minimum degree of flexibility which is common to all four-colored planar graphs, where flexibility is defined as the option to be one or two colors other than one's own, without conflict. But it's not so easy to statistically quantify this minimum degree of flexibility. Everyone can see that conflicted nodes can be resolved by swapping colors along a path toward a flexible node, and it also becomes obvious that this flexibility is deriving from the inevitable isolation of every node from the rest of the graph by its neighbors. But how can one show, without testing every possible kind of case, that this local principle of isolation will always yield enough flexibility to four-color any graph?
 <br><br>
+-->
 </div>
 </div>
  
@@ -871,7 +880,7 @@ After solving graphs manually and watching the algorithm solve graphs in a simil
 </div>
 </div>
 
-<div id="dataShowHideButton" style="display:none;text-align:center;color:#bbbbbb;top:12px;right:90px;font-size:30px;color:black;padding-top:1px;padding-bottom:5px;padding-left:8px;padding-right:8px;height:30px;width:30px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:100002;">-</div>
+<input id="dataShowHideButton" type="button" value="-" style="display:none;text-align:center;color:#bbbbbb;top:0px;right:0px;font-size:60px;color:black;padding-top:1px;padding-bottom:1px;padding-left:1px;padding-right:1px;height:150px;width:150px;background-color:#dddddd;border: 2px solid #bbbbbb;position:absolute;font-family:monospace;z-index:10000000002;">
 
 
 <script>
@@ -1052,7 +1061,7 @@ activeShuffleButton('restoreNativeButton');
 
 window.onresize=function(){setTimeout("modStyles();render();",200);};
 
-
+/*
 function setDataShowHideButton(){
 let dataRect=el('data').getBoundingClientRect();
 el('dataShowHideButton').style.right=parseInt(ww-dataRect.width+10)+'px';
@@ -1060,7 +1069,7 @@ el('dataShowHideButton').style.top=parseInt(dataRect.top+6)+'px';
 el('dataShowHideButton').style.display='block';
 //alert(el('dataShowHideButton').style.right);
 }//end setDataShowHideButton
-
+*/
 
 var canv=document.getElementById("canvas");
 var ctx=canv.getContext('2d');
@@ -1089,6 +1098,7 @@ window.addEventListener('resize',function(){
 init();
 vertScaler();
 render();
+modStyles();
 });//addEventListener('resize'
 
 
@@ -1228,6 +1238,10 @@ els('consoleInputDiv').width=ww*.96+'px';
 els('consoleInputDiv').fontSize='55px';
 els('consoleEnterButton').fontSize='40px';
 els('consoleEnterButton').right='10px';
+els('consoleClearButton').fontSize='40px';
+els('consoleClearButton').right='200px';
+//els('consolePasteButton').fontSize='40px';
+//els('consolePasteButton').right='400px';
 els('consoleCloser').width='70px';
 els('consoleCloser').height='70px';
 els('consoleCloser').top='2px';
@@ -1307,7 +1321,6 @@ els('closeSelect').padding='10px';
 
 els('consoleInputDiv').width=ww*.96+'px';
 els('consoleInputDiv').fontSize='30px';
-els('consoleEnterButton').right='40px';
 els('consoleCloser').width='40px';
 els('consoleCloser').height='35px';
 els('consoleCloser').top='4px';
@@ -1316,6 +1329,10 @@ els('consoleCloser').fontSize='25px';
 els('consoleCloser').padding='0px';
 els('consoleEnterButton').right='10px';
 els('consoleEnterButton').padding='4px';
+els('consoleClearButton').right='200px';
+els('consoleClearButton').padding='4px';
+//els('consolePasteButton').right='400px';
+//els('consolePasteButton').padding='4px';
 els('consoleInput').height='25%';
 els('consoleInput').fontSize='24px';
 els('consoleOutput').height='100%';
@@ -2883,7 +2900,6 @@ function clearActions(event){
 if(isThere(event)){event.preventDefault();
 activeButton('clear');
 }
-
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
 reSolverReset();
@@ -2906,7 +2922,11 @@ replaceDownEventById('flexiblesButton',flexiblesActions);
 function dropRandomActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('dropRandom');
+if(modifiedGraph){
+clearActions(event);
+}else{
 buildGraphActions(event);
+}
 el('selectGraphHolder').style.display='none';
 el('filenameInputDiv').style.display='none';
 randomDropping=true;
@@ -2920,9 +2940,9 @@ replaceDownEventById('dropRandom',dropRandomActions);
 function dropRandomShowHide(event){
 showHide('data');
 if(el('data').style.display=='block'){
-el('dataShowHideButton').innerHTML='-';
+el('dataShowHideButton').value='-';
 }else{
-el('dataShowHideButton').innerHTML='+';
+el('dataShowHideButton').value='+';
 }
 }//dropRandomShowHide
 replaceDownEventById('dataShowHideButton',dropRandomShowHide);
@@ -2949,6 +2969,19 @@ daar('consoleOutput',eval(el('consoleInput').value)+'<br><hr><br>');
 el('consoleScroller').scrollTop=0;
 }//consoleEnterButtonActions
 replaceDownEventById('consoleEnterButton',consoleEnterButtonActions);
+
+
+function consoleClearButtonActions(event){
+el('consoleInput').value='';
+}//consoleClearButtonActions
+replaceDownEventById('consoleClearButton',consoleClearButtonActions);
+
+/*
+function consolePasteButtonActions(event){
+el('consoleInput').value='';
+}//consoleClearButtonActions
+replaceDownEventById('consoleClearButton',consoleClearButtonActions);
+*/
 
 
 function consoleCloserActions(event){
@@ -3055,13 +3088,6 @@ loadFile();
 el('selectGraphHolder').style.display="none";
 }//reloadButtonActions
 replaceDownEventById('reloadGraphButton',reloadButtonActions);
-
-
-function hardReloadActions(event){
-location.reload(true);
-//location.href='http://moygen.rf.gd/graph2/index.html?i='+randRange(29,1000000);
-}//hardReloadActions
-replaceDownEventById('hardReload',hardReloadActions);
 
 
 function curvedLinkButtonActions(event){
@@ -3692,7 +3718,6 @@ el('buildRandomGraph').style.backgroundColor='#dbedff';
 
 
 
-
 document.body.onload=function(){
 cancelAnimationFrame(animId);
 modStyles();
@@ -4118,14 +4143,17 @@ el('messageHolder').style.display='none';
 
 function getFlexibles(){
 flexibles=[];
+solvedVerts=0;
 
 for(let v=0;v<vertices.length;v++){
 flexibles[v]={
 avail:false,
-i: vertices[v].i,
+i:vertices[v].i,
 colorsAvailable:[]
 };
-if(vertices[vertices[v].i].c!=4){
+if(vertices[vertices[v].i].c!=4&&!vertices[vertices[v].i].inSameColorPair){
+solvedVerts++;
+
 let colorAvailable=[true,true,true,true];
 for(let c=0;c<4;c++){
 for(let n=0;n<vertices[v].nCount;n++){
@@ -4152,6 +4180,9 @@ flexiblesCount=
 flexibles.filter((obj)=>obj.avail==true).length;
 
 }//end getFlexibles
+
+
+
 
 
 function clamp(a,min,max){
@@ -4206,6 +4237,7 @@ let offset=.5*radius;
 let onlySome=0;
 let pointCounter=0;
 
+
 if(setRandomVerts){
 for(let y=radius*1.7;y<cH-radius;y+=diam){
 if(pointCounter>=numPoints){break;}
@@ -4214,7 +4246,8 @@ let randOffX=randRange(-offset,offset);
 let randOffY=randRange(-offset,offset);
 onlySome=randRange(1,30);
 if(onlySome>20){
-vertices.push(new Vertex(x+randOffX,y+randOffY,4,pointCounter,0,[],false));
+vertices.push(new Vertex(x+randOffX,y+randOffY,4,pointCounter,0,[],false,false,false,pointCounter));
+//function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex){ 
 pointCounter++;
 triangles=triangulate(vertices);
 
@@ -4237,18 +4270,17 @@ render();
 
 }else if(!setRandomVerts&&!randomDropping){
 
-if(isLive>=0){
+//moygen or localhost
+if(isLive>=0||serverAddress.indexOf('localhost')>=0){
 processFile('../graph2/data/'+dataFileName);
+
+//hopweb
 }else if(
 serverAddress.indexOf('172.18.11.218')>=0
 ||serverAddress.indexOf('48.52.212.109')>=0
 ||serverAddress.indexOf('0.0.0.0')>=0
 ){
-//hopweb
 processFile('/data/'+dataFileName);
-}else if(serverAddress.indexOf('localhost')>=0){
-//localhost
-processFile('../graph2/data/'+dataFileName);
 }
 
 }//if(!setRandomVerts&&!randomDropping)
@@ -4877,7 +4909,11 @@ streamSolving=false;
 showSolving=false;
 showSolvingStatus();
 
-let sampleSize=5;
+let sampleSize=20;
+let noDivideZero=0;
+
+let sumSolvedVerts=0;
+let avgSolvedVerts=0;
 
 let sumVertCount=0;
 let avgVertCount=0;
@@ -4887,7 +4923,6 @@ let avgFlexCount=0;
 
 let sumVertFlexRatios=0;
 let avgVertFlexRatios=0;
-
 
 let sumDiffColorPairsCount=0;
 let avgDiffColorPairsCount=0;
@@ -4900,9 +4935,6 @@ let sumDiffSamePairsRatio=0;
 
 let sumPairCount=0;
 let avgPairCount=0;
-
-let sumSameFlexibleCount=0;
-let avgSameFlexibleCount=0;
 
 let sumVertsInSameColorPairCount=0;
 let avgVertsInSameColorPairCount=0;
@@ -4919,7 +4951,12 @@ let maxNeighs=0;
 let minNeighs=1000;
 
 for(let r=0;r<sampleSize;r++){
+
+if(modifiedGraph){
+clearActions(event);
+}else{
 buildAndRender();
+}
 
 let sameColorPairsCount=0;
 let diffColorPairsCount=0;
@@ -4965,9 +5002,18 @@ if(flexibles[f].avail){
 colorsPerFlexible+=flexibles[f].colorsAvailable.length;
 }//if(flex
 }//f loop
-sumColorsPerFlexible+=colorsPerFlexible/flexiblesCount;
 
-sumFlexCount+=flexiblesCount;
+sumSolvedVerts+=solvedVerts;
+
+if(flexiblesCount>0){
+noDivideZero=colorsPerFlexible/flexiblesCount;
+}else{
+noDivideZero=0;
+}
+sumColorsPerFlexible+=noDivideZero;
+
+sumFlexCount+=flexiblesCount
+
 sumVertFlexRatios+=(vertices.length/flexiblesCount);
 
 sumDiffSamePairsRatio+=(diffColorPairsCount/sameColorPairsCount);
@@ -4975,15 +5021,14 @@ sumDiffSamePairsRatio+=(diffColorPairsCount/sameColorPairsCount);
 sumSameColorPairsCount+=sameColorPairsCount;
 sumDiffColorPairsCount+=diffColorPairsCount;
 
-let sameFlexibleCount=countOccurrences(vertices, 'isFlexible',true,'inSameColorPair',true);
-sumSameFlexibleCount+=sameFlexibleCount;
-
-
 vertsInSameColorPairCount=vertices.filter((obj)=>obj.inSameColorPair==true).length;
+
 sumVertsInSameColorPairCount+=vertsInSameColorPairCount;
 
 
 }//end r loop
+
+avgSolvedVerts=(sumSolvedVerts/sampleSize).toFixed(2);
 
 avgColorsPerFlexible=(sumColorsPerFlexible/sampleSize).toFixed(3);
 
@@ -4991,8 +5036,6 @@ avgNeighsPerVertex=(sumNeighsPerVertex/sampleSize).toFixed(0);
 
 avgVertsInSameColorPairCount=(sumVertsInSameColorPairCount/sampleSize).toFixed(0);
 
-
-avgSameFlexibleCount=(sumSameFlexibleCount/sampleSize).toFixed(0);
 
 avgPairCount=(sumPairCount/sampleSize).toFixed(0);
 
@@ -5018,24 +5061,24 @@ el('data').style.display='block';
 let dat=[
 [`number of graphs sampled:`,sampleSize], 
 [`avg # vertices:`,avgVertCount],
-[`avg # pairs:`,avgPairCount],
-['avg ratio pairs/verts:',avgPairsPerVertex+` x more pairs`],
-['avg ratio verts/pairs:',avgVertPairRatio+' ('+avgVertPairPercent+'% of pairs)'],
-['avg neighbors per vertex, max, min:',avgNeighsPerVertex+', '+maxNeighs+', '+minNeighs],
+//[`avg # pairs:`,avgPairCount],
+//['avg ratio pairs/verts:',avgPairsPerVertex+` x more pairs`],
+//['avg ratio verts/pairs:',avgVertPairRatio+' ('+avgVertPairPercent+'% of pairs)'],
+['avg neighbors: per vertex, max, min:',avgNeighsPerVertex+', '+maxNeighs+', '+minNeighs],
+[`avg # solved verts per graph: `,avgSolvedVerts],
 [`avg # flexibles:`,avgFlexCount],
-[`avg ratio flexibles/vertices:`,
-(1/avgVertFlexRatio).toFixed(2)+` (`+((1/avgVertFlexRatio)*100).toFixed(0)+`% of verts)`],
-[`avg ratio vertices/flexibles:`,avgVertFlexRatio+` x more verts`],
-[`avg # different color pairs:`,avgDiffColorPairsCount],
-[`avg # same color pairs:`,avgSameColorPairsCount],
-[`avg ratio diff/same pairs:`,avgDiffSamePairsRatio+` times more diff`],
-[`avg ratio same/diff pairs:`,(1/avgDiffSamePairsRatio).toFixed(2)+` (`+((1/avgDiffSamePairsRatio)*100).toFixed(0)+`% of same)`],
-[`avg % of pairs which are different colors:`,((avgDiffColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
-[`avg % of pairs which are same colors:`,((avgSameColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
-[`avg # verts in at least one same color pair:`,avgVertsInSameColorPairCount+` (`+avgPercentVertsInSameColorPair+`% of all verts)`],
-[`avg # flexible verts in same color pairs:`,avgSameFlexibleCount+` (`+((avgSameFlexibleCount/avgFlexCount)*100).toFixed(0)+`% of all flexibles)`],
-[`avg % verts in same color pairs which are flexible:`,((avgSameFlexibleCount/avgVertsInSameColorPairCount)*100).toFixed(0)+`%`],
 [`avg # alternate colors per flexible:`,avgColorsPerFlexible]
+//[`avg ratio flexibles/vertices:`,(1/avgVertFlexRatio).toFixed(2)+` (`+((1/avgVertFlexRatio)*100).toFixed(0)+`% of verts)`],
+//[`avg ratio vertices/flexibles:`,avgVertFlexRatio+` x more verts`],
+//[`avg # different color pairs:`,avgDiffColorPairsCount],
+//[`avg # same color pairs:`,avgSameColorPairsCount],
+//[`avg ratio diff/same pairs:`,avgDiffSamePairsRatio+` times more diff`],
+//[`avg ratio same/diff pairs:`,(1/avgDiffSamePairsRatio).toFixed(2)+` (`+((1/avgDiffSamePairsRatio)*100).toFixed(0)+`% of same)`],
+//[`avg % of pairs which are different colors:`,((avgDiffColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
+//[`avg % of pairs which are same colors:`,((avgSameColorPairsCount/avgPairCount)*100).toFixed(0)+`%`],
+//[`avg # verts in at least one same color pair:`,avgVertsInSameColorPairCount+` (`+avgPercentVertsInSameColorPair+`% of all verts)`],
+
+
 ];
 
 
@@ -5056,7 +5099,8 @@ stringer2+=`</td></tr></table>`;
 
 da('tableId',stringer2);
 activeButton('dropRandom');
-setTimeout('setDataShowHideButton();',100);
+//setTimeout('setDataShowHideButton();',100);
+el('dataShowHideButton').style.display='block';
 hideMessage(messageTimer);
 randomDropping=false;
 }//dropRandom
@@ -5483,8 +5527,6 @@ middleButtonPan(event);});
 
 canv.addEventListener('mousedown',(event)=>{
 middleButtonPan(event);});
-
-
 
 
 </script>
