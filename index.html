@@ -102,7 +102,7 @@ width:200px
 
 .pz{
 display:inline-block;
-font-size:20px;
+font-size:20px;}
 padding:20px;
 width:100px;
 }
@@ -137,7 +137,7 @@ scrollbar-width:none;
 
 </style>
 </head>
-<body id="bodyer" style="background-color:#bbbbbb;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
+<body id="bodyer" style="background-color:#efefef;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
 <div id="loading-overlay">Loading...</div>
 
 <script>
@@ -150,7 +150,7 @@ var supportsPointer='onpointerdown' in window;
 var isTouchDevice='ontouchstart' in window;
 var usePHP=true;  
 var origin=window.location.origin; //ex: http://172.18.11.218:45267
-var dir='';
+var dir=''; 
 if(origin.indexOf('moygen')>=0||origin.indexOf('localhost')>=0){
 dir='graph2/';
 }
@@ -161,6 +161,15 @@ var serverAddress=origin+'/'+dir;
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
 
+var gettingkLinkStartToDelete=false;
+var gettingkLinkEndToDelete=false;
+var linkStartToDelete=-1;
+var linkEndToDelete=false;
+var showDegree=true;
+var showBuildRendTime=false;
+var buildStartTime=0;
+var startRenderTime=0;
+var genStartTime=0;
 var graphDegree=0;
 var sampleSize=10;
 var dropType='randomBuild';
@@ -340,7 +349,11 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 </script>
 
-<div id="graphDegree" style="font-family:monospace;font-size:60px;color:black;background-color:transparent;position:absolute;left:0px;top:0px;display:block;visibility:visible;z-index:100000000000000;padding:4px;"></div>
+<div id="graphDegree" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;left:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
+
+
+<div id="buildRendTime" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;right:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
+
 
 <div id="testerHolder" style="font-size:25px;font-family:monospace;color:#00ff00;background-color:black;position:absolute;left:15px;top:15px;z-index:100000000;border:6px solid white;padding:0px;visibility:hidden;overflow-x:hidden;overflow-y:auto;">
   
@@ -697,6 +710,8 @@ Output:<br>
 
 <input type="button" value="Link" id="linkVertsButton" class="b" title="[3]">
 
+<input type="button" value="deleteLink" id="deleteLinkButton" class="b" title="[3]">
+
 <input type="button" value="curvedLink" id="addCurveButton" class="b" title="[0]">
 
 <input id="moveVertButton" type="button" value="Move" class="b" title="[4]">
@@ -720,7 +735,12 @@ Output:<br>
 <input id="keysButton" type="button" value="Keys" class="b" title="[K]">
 
 
-<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b">
+<input id="defaultTouchButton" type="button" value="DefaultTouch" class="b" style="display:none">
+
+
+<input id="buildTime" type="button" value="buildTime" class="b">
+
+<input id="showDegree" type="button" value="Degree" class="b">
 
 
 </div><!--end buttonHolder Inner-->
@@ -1099,6 +1119,11 @@ gettingLinkStart=false;
 endConnecting=false;
 }//if(lastButton!='link'){
 
+if(lastButton!='deleteLinkButton'){
+gettingkLinkStartToDelete=false;
+gettingkLinkEndToDelete=false;
+}//if(lastButton!='deleteLinkButton'){
+
 }//activeButton
 
 
@@ -1216,13 +1241,15 @@ els('screenshot').width=ww*.85+'px';
 els('shortcutKeysHeading').width=ww*.96+'px';
 els('shortcutKeys').width=ww*.96+'px';
 
-els('messageHolder').left=ww*.5-220+'px';
+
+els('messageHolder').left=ww*.5-parseInt(el('messageHolder').getBoundingClientRect().width*.5)+'px';
 els('messageHolder').top=hh*.23+'px';
 els('messageHolder').border='8px solid black';
 els('message').fontSize='40px';
 
 if(isTouchDevice){
-els('defaultTouchButton').display='inline-block';
+//els('defaultTouchButton').display='inline-block';
+els('defaultTouchButton').display='none';
 }else{
 els('defaultTouchButton').display='none';
 }
@@ -1582,6 +1609,8 @@ nativePairArr=[...pairArr];
 autoRotate();
 modifiedGraph=true;
 hideMessage(messageTimer);
+getDegree();
+getBuildRendTime();
 }//end isThere
 
 }//async function processFile(fileName){
@@ -2164,6 +2193,8 @@ return eventer;
 }//eventSwitch
 
 
+
+
 function aboutAction(event){
 event.preventDefault();
 activeButton('about');
@@ -2728,7 +2759,7 @@ replaceDownEventById('defaultTouchButton',defaultTouchButtonActions);
 
 
 function buildGraphActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('buildRandomGraph');
 showSolving=false;
 streamSolving=false;
@@ -3271,6 +3302,26 @@ replaceDownEventById('linkVertsButton',linkVertsButtonActions);
 
 
 
+function deleteLinkButtonActions(event){
+event.preventDefault();
+activeButton('deleteLinkButton');
+gettingkLinkStartToDelete=true;
+gettingkLinkEndToDelete=false;
+linkStartToDelete=-1;
+linkEndToDelete=-1;
+replaceDownEventById('canvas',function(event){
+event.preventDefault();
+delaunay=false;
+el('expander').blur();
+getVertexToEdit(event);
+solved=false;
+});//replaceDownEventById('canvas',function(event){
+}//deleteLinkButtonActions
+replaceDownEventById('deleteLinkButton',deleteLinkButtonActions);
+
+
+
+
 function moveVertButtonActions(event){
 event.preventDefault();
 activeButton('moveVertButton');
@@ -3361,8 +3412,12 @@ setTimeout(`addVertsAtTriangleCenters2();`,1);
 replaceDownEventById('gen2Button',genVertsButtonActions);
 
 
+
 function addVertsAtTriangleCenters2(){
-//testVars("pauser",pauser,"solved",solved,"showSolvingTime",showSolvingTime,"showSolving",showSolving,"solving",solving);
+genStartTime=Date.now();
+da('graphDegree','');
+da('buildRendTime','');
+
 delaunay=true;
 for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
@@ -3396,7 +3451,11 @@ segPoints.push(null);
 
 vertScaler();
 sortByNeighborCount();
+if(showDegree){
+getGenVertsDegree();
+}else{
 render();
+}
 delaunay=false;
 modified=true;
 hideMessage(messageTimer);
@@ -3404,6 +3463,19 @@ hideMessage(messageTimer);
 
 
 
+
+function getGenVertsDegree(){
+if(isThere(pairArr)&&isThere(vertices)){
+graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+daa('graphDegree',graphDegree+' degree ');
+}
+daa('buildRendTime',(Date.now()-genStartTime)+' ms build ');
+setTimeout(`
+startRenderTime=Date.now();
+render();
+daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
+`,500);
+}//genVertsDegree
 
 
 
@@ -3620,7 +3692,29 @@ ctx.strokeStyle=fourColor[vertices[vertexToEdit].c];
 ctx.stroke();
 
 if(!delaunay){
-if(gettingLinkStart){
+
+if(gettingkLinkStartToDelete){
+linkStartToDelete=vertexToEdit;
+gettingkLinkStartToDelete=false;
+gettingkLinkEndToDelete=true;
+
+}else if(gettingkLinkEndToDelete){
+linkEndToDelete=vertexToEdit;
+//gettingkLinkEndToDelete=false;
+
+for(let i=pairArr.length-1;i>=0;i--){
+if((linkStartToDelete==pairArr[i][0]||linkStartToDelete==pairArr[i][1])&&(linkEndToDelete==pairArr[i][0]||linkEndToDelete==pairArr[i][1])){
+pairArr.splice(i,1);
+//segPoints.splice(i,1);
+}
+}//i loop
+
+//gettingkLinkStartToDelete=true;
+//gettingkLinkEndToDelete=false;
+linkStartToDelete=vertexToEdit;
+linkEndToDelete=-1;
+
+}else if(gettingLinkStart){
 linkStart=vertexToEdit;
 addingVert=true;
 
@@ -3676,6 +3770,8 @@ render();
 //ctx.closePath();
 }//end getVertexToEdit
  
+
+
 
 
 function deleteVertex(e,delaunay){
@@ -3954,13 +4050,6 @@ if(showSolving&&!pauser&&!stepping){
 recursiveNeighborSolver();
 render();
 }//end showSolving&&!&&pauser
-
-/*
-if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
-da('graphDegree',graphDegree);
-}
-*/
 
 },1000/framesPerSecond);//end setTimeout
 }//end animate
@@ -4353,6 +4442,11 @@ diam=Math.sqrt(cW*cH/numPoints*randOnlySome);
 
 
 function buildAndRender(){
+da('graphDegree','');
+els('graphDegree').visibility='hidden';
+da('buildRendTime','');
+els('buildRendTime').visibility='hidden';
+buildStartTime=Date.now();
 vertices=[];
 triangles=[];
 pairArr=[];
@@ -4381,7 +4475,6 @@ let offset=.5*radius;
 let onlySome=0;
 let pointCounter=0;
 
-
 if(setRandomVerts){
 for(let y=radius*1.7;y<cH-radius;y+=diam){
 if(pointCounter>=numPoints){break;}
@@ -4409,8 +4502,10 @@ nativePairArr=[...pairArr];
 
 
 if(!showSolving){
-render();
-}
+getDegree();
+getBuildRendTime();
+}//if(!showSolving){
+
 
 }else if(!setRandomVerts&&!randomDropping){
 
@@ -4436,6 +4531,81 @@ hideMessage(messageTimer);
 }
 }// end buildAndRender
 
+
+
+
+function getDegree(){
+if(showDegree){
+els('graphDegree').visibility='visible';
+}else{
+els('graphDegree').visibility='hidden';
+}
+if(isThere(pairArr)&&isThere(vertices)){
+graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+daa('graphDegree',graphDegree+' degree ');
+}
+}//getDegree
+
+
+function getBuildRendTime(){
+if(showBuildRendTime){
+els('buildRendTime').visibility='visible';
+}else{
+els('buildRendTime').visibility='hidden';
+}
+daa('buildRendTime',(Date.now()-buildStartTime)+' ms build ');
+setTimeout(`
+startRenderTime=Date.now();
+render();
+daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
+`,500);
+}//getBuildRendTime
+
+
+
+
+function showBuildRendTimeActions(event){
+if(isThere(event)){event.preventDefault();}
+showBuildRendTime=!showBuildRendTime;
+if(showBuildRendTime){
+els('buildRendTime').visibility='visible';
+}else{
+els('buildRendTime').visibility='hidden';
+}
+}//showBuildRendTimeActions
+replaceDownEventById('buildTime',showBuildRendTimeActions);
+
+
+
+function showDegreeActions(event){
+if(isThere(event)){event.preventDefault();}
+if(isThere(pairArr)&&isThere(vertices)){
+graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+da('graphDegree',graphDegree+' degree ');
+}
+if(isThere(event)){
+showDegree=!showDegree;
+if(showDegree){
+els('graphDegree').visibility='visible';
+}else{
+els('graphDegree').visibility='hidden';
+}
+}//if(isThere(event)){
+}//showDegreeActions
+replaceDownEventById('showDegree',showDegreeActions);
+
+
+/*
+function graphDegreeActions(event){
+if(isThere(event)){event.preventDefault();}
+if(els('graphDegree').opacity==1){
+els('graphDegree').opacity=.3;
+}else{
+els('graphDegree').opacity=1;
+}
+}//graphDegreeActions
+replaceDownEventById('graphDegree',graphDegreeActions);
+*/
 
 
 
@@ -4899,6 +5069,7 @@ loadDataFileNameAtStart=false;
 setTimeout(`showSolvingActions();`,500);
 }
 
+showDegreeActions();
 }//end render
 
 
