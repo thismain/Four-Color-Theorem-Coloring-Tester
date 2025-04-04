@@ -165,7 +165,7 @@ var gettingkLinkStartToDelete=false;
 var gettingkLinkEndToDelete=false;
 var linkStartToDelete=-1;
 var linkEndToDelete=false;
-var showDegree=true;
+var showDegree=false;
 var showBuildRendTime=false;
 var buildStartTime=0;
 var startRenderTime=0;
@@ -183,9 +183,9 @@ var solving=false;
 var pauser=false;
 var streamSolving=true;
 var loading=false;
-var setRandomVerts=true;
+var setRandomVerts=false;
 var loadDataFileNameAtStart=!setRandomVerts;
-var dataFileName="pentagon.txt";
+var dataFileName="triangle3.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
@@ -618,7 +618,7 @@ Filename:
 <input type="button" id="consoleCloser" style="top:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;display:inline-block;" value="x">
 
 Enter Javascript:
-<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">JSON.stringify(graphFileNames)</textarea>
+<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">startPart+'---'+endPart+'---'+doNotTriangulate+'---'+vertices.length+'---'+triangles.length+'<br>'+(2*pairArr.length)/vertices.length</textarea>
 <br>
 <!--
 <input id="consolePasteButton" value=" Paste " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;display:inline-block;">-->
@@ -1483,7 +1483,7 @@ numSavedGraphs=graphFileNames.length;
 initSelectGraph();
 
 if(loadDataFileNameAtStart){
-loadFile();
+setTimeout(`loadFile();`,100);
 }//if(loadDataFileNameAtStart){
 
 }//if(isThere(el('ifr').contentWindow.filenames)){
@@ -3372,6 +3372,7 @@ testVars("testNumber",testNumber,"solving:",solving,"solved",solved,"pauser",pau
 testNumber++;
 }
 */
+
 //el('testerContent').scrollTop=el('testerContent').scrollHeight;
 }//testerButtonActions
 replaceDownEventById('testerButton',testerButtonActions);
@@ -3412,18 +3413,97 @@ setTimeout(`addVertsAtTriangleCenters2();`,1);
 replaceDownEventById('gen2Button',genVertsButtonActions);
 
 
+var partSize=100;
+var startPart=0;
+var endPart=startPart+partSize;
+var doNotTriangulate=false;
+
 
 function addVertsAtTriangleCenters2(){
 genStartTime=Date.now();
 da('graphDegree','');
 da('buildRendTime','');
 
+if(!doNotTriangulate){
 delaunay=true;
-for(i=0;i<vertices.length;i++){
+//for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-}//i loop
+//}//i loop
+vertScaler();
 sortByNeighborCount();
-delaunay=false
+delaunay=false;
+render();
+}//if(!doNotTriangulate){
+
+
+for(i=startPart;i<triangles.length;i++){
+ 
+let triCenterX=parseInt((
+triangles[i].v0.x+
+triangles[i].v1.x+
+triangles[i].v2.x)/3);
+
+let triCenterY=parseInt((
+triangles[i].v0.y+
+triangles[i].v1.y+
+triangles[i].v2.y)/3);
+
+vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1,true));
+
+
+pairArr.push([vertices.length-1,triangles[i].v0.i]);
+pairArr.push([vertices.length-1,triangles[i].v1.i]);
+pairArr.push([vertices.length-1,triangles[i].v2.i]);
+
+segPoints.push(null);
+segPoints.push(null);
+segPoints.push(null);
+
+
+if(i==triangles.length-1){
+doNotTriangulate=false;
+startPart=0;
+endPart=startPart+partSize;
+//alert('reached end: '+startPart+'--'+endPart);
+
+}else
+
+if(i==endPart){
+doNotTriangulate=true;
+startPart=endPart+1;
+endPart+=partSize;
+//alert('2: ---'+startPart+'--'+endPart);
+break;
+}
+
+}//i loop
+
+vertScaler();
+sortByNeighborCount();
+if(showDegree){
+getGenVertsDegree();
+}else{
+render();
+}
+delaunay=false;
+modified=true;
+hideMessage(messageTimer);
+checkForDuplicateVertices();
+}//addVertsAtTriangleCenters2
+
+
+
+function addVertsAtTriangleCenters1(){
+genStartTime=Date.now();
+da('graphDegree','');
+da('buildRendTime','');
+
+delaunay=true;
+//for(i=0;i<vertices.length;i++){
+triangles=triangulate(vertices);
+//}//i loop
+sortByNeighborCount();
+delaunay=false;
 for(i=0;i<triangles.length;i++){
  
 let triCenterX=parseInt((
@@ -3459,14 +3539,16 @@ render();
 delaunay=false;
 modified=true;
 hideMessage(messageTimer);
+checkForDuplicateVertices();
 }//addVertsAtTriangleCenters2
+
 
 
 
 
 function getGenVertsDegree(){
 if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+graphDegree=(2*pairArr.length/vertices.length);
 daa('graphDegree',graphDegree+' degree ');
 }
 daa('buildRendTime',(Date.now()-genStartTime)+' ms build ');
@@ -3953,13 +4035,13 @@ setRadioButtons();
 document.body.onload=function(){
 cancelAnimationFrame(animId);
 modStyles();
+if(loadDataFileNameAtStart){
+showMessage('Loading Graph...',60000000);
+}
 getGraphFilenames();
 graphRenderScaleFactors();
 buildAndRender();
 animInit();
-if(loadDataFileNameAtStart){
-showMessage('Loading Graph...',60000000);
-}
 //showHideV('bodyer');
 //setTimeout(`showHideV('bodyer');`,200);
 replaceDownEventById('canvas',showSolvingActions);
@@ -4547,10 +4629,11 @@ els('graphDegree').visibility='visible';
 els('graphDegree').visibility='hidden';
 }
 if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+graphDegree=(2*pairArr.length/vertices.length);
 daa('graphDegree',graphDegree+' degree ');
 }
 }//getDegree
+
 
 
 function getBuildRendTime(){
@@ -4582,23 +4665,40 @@ els('buildRendTime').visibility='hidden';
 replaceDownEventById('buildTime',showBuildRendTimeActions);
 
 
+function checkForDuplicateVertices(){
+let sama=[];
+for(let i=0;i<vertices.length;i++){
+for(let v=i+1;v<vertices.length;v++){
+if(vertices[i].x==vertices[v].x&&vertices[i].y==vertices[v].y){
+alert('same pos: '+vertices[i].i+'---'+vertices[v].i);
+sama.push(vertices[i].i);
+sama.push(vertices[v].i);
+}
+}//v loop
+}//i loop
+daar('consoleOutput',sama.length+'<br>'+JSON.stringify(sama)+'<br>');
+}//checkForDuplicateVertices
+
 
 function showDegreeActions(event){
 if(isThere(event)){event.preventDefault();}
 if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length).toFixed(3);
+graphDegree=(2*pairArr.length/vertices.length);
 da('graphDegree',graphDegree+' degree ');
 }
 if(isThere(event)){
 showDegree=!showDegree;
 if(showDegree){
 els('graphDegree').visibility='visible';
+checkForDuplicateVertices();
+
 }else{
 els('graphDegree').visibility='hidden';
 }
 }//if(isThere(event)){
 }//showDegreeActions
 replaceDownEventById('showDegree',showDegreeActions);
+
 
 
 /*
@@ -4638,9 +4738,9 @@ function restoreNativeVertOrder(){
 vertices=[...nativeVertOrder];
 vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
 if(delaunay){
-for(let i=0;i<vertices.length;i++){
+//for(let i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-}//i loop
+//}//i loop
 }//if(delaunay){
 updatePairArr(vertices);
 vertScaler();
@@ -4661,11 +4761,11 @@ return array;
 function shuffleRandomVertices(){
 shuffledVertices=shuffle(vertices);
 vertices=[...shuffledVertices];
-for(let i=0;i<vertices.length;i++){
+//for(let i=0;i<vertices.length;i++){
 if(delaunay){
 triangles=triangulate(vertices);
 }
-}//i loop
+//}//i loop
 updatePairArr(shuffledVertices);
 vertScaler();
 sortByNeighborCount();
@@ -4687,11 +4787,11 @@ if(a.x===b.x){return a.x-b.x;
 function sort2D(){
 let sortedVerts2D=sortPoints(vertices);
 vertices=[...sortedVerts2D];
-for(let i=0;i<vertices.length;i++){
+//for(let i=0;i<vertices.length;i++){
 if(delaunay){
 triangles=triangulate(vertices);
 }
-}//i loop 
+//}//i loop 
 updatePairArr(sortedVerts2D);
 vertScaler(); 
 sortByNeighborCount();
@@ -4730,11 +4830,11 @@ outInVerts.sort((a,b)=>a.distFromCenter-b.distFromCenter);
 vertices=[...outInVerts];
 vertices.forEach(vert=>{delete vert.distFromCenter;});
 
-for(let i=0;i<vertices.length;i++){
+//for(let i=0;i<vertices.length;i++){
 if(delaunay){
 triangles=triangulate(vertices);
 }
-}//i loop 
+//}//i loop 
 updatePairArr(vertices);
 vertScaler(); 
 sortByNeighborCount();
@@ -4750,9 +4850,9 @@ sortedByNeighCount.sort((a,b)=>b.nCount-a.nCount);
 vertices=[...sortedByNeighCount];
 
 if(delaunay){
-for(let i=0;i<vertices.length;i++){
+//for(let i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-}//i loop 
+//}//i loop 
 }//if(delaunay){
 
 updatePairArr(vertices);
@@ -5071,11 +5171,15 @@ ci++;
 //testVars("gettingLinkStart",gettingLinkStart,"startConnecting",startConnecting,"endConnecting",endConnecting,"addingVert",addingVert,"linkStart",linkStart,"linkEnd",linkEnd);
 
 if(loadDataFileNameAtStart&&streamSolving){
-loadDataFileNameAtStart=false;
 setTimeout(`showSolvingActions();`,500);
 }
 
 showDegreeActions();
+if(loadDataFileNameAtStart){
+loadDataFileNameAtStart=false;
+hideMessage();
+}
+
 }//end render
 
 
