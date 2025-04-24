@@ -161,16 +161,27 @@ var serverAddress=origin+'/'+dir;
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
 
+var plotFontSize=45;
+var leftOfPlot=160;
+var xScale=36;
+var targetNumberVertices=400;
+var graphDegree=0;
+var maxDegree=0;
+var partSize=100;
+var savedPartSize=partSize;
+var startPart=0;
+var endPart=startPart+partSize;
+var b_Triangulate=true;
 var gettingkLinkStartToDelete=false;
 var gettingkLinkEndToDelete=false;
 var linkStartToDelete=-1;
 var linkEndToDelete=false;
-var showDegree=false;
+var showDegree=true;
 var showBuildRendTime=false;
 var buildStartTime=0;
 var startRenderTime=0;
 var genStartTime=0;
-var graphDegree=0;
+
 var sampleSize=10;
 var dropType='randomBuild';
 var saveAttempts=1;
@@ -180,17 +191,18 @@ var showSolving=false;
 var stepping=false;
 var solved=false;
 var solving=false;
-var pauser=false;
+var pauser=false; 
 var streamSolving=true;
 var loading=false;
 var setRandomVerts=false;
+var eqTri=false;
 var loadDataFileNameAtStart=!setRandomVerts;
-var dataFileName="triangle3.txt";
+var dataFileName="max_7143_42.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
-showSolving=true;
-streamSolving=true;
+showSolving=false;
+streamSolving=false;
 loading=true;
 numPoints=60;
 }else{
@@ -349,7 +361,9 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 </script>
 
-<div id="graphDegree" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;left:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
+<div id="flexiblesCountDisplay" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;right:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px;text-align:right;"></div>
+
+<div id="graphDegree" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;left:0px;top:0px;display:block;visibility:visible;z-index:100000000000000;padding:4px;padding:20px"></div>
 
 
 <div id="buildRendTime" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;right:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
@@ -369,6 +383,31 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 </div>
 
 
+
+<div id="flexiblesDataHolder" style="position:absolute;left:450px;top:300px;padding:60px;border:8px solid black;visibility:hidden;z-index:1000000;background-color:white;overflow-x:hidden;overflow-y:auto;height:500px;font-size:50px;text-align:center;"> 
+ 
+Number of Graphs to Sample:<br>
+<div style="text-align:center;padding:20px;">
+ 
+<input id="enterNumFlexSamples" type="text" size="4" value="20" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:50px;padding:10px;">
+
+<input id="numFlexSamplesApply" value=" run " type="button" style="display:inline-block;font-size:50px;padding:10px;">
+
+<input id="numFlexSamplesCancel" value=" cancel " type="button" style="display:inline-block;font-size:50px;padding:10px;">
+</div>
+<hr>
+<br><br>
+
+<div id="flexiblesData" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;overflow-y:auto;overflow-x:hidden;word-wrap:break-word;">
+</div>
+
+<center>
+<br><br>
+<input id="showFlexSampleSolves" value=" showFlexSampleSolves " type="button" style="display:inline-block;font-size:50px;padding:10px;">
+ <br><br>
+<input type="button" value="[close]" id="flexiblesDataCloser" style="bottom:0px;right:0px:z-index:10000000000;font-size:50px;font-family:monospace;display:block;">
+</center>
+</div>
 
 
 
@@ -420,6 +459,8 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 <div id="message" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:40px;">
 </div>
 </div>
+
+
 
 
 <iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
@@ -582,14 +623,17 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 
 
-<div id="selectGraphHolder" style="z-index:10000000;display:none;position:absolute;top:10px;left:10px;">
+<div id="selectGraphHolder" style="z-index:10000000;visibility:hidden;position:absolute;bottom:0px;left:10px;height:80px"> 
  
 <select id="selectGraph" onchange="loadFile();" style="font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;overflow-x:hidden;">
  
 <option id="selectGraphOption" style="font-size:20px;font-family:monospace;" disabled value="" id="label">Load Graph</option>
 </select>
 
+<input id="reloadGraphButton" value="reload" type="button" style="color:#000000;font-size:40px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+
 <input id="closeSelect" value="X" type="button" style="color:#000000;font-size:30px;font-family:monospace;background-color:#ffffff;border:6px solid #000000;padding:30px;margin-left:-12px;">
+
 </div>
 
 
@@ -618,7 +662,13 @@ Filename:
 <input type="button" id="consoleCloser" style="top:10px;right:40px;font-size:40px;font-family:monospace;position:absolute;border:2px solid black;display:inline-block;" value="x">
 
 Enter Javascript:
-<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">startPart+'---'+endPart+'---'+doNotTriangulate+'---'+vertices.length+'---'+triangles.length+'<br>'+(2*pairArr.length)/vertices.length</textarea>
+<textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">
+let s='';
+for(let i=0;i<uniqueSolveStringArray.length;i++){
+s+=i+') '+uniqueSolveStringArray[i]+'<br>';
+}
+s
+ </textarea>
 <br>
 <!--
 <input id="consolePasteButton" value=" Paste " type="button" style="display:block;font-size:30px;padding:10px;right:40px;position:absolute;display:inline-block;">-->
@@ -694,7 +744,6 @@ Output:<br>
 <input id="saveGraphButton" type="button" value="save"  class="b" title="[E]">
 
 
-<input type="button" value="reload" id="reloadGraphButton" class="b" style="display:none;">
 
 
 <input type="button" value="Tester" id="testerButton" class="b" title="[Y]" style="display:inline-block;">
@@ -738,11 +787,19 @@ Output:<br>
 <input id="defaultTouchButton" type="button" value="DefaultTouch" class="b" style="display:none">
 
 
-<input id="buildTime" type="button" value="buildTime" class="b">
+<input id="buildTime" type="button" value="buildTime" class="b" style="display:none;">
+
+<input id="delaun" type="button" value="delaun" class="b">
 
 <input id="showDegree" type="button" value="Degree" class="b">
 
+<input id="autoGen" type="button" value="autoGen" class="b" style="display:inline-block;">
 
+<input id="plotMaxDegree" type="button" value="plotMaxDegree" class="b">
+
+<input id="flexiblesCount" type="button" value="flexiblesCount" class="b">
+
+<input id="randSolve" type="button" value="randSolve" class="b">
 </div><!--end buttonHolder Inner-->
 
 </div><!--end buttonHolder Outer-->
@@ -805,7 +862,7 @@ Number of Graphs to Sample:
 
 Number of Vertices:
 <input id="enterNumVerts" type="text"  size="3" value="60" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:25px;padding:5px">
-
+ 
 <input id="numVertsApply" value="Apply" type="button" style="display:inline-block;font-size:25px;padding:5px;">
 
 <input id="numVertsCancel" value="cancel" type="button" style="display:inline-block;font-size:25px;padding:5px;">
@@ -1099,9 +1156,12 @@ el('showSolving').value='AnimSolving';
 savedButtonId=buttonId;
 savedLastButton=lastButton;
 lastButton=buttonId;
- 
+
 //if(lastButton!='dropRandomColors'){el('dataShowHideButton').style.display='none';el('data').style.display='none';}
 if(lastButton!='about'){el('aboutDiv').style.display='none';}
+
+
+
 if(lastButton!='curvedLink'&&gettingCurvedLinkEnd){
 gettingCurvedLinkStart=false;
 gettingCurvedLinkEnd=false;
@@ -1184,12 +1244,17 @@ els(id).height=hh-parseInt(el('buttonHolder').getBoundingClientRect().height)-(p
 }//setDivHeightAboveButtons
 
 
-var idArray=['aboutDiv','data','testerHolder','consoleInputDiv','shortcutKeys'];
+var idArray=['aboutDiv','data','testerHolder','consoleInputDiv','shortcutKeys','flexiblesDataHolder'];
 
 function setDivHeightAboveButtonsA(idA){
 for(let i=0;i<idA.length;i++){
 els(idA[i]).height=hh-parseInt(el('buttonHolder').getBoundingClientRect().height)-(parseInt(els(idA[i]).padding)*2)-(parseInt(els(idA[i]).borderWidth)*2)-parseInt(els(idA[i]).top)+'px';
 }//i loop
+
+
+els('selectGraphHolder').bottom=parseInt(el('buttonHolder').getBoundingClientRect().height)+parseInt(els('selectGraphOption').fontSize)+'px';
+
+//-(parseInt(els('selectGraphHolder').padding)*2)-(parseInt(els('selectGraphHolder').borderWidth)*2)-parseInt(els('selectGraphHolder').height)
 }//setDivHeightAboveButtons
 
 
@@ -1198,6 +1263,7 @@ if(els('buttonHolder').display=='none'){
 els('buttonHolder').height='';
 els('buttonHolder').display='block';
 setDivHeightAboveButtonsA(idArray);
+
 el('expander').value='-';
 }else{
 els('buttonHolder').height='0px';
@@ -1255,8 +1321,25 @@ els('defaultTouchButton').display='none';
 }
 
 
-
 if(isMobile){
+els('flexiblesData').fontSize='50px';
+els('flexiblesDataHolder').fontSize='50px';
+els('enterNumFlexSamples').fontSize='50px';
+els('numFlexSamplesApply').fontSize='50px';
+els('numFlexSamplesCancel').fontSize='50px';
+els('showFlexSampleSolves').fontSize='50px';
+els('flexiblesDataCloser').fontSize='50px';
+
+
+els('reloadGraphButton').fontSize='40px';
+els('reloadGraphButton').padding='30px';
+
+els('graphDegree').fontSize='50px';
+els('buildRendTime').fontSize='50px';
+
+plotFontSize=45;
+leftOfPlot=160;
+xScale=36;
 
 changeClass('b','bm');
 changeClass('t','tm');
@@ -1308,9 +1391,15 @@ bhStyle=getComputedStyle(el('buttonHolder'));
 bhStyleTop=parseInt(bhStyle.top);
 bhStyleHeight=parseInt(bhStyle.height);
 
+els('selectGraph').borderWidth='6px';
 els('selectGraph').fontSize='40px';
 els('selectGraphOption').fontSize='40px';
 els('closeSelect').fontSize='40px';
+els('closeSelect').borderWidth='6px';
+
+els('reloadGraphButton').borderWidth='6px';
+els('reloadGraphButton').fontSize='40px';
+els('reloadGraphButton').padding='30px';
 //els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
 //centerDiv('selectGraphHolder');
 
@@ -1341,7 +1430,6 @@ els('aboutCloser').width='60px';
 els('aboutCloser').height='60px';
 els('aboutCloser').fontSize='50px';
 els('aboutCloser').padding='2px';
-
 
 els('fpsInputDiv').bottom=bhStyleHeight+160+'px';
 els('numVertsInputDiv').bottom=bhStyleHeight+160+'px';
@@ -1380,6 +1468,20 @@ listNeighsLineHeight=60;
 
 
 }else if(!isMobile){
+els('flexiblesData').fontSize='25px';
+els('flexiblesDataHolder').fontSize='25px';
+els('enterNumFlexSamples').fontSize='25px';
+els('numFlexSamplesApply').fontSize='25px';
+els('numFlexSamplesCancel').fontSize='25px';
+els('showFlexSampleSolves').fontSize='25px';
+els('flexiblesDataCloser').fontSize='25px';
+
+els('graphDegree').fontSize='25px';
+els('buildRendTime').fontSize='25px';
+
+plotFontSize=25;
+leftOfPlot=80;
+xScale=28;
 
 els('messageHolder').top=hh*.05+'px';
 els('messageHolder').border='4px solid black';
@@ -1404,11 +1506,16 @@ els('vertSizeControls').fontSize='30px';
 els('vertSizeControls').lineHeight='60px';
 els('vertSizeCloseButton').fontSize='30px';
 
+els('selectGraph').borderWidth='3px';
 els('selectGraph').fontSize='20px';
 els('selectGraph').padding='10px';
 els('selectGraphOption').fontSize='20px';
 els('closeSelect').fontSize='20px';
-els('closeSelect').padding='10px';
+els('closeSelect').padding='11px';
+els('closeSelect').borderWidth='3px';
+els('reloadGraphButton').borderWidth='3px';
+els('reloadGraphButton').fontSize='20px';
+els('reloadGraphButton').padding='11px';
 //els('selectGraphHolder').bottom=bhStyleHeight+'px';
 //centerDiv('selectGraphHolder');
 
@@ -1460,7 +1567,6 @@ listNeighsFontSize=30;
 listNeighsLineHeight=40;
 
 }//}else if(!isMobile)
-
 
 
 setDivHeightAboveButtonsA(idArray);
@@ -1519,6 +1625,7 @@ el('selectGraph').appendChild(op);
 
 
 async function loadTextFile(filePath){
+resetGenVertsVars();
 try{
 const response=await fetch(filePath);
 if(!response.ok){
@@ -1610,7 +1717,7 @@ autoRotate();
 modifiedGraph=true;
 hideMessage(messageTimer);
 getDegree();
-getBuildRendTime();
+//getBuildRendTime();
 }//end isThere
 
 }//async function processFile(fileName){
@@ -1715,7 +1822,8 @@ function saveGraphData(){
 if(usePHP){
 graphData='';
 for(let i=0;i<vertices.length;i++){
-graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i;
+graphData+=vertices[i].x+' '+vertices[i].y+' '+vertices[i].c+' '+vertices[i].i;
+//graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i;
 if(i<vertices.length-1){graphData+=' ';}
 }//end i loop
 
@@ -1736,8 +1844,12 @@ segPointsCopy.splice(i,1);
 for(let i=0;i<segPointsCopy.length;i++){
 if(isThere(segPointsCopy[i])){
 for(let s=0;s<segPointsCopy[i].length;s++){
+/*
 segPointsCopy[i][s].x=parseInt(segPointsCopy[i][s].x);
 segPointsCopy[i][s].y=parseInt(segPointsCopy[i][s].y);
+*/
+segPointsCopy[i][s].x=segPointsCopy[i][s].x;
+segPointsCopy[i][s].y=segPointsCopy[i][s].y;
 }//s loop
 }//isThere
 }//end i loop
@@ -2378,9 +2490,9 @@ el('solve').style.backgroundColor=B.blue;
 
 
 function solveActions(event){
-if(isThere(event)){event.preventDefault();}
+if(isThere(event)){event.preventDefault();
 activeButton('solve');
-//setTimeout(`
+}
 if(savedLastButton!='solve'){
 replaceDownEventById('canvas',solveActions);
 }
@@ -2452,7 +2564,6 @@ recursiveNeighborSolver();
 }//if(solving&&!pauser
 
 solveButton();
-//`,20);
 }//end solveActions
 replaceDownEventById('solve',solveActions);
 
@@ -2776,10 +2887,14 @@ function addVertexDelaunayButtonActions(event){
 event.preventDefault();
 activeButton('addVertexDelaunay');
 replaceDownEventById('canvas',function(event){
-event.preventDefault();
+showMessage('Delauneating...',600000);
+setTimeout(function(){
+if(isThere(event)){event.preventDefault();}
 delaunay=true;
 mouseAdd_Vertex(event);
 solved=false;
+hideMessage(); 
+},20);
 });//replaceDownEventById('canvas',function(event){
 }//end addVertDelaunay
 replaceDownEventById('addVertexDelaunay',addVertexDelaunayButtonActions);
@@ -2790,7 +2905,7 @@ function moveVertexDelaunayButtonActions(event){
 event.preventDefault();
 activeButton('moveVertexDelaunay');
 replaceDownEventById('canvas',function(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 delaunay=true;
 el('expander').blur();
 dragging=true;
@@ -3036,7 +3151,7 @@ replaceDownEventById('dropRandom2',dropRandom2Actions);
 
 function dropRandomColorsActions(event){
 activeButton('dropRandomColors');
-el('selectGraphHolder').style.display='none';
+el('selectGraphHolder').style.visibility='hidden';
 el('filenameInputDiv').style.display='none';
 el('dropNumVerts').value=numPoints;
 if(dropType=='randomBuild'){
@@ -3054,7 +3169,7 @@ function dropRunActions(event){
 if(isThere(event)){event.preventDefault();}
 showHideV('dropRandomInputDiv');
 activeButton('dropRandomColors');
-el('selectGraphHolder').style.display='none';
+el('selectGraphHolder').style.visibility='hidden';
 el('filenameInputDiv').style.display='none';
 randomDropping=true;
 numPoints=parseInt(el('dropNumVerts').value);
@@ -3208,6 +3323,7 @@ replaceDownEventById('cancelSave',cancelSaveButtonActions);
 function loadButtonActions(event){
 event.preventDefault();
 activeButton('loadGraphButton');
+modStyles();
 clearInterval(waitGraphFileNames);
 waitGraphFileNames=0;
 if(savedLastButton!='loadGraphButton'){
@@ -3215,7 +3331,7 @@ replaceDownEventById('canvas',showSolvingActions);
 }
 streamSolving=false;
 showSolvingStatus();
-showHide('selectGraphHolder');
+showHideV('selectGraphHolder');
 //centerDiv('selectGraphHolder');
 }//loadButtonActions
 replaceDownEventById('loadGraphButton',loadButtonActions);
@@ -3224,18 +3340,23 @@ replaceDownEventById('loadGraphButton',loadButtonActions);
 
 
 function closeSelectActions(event){
-el('selectGraphHolder').style.display='none';
+el('selectGraphHolder').style.visibility='hidden';
 }//closeSelectActions
 replaceDownEventById('closeSelect',closeSelectActions);
 
+/*
+function reloadSelectActions(event){
+
+}//reloadSelectActions
+replaceDownEventById('reloadSelect',reloadSelectActions);
+*/
 
 function reloadButtonActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
 activeButton('reloadGraphButton');
 streamSolving=false;
 showSolvingStatus();
 loadFile();
-el('selectGraphHolder').style.display="none";
 }//reloadButtonActions
 replaceDownEventById('reloadGraphButton',reloadButtonActions);
 
@@ -3387,6 +3508,13 @@ replaceDownEventById('testerCloser',testerCloserActions);
 
 
 
+function flexiblesDataCloserActions(event){
+if(isThere(event)){event.preventDefault();}
+showHideV('flexiblesDataHolder');
+}//flexiblesDataCloserActions
+replaceDownEventById('flexiblesDataCloser',flexiblesDataCloserActions);
+
+
 
 function messageCancelActions(event){
 if(event){event.preventDefault();}
@@ -3413,40 +3541,210 @@ setTimeout(`addVertsAtTriangleCenters2();`,1);
 replaceDownEventById('gen2Button',genVertsButtonActions);
 
 
-var partSize=100;
-var startPart=0;
-var endPart=startPart+partSize;
-var doNotTriangulate=false;
+function plotNumVertsPerMaximalGraphDegree(){
+modStyles();
+if(showDegree){
+showDegree=false;
+showHideV('graphDegree');
+}
+ctx.clearRect(0,0,cW,cH);
+let numVerts=0;
+let inc=1;
+let bottomOfPlot=1200;
+let yScale=120;
+let y=0;
+let x=0;
+let numVertsToSample=30;
+//let numVerts=12/(6-graphDegree);
+let maxDegree=6-(12/numVerts);
 
+ctx.beginPath();
+ctx.moveTo(leftOfPlot,bottomOfPlot-6*yScale);
+ctx.lineTo(leftOfPlot+numVertsToSample*xScale,bottomOfPlot-6*yScale);
+ctx.lineTo(leftOfPlot+numVertsToSample*xScale,bottomOfPlot);
+ctx.lineTo(leftOfPlot,bottomOfPlot);
+ctx.closePath();
+ctx.strokeStyle="black";
+ctx.lineWidth=2*scaleFactor;
+ctx.stroke();
+
+ctx.beginPath();
+
+ctx.font=plotFontSize+"px Monospace";
+ctx.fillStyle='black';
+ctx.fillText('Number of Vertices',leftOfPlot+10*xScale*.3,bottomOfPlot+plotFontSize*3);
+ctx.fillText('v=12/(6-d)',leftOfPlot+10*xScale*.3,bottomOfPlot+plotFontSize*4.5);
+ctx.fillText('v=minimum vertices required',leftOfPlot+10*xScale*.3,bottomOfPlot+plotFontSize*6);
+ctx.fillText('ex. for v=12,d=5: 12=12/(6-5)',leftOfPlot+10*xScale*.3,bottomOfPlot+plotFontSize*7.5);
+let v=0;
+for(let i=0;i<numVertsToSample;i++){ 
+if(i==3||i==4||i==6||i==12){
+ctx.fillText(v,leftOfPlot+v*xScale*.95,bottomOfPlot+plotFontSize);
+}
+ctx.fillText('30',leftOfPlot+30*xScale*.97,bottomOfPlot+plotFontSize);
+
+ctx.moveTo(leftOfPlot+v*xScale,bottomOfPlot-6*yScale);
+ctx.lineTo(leftOfPlot+v*xScale,bottomOfPlot);
+v++;
+}// i loop
+
+ctx.strokeStyle='#cdcdcd';
+ctx.lineWidth=1*scaleFactor;
+ctx.stroke();
+
+ctx.beginPath();
+
+//plotFontSize=parseInt(15*scaleFactor);
+
+let d=6;
+ctx.fillText('ex. for d=4,v=6: 4=6-(12/6)',leftOfPlot-plotFontSize*1.5,bottomOfPlot-d*yScale-plotFontSize*7);
+
+ctx.fillText('d=maximum degree possible',leftOfPlot-plotFontSize*1.5,bottomOfPlot-d*yScale-plotFontSize*5.5);
+
+ctx.fillText('d=6-(12/v)',leftOfPlot-plotFontSize*1.5,bottomOfPlot-d*yScale-plotFontSize*4);
+
+ctx.fillText('Maximum Degree',leftOfPlot-plotFontSize*1.5,bottomOfPlot-d*yScale-plotFontSize*2.5);
+
+ctx.fillText(d,leftOfPlot-plotFontSize,bottomOfPlot-d*yScale-10);
+d--;
+for(let i=0;i<5;i++){
+ctx.moveTo(leftOfPlot,bottomOfPlot-d*yScale);
+ctx.lineTo(leftOfPlot+numVertsToSample*xScale,bottomOfPlot-d*yScale);
+ctx.fillText(d,leftOfPlot-plotFontSize,bottomOfPlot-d*yScale-10);
+d--;
+
+}//i loop
+ctx.strokeStyle='#cdcdcd';
+ctx.lineWidth=1*scaleFactor;
+ctx.stroke();
+
+for(let i=3;i<=numVertsToSample;i+=inc){
+
+
+numVerts=i;
+maxDegree=6-(12/numVerts);
+y=bottomOfPlot-maxDegree*yScale;
+x=leftOfPlot+numVerts*xScale;
+
+
+ctx.beginPath();
+ctx.strokeStyle="black"; 
+ctx.lineWidth=2*scaleFactor;
+ctx.arc(x,y,3*scaleFactor,0,Math.PI*2,true);
+ctx.stroke();
+ctx.fillStyle='#ff0000';
+ctx.fill();
+}//i loop
+
+
+}//plotNumVertsPerMaximalGraphDegree
+
+
+
+
+
+
+
+function plotMaxDegreeActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('plotMaxDegree');
+}//if(isThere(event)){
+plotNumVertsPerMaximalGraphDegree();
+}//plotMaxDegreeActions
+replaceDownEventById('plotMaxDegree',plotMaxDegreeActions);
+
+
+var showFlexiblesCount=false;
+
+function flexiblesCountActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('flexiblesCount');
+}//if(isThere(event)){
+
+
+showHideV('flexiblesCountDisplay');
+/*
+showFlexiblesCount=!showFlexiblesCount;
+if(showFlexiblesCount){
+getFlexibles();
+
+}else{
+
+}
+*/
+}//flexiblesCountActions
+replaceDownEventById('flexiblesCount',flexiblesCountActions);
+
+
+
+
+
+function setEquilateralTriangle(){
+modifiedGraph=true;
+ctx.clearRect(0,0,cW,cH);
+let centerX=cW/2;
+let centerY=cH/2;
+let sideLength=600;
+let height=(Math.sqrt(3)/2)*sideLength;
+let x=centerX-sideLength/2;
+let y=centerY-height/2;
+
+vertices.push(new Vertex(x,y,4,vertices.length+1,[],0,false,false,false,vertices.length,true));
+
+vertices.push(new Vertex(x+sideLength,y,4,vertices.length+1,[],0,false,false,false,vertices.length,true));
+
+vertices.push(new Vertex(x+sideLength/2,y+height,4,vertices.length+1,[],0,false,false,false,vertices.length,true));
+
+sortByNeighborCount();
+render();
+}//setEquilateralTriangle
+
+
+
+
+function resetGenVertsVars(){
+targetNumberVertices=400;
+tvi=0;
+partSize=savedPartSize;
+startPart=0;
+endPart=startPart+partSize;
+b_Triangulate=true;
+globali=0;
+numDeev=0;
+}//resetGenVertsVars
+
+
+var globali=0;
+var tvi=0;
+var targNumVertsArray=['40','60','90','120','240','360','480','600','720','840','960','1080','1200'];
+var numDeev=0;
 
 function addVertsAtTriangleCenters2(){
-genStartTime=Date.now();
-da('graphDegree','');
-da('buildRendTime','');
 
-if(!doNotTriangulate){
+if(b_Triangulate){
+triangles=[];
 delaunay=true;
-//for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-//}//i loop
 vertScaler();
 sortByNeighborCount();
 delaunay=false;
-render();
-}//if(!doNotTriangulate){
+}//if(b_Triangulate){
 
 
 for(i=startPart;i<triangles.length;i++){
- 
-let triCenterX=parseInt((
+globali=i; 
+
+let triCenterX=(
 triangles[i].v0.x+
 triangles[i].v1.x+
-triangles[i].v2.x)/3);
+triangles[i].v2.x)/3;
 
-let triCenterY=parseInt((
+let triCenterY=(
 triangles[i].v0.y+
 triangles[i].v1.y+
-triangles[i].v2.y)/3);
+triangles[i].v2.y)/3;
 
 vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1,true));
 
@@ -3459,105 +3757,426 @@ segPoints.push(null);
 segPoints.push(null);
 segPoints.push(null);
 
+getDegree();
 
-if(i==triangles.length-1){
-doNotTriangulate=false;
-startPart=0;
-endPart=startPart+partSize;
-//alert('reached end: '+startPart+'--'+endPart);
 
-}else
+if((graphDegree!=maxDegree)&&!setRandomVerts){
+numDeev++;
+autoGenActions();
+/*
+vertices[vertices.length-1].c=0;
+setTimeout(`
+showMessage('vert.i: '+vertices[vertices.length-1].i+'<br>numDeev: '+numDeev+'<br>graphDegree: '+graphDegree.toFixed(7)+'<br>maxDegree: '+maxDegree.toFixed(7)+'<br>numVerts: '+vertices.length,600000);
+`,500)
+break;
+pairArr.push([0,1]);
+pairArr.push([1,2]);
+pairArr.push([2,0]);
+segPoints.push(null);
+segPoints.push(null);
+segPoints.push(null);
+removeDuplicatePairs();
+checkForDuplicateVertices();
+sortByNeighborCount();
+getDegree();
+*/
+}//if(graphDegree!=maxDegree){
 
-if(i==endPart){
-doNotTriangulate=true;
-startPart=endPart+1;
-endPart+=partSize;
-//alert('2: ---'+startPart+'--'+endPart);
+/*
+targetNumberVertices=1200;
+if(vertices.length==targetNumberVertices){
+showMessage('targetNumberVertices: '+targetNumberVertices+' reached.',2000);
+break;
+}
+*/
+//targetNumberVertices=targNumVertsArray[tvi];
+
+
+if(vertices.length%targetNumberVertices==0){
+b_Triangulate=false;
+setTimeout(`
+showMessage('targetNumberVertices: '+targetNumberVertices+' reached.',2000);
+targetNumberVertices+=400;
+`,1)
+startPart=i+1;
+testVars("triangles.length",triangles.length,"vertices.length",vertices.length,"startPart",startPart,"globali",globali,"b_Triangulate",b_Triangulate);
 break;
 }
 
+
+if(i==triangles.length-1){
+b_Triangulate=true;
+startPart=0;
+
+break;
+}else{
+b_Triangulate=false;
+}
+
+
+/*
+testVars("triangles.length",triangles.length,"vertices.length",vertices.length,"startPart",startPart,"globali",globali);
+*/
 }//i loop
+
 
 vertScaler();
 sortByNeighborCount();
-if(showDegree){
-getGenVertsDegree();
-}else{
+getDegree();
 render();
-}
 delaunay=false;
 modified=true;
 hideMessage(messageTimer);
-checkForDuplicateVertices();
+el('enterGraphName').value='tmax_'+graphDegree.toFixed(4)+'_'+targetNumberVertices;
 }//addVertsAtTriangleCenters2
 
 
 
-function addVertsAtTriangleCenters1(){
-genStartTime=Date.now();
-da('graphDegree','');
-da('buildRendTime','');
+
+
+
+
+var triAng=[];
+
+function pullTriangleCornersOut2(){
+let moveDist=30;
+
+let triCentX=(vertices[0].x+vertices[1].x+vertices[2].x)/3;
+let triCentY=(vertices[0].y+vertices[1].y+vertices[2].y)/3;
+
+for(let i=0;i<3;i++){
+let sub0x=vertices[i].x-triCentX;
+let sub0y=vertices[i].y-triCentY;
+triAng[i]=Math.atan2(sub0y,sub0x);
+let newx=Math.cos(triAng[i])*moveDist;
+vertices[i].x+=newx;
+let newy=Math.sin(triAng[i])*moveDist;
+vertices[i].y+=newy;
+
+}//i loop
 
 delaunay=true;
-//for(i=0;i<vertices.length;i++){
 triangles=triangulate(vertices);
-//}//i loop
+vertScaler();
 sortByNeighborCount();
 delaunay=false;
-for(i=0;i<triangles.length;i++){
+render();
+}//pullTriangleCornersOut2
+
+
+
+
+function autoGenActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('autoGen');
+}//if(isThere(event)){
+
+deleteDupeVerts(vertices.length-1);
+pullTriangleCornersOut2();
+
+}//autoGenActions
+replaceDownEventById('autoGen',autoGenActions);
+
+
+
+
+
+
+
+function deleteDupeVerts(ind){
+if(!delaunay){
+for(let i=pairArr.length-1;i>=0;i--){
+if(isThere(segPoints[i])){
+segPoints[i][0].pairIndex-=vertices[ind].nCount;
+}//isThere
+}//i loop  
+}//if(!delaunay){
+
+vertices.splice(ind,1);
+for(let v=0;v<vertices.length;v++){
+vertices[v].i=v;}
+
+if(!delaunay){
+for(let i=pairArr.length-1;i>=0;i--){
+if(ind==pairArr[i][0]||ind==pairArr[i][1]){
+pairArr.splice(i,1);
+segPoints.splice(i,1);
+}
+}//i loop
+delaunay=false;
+}//!delaunay
+
+if(delaunay){
+triangles=triangulate(vertices);
+}
+
+for(let j=0;j<pairArr.length;j++){
+if(pairArr[j][0]>ind){
+pairArr[j][0]--;}
+if(pairArr[j][1]>ind){
+pairArr[j][1]--;}
+}//j loop 
+
+sortByNeighborCount();
+}//deleteDupeVerts
+
+
+
+
+
+function checkForDuplicateVertices(){
+let sama=[];
+for(let i=vertices.length-1;i>=0;i--){
+for(let v=i-1;v>=0;v--){
+if(vertices[i].x==vertices[v].x&&vertices[i].y==vertices[v].y){
+sama.push([vertices[i].i,vertices[v].i]);
+deleteDupeVerts(vertices[v].i);
+deleteDupeVerts(vertices[i].i);
+//vertices.splice(vertices[i].i,1);
+//vertices.splice(vertices[v].i,1);
+//alert('same pos: '+vertices[i].i+'---'+vertices[v].i);
+
+}
+}//v loop
+}//i loop
+daar('consoleOutput',sama.length+'<br>'+JSON.stringify(sama)+'<br>');
+}//checkForDuplicateVertices
+
+
+
+
+
+
+/*
+function removeDuplicateTriangles(triangles){
+let uniqueTriangles=[];
+let triangleSet=new Set();
+for(let triangle of triangles){
+let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
+let triangleKey=sortedIndices.join(',');
+if(!triangleSet.has(triangleKey)){
+triangleSet.add(triangleKey);
+uniqueTriangles.push(triangle);
+}//if
+}//for
+return uniqueTriangles;
+}//removeDuplicateTriangles
+
+// Example usage:
+const triangles = [
+  { i0: 0, i1: 1, i2: 2 },
+  { i0: 2, i1: 1, i2: 0 }, // Duplicate
+  { i0: 3, i1: 4, i2: 5 },
+  { i0: 5, i1: 4, i2: 3 } // Duplicate
+];
+
+const uniqueTriangles = removeDuplicateTriangles(triangles);
+console.log(uniqueTriangles);
+
+var foundTriangles=[];
+var nonUniqueTriangles=[];
+
+function addVertsAtTriangleCenters(){
+delaunay=true;
+for(i=0;i<vertices.length;i++){
+triangles=triangulate(vertices);
+sortByNeighborCount();
+}//i loop
+
+delaunay=false;
+foundTriangles=[];
+
+for(i=0;i<vertices.length;i++){
+for(let j=0;j<vertices[i].n.length;j++){
+let n1=vertices[i].n[j];
+
+for(let k=0;k<vertices[n1].n.length;k++){
+let n2=vertices[n1].n[k];
+
+for(let m=0;m<vertices[n2].n.length;m++){
+let n3=vertices[n2].n[m];
+
+if(n3==vertices[i].nativeIndex){
+
+foundTriangles.push({
+x0:parseInt(vertices[i].x),
+y0:parseInt(vertices[i].y),
+i0:vertices[i].nativeIndex,
+x1:parseInt(vertices[n1].x),
+y1:parseInt(vertices[n1].y),
+i1:vertices[n1].nativeIndex,
+x2:parseInt(vertices[n2].x),
+y2:parseInt(vertices[n2].y),
+i2:vertices[n2].nativeIndex
+});
+}//if(n3==vertices[i].nativeIndex){
+}//m loop
+}//k loop
+}//j loop
+}//i loop
+
+
+//let uniqueTriangles=removeDuplicateTriangles(foundTriangles);
+//foundTriangles=[...uniqueTriangles];
+
+
+nonUniqueTriangles=[...foundTriangles];
+let uniqueTriangles=[];
+let triangleSet=new Set();
+for(let triangle of foundTriangles){
+let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
+let triangleKey=sortedIndices.join(',');
+if(!triangleSet.has(triangleKey)){
+triangleSet.add(triangleKey);
+uniqueTriangles.push(triangle);
+}//if
+}//for
+foundTriangles=[...uniqueTriangles];
+
+
+for(i=0;i<foundTriangles.length;i++){
  
-let triCenterX=parseInt((
-triangles[i].v0.x+
-triangles[i].v1.x+
-triangles[i].v2.x)/3);
+let triCenterX=(
+foundTriangles[i].x0+
+foundTriangles[i].x1+
+foundTriangles[i].x2)/3;
 
-let triCenterY=parseInt((
-triangles[i].v0.y+
-triangles[i].v1.y+
-triangles[i].v2.y)/3);
-
-vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1,true));
+let triCenterY=(
+foundTriangles[i].y0+
+foundTriangles[i].y1+
+foundTriangles[i].y2)/3;
 
 
-pairArr.push([vertices.length-1,triangles[i].v0.i]);
-pairArr.push([vertices.length-1,triangles[i].v1.i]);
-pairArr.push([vertices.length-1,triangles[i].v2.i]);
+vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length,[],0,false,false,false,vertices.length));
+
+if(!delaunay){
+pairArr.push([vertices.length-1,foundTriangles[i].i0]);
+pairArr.push([vertices.length-1,foundTriangles[i].i1]);
+pairArr.push([vertices.length-1,foundTriangles[i].i2]);
 
 segPoints.push(null);
 segPoints.push(null);
 segPoints.push(null);
+}//if(!delaunay){
 
 }//i loop
 
-vertScaler();
-sortByNeighborCount();
-if(showDegree){
-getGenVertsDegree();
-}else{
-render();
+
+
+for(let i=vertices.length-1;i>=1;i--){
+for(let j=i-1;j>=0;j--){
+if(isThere(vertices[i])&&isThere(vertices[j])){
+if(vertices[i].x==vertices[j].x
+&&vertices[i].y==vertices[j].y){
+vertices.splice(i,1);
 }
-delaunay=false;
-modified=true;
-hideMessage(messageTimer);
-checkForDuplicateVertices();
-}//addVertsAtTriangleCenters2
+}//end isThere
+}//end j loop
+}//end i loop
+
+
+vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
+updatePairArr(vertices);
+vertScaler();
+sortByNeighborCount(); 
+render();
+modifiedGraph=true;
+}//addVertsAtTriangleCenters
+
+*/
 
 
 
 
 
+function showDegreeActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('showDegree');
+}//if(isThere(event)){
+showDegree=!showDegree;
+if(showDegree){
+modStyles();
+getDegree();
+els('graphDegree').visibility='visible';
+}else{
+els('graphDegree').visibility='hidden';
+}
+
+}//showDegreeActions
+replaceDownEventById('showDegree',showDegreeActions);
+
+
+
+
+function getDegree(){
+if(isThere(pairArr)&&isThere(vertices)){
+graphDegree=(2*pairArr.length/vertices.length);
+maxDegree=(6*vertices.length-12)/vertices.length;
+da('graphDegree',graphDegree.toFixed(7)+' degree, verts: '+vertices.length+'<br>'+maxDegree.toFixed(7)+' maxDegree');
+}
+}//getDegree
+
+
+
+
+/*
 function getGenVertsDegree(){
 if(isThere(pairArr)&&isThere(vertices)){
 graphDegree=(2*pairArr.length/vertices.length);
-daa('graphDegree',graphDegree+' degree ');
+if(showDegree){
+daa('graphDegree',graphDegree.toFixed(7)+' degree ');
 }
+}//if(isThere(pairArr)&&isThere(vertices)){
+*/
+/*
 daa('buildRendTime',(Date.now()-genStartTime)+' ms build ');
 setTimeout(`
 startRenderTime=Date.now();
 render();
 daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
 `,500);
-}//genVertsDegree
+*/
+//}//genVertsDegree
+
+
+/*
+function showBuildRendTimeActions(event){
+if(isThere(event)){event.preventDefault();}
+activeButton('buildTime');
+showBuildRendTime=!showBuildRendTime;
+if(showBuildRendTime){
+els('buildRendTime').visibility='visible';
+}else{
+els('buildRendTime').visibility='hidden';
+}
+}//showBuildRendTimeActions
+replaceDownEventById('buildTime',showBuildRendTimeActions);
+
+*/
+
+
+/*
+function getBuildRendTime(){
+if(showBuildRendTime){
+els('buildRendTime').visibility='visible';
+}else{
+els('buildRendTime').visibility='hidden';
+}
+daa('buildRendTime',(Date.now()-buildStartTime)+' ms build ');
+setTimeout(`
+startRenderTime=Date.now();
+render();
+daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
+`,500);
+}//getBuildRendTime
+*/
+
+
+
+
+
 
 
 
@@ -4499,6 +5118,169 @@ flexibles.filter((obj)=>obj.avail==true).length;
 
 
 
+var flexiblesCountAvg=0;
+var flexiblesCountArray=[];
+var numFlexSamples=20;
+var flexiblesCountString='';
+var flexiblesCountAvgPercent=0;
+var dupeSolves=0;
+var uniqueSolveStringArray=null;
+var vertColorString='';
+var isUniqueSolve=true;
+var uniqueSolveIndex=0;
+
+
+function randSolveActions(event){
+if(isThere(event)){
+event.preventDefault();
+}//if(isThere(event)){
+uniqueSolveStringArray=null;
+vertColorString='';
+numFlexSamples=el('enterNumFlexSamples').value;
+showMessage("Running "+numFlexSamples+" Samples...",600000);
+setTimeout(`randSolveActions2();`,1); 
+}//randSolveActions
+
+
+function randSolveActions2(){
+flexiblesCountAvg=0;
+flexiblesCountArray=[];
+dupeSolves=0;
+isUniqueSolve=true;
+uniqueSolveIndex=0;
+
+for(let n=0;n<numFlexSamples;n++){
+clearActions();
+shuffleRandomVertices(); 
+solveActions();
+vertices=[...nativeVertOrder];
+vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
+if(delaunay){
+triangles=triangulate(vertices);
+}//if(delaunay){
+updatePairArr(vertices);
+vertScaler();
+sortByNeighborCount();
+render();
+
+vertColorString='';
+for(let i=0;i<vertices.length;i++){
+vertColorString+=JSON.stringify(vertices[i].c);
+}
+
+//daar('testerContent',vertColorString+'<hr>');
+
+if(!isThere(uniqueSolveStringArray)){
+uniqueSolveStringArray=[];
+uniqueSolveStringArray.push(vertColorString);
+getFlexibles();
+
+
+}else{
+for(let i=0;i<uniqueSolveStringArray.length;i++){
+if(uniqueSolveStringArray[i]==vertColorString){
+isUniqueSolve=false;
+break;
+}
+}//i loop
+
+if(isUniqueSolve){
+uniqueSolveStringArray.push(vertColorString);
+getFlexibles();
+}
+
+}//if(isThere(uniqueSolveStringArray)){
+
+
+if(isUniqueSolve){
+flexiblesCountAvg+=flexiblesCount;
+flexiblesCountArray.push(flexiblesCount);
+}else{
+dupeSolves++;
+}
+}//n loop
+
+flexiblesCountAvg=(flexiblesCountAvg/(numFlexSamples-dupeSolves)).toFixed(3);
+flexiblesCountAvgPercent=(flexiblesCountAvg/vertices.length*100).toFixed(2);
+flexiblesCountString='';
+for(let i=0;i<flexiblesCountArray.length;i++){
+if(i%12==0){flexiblesCountString+='<br>';}
+flexiblesCountString+=flexiblesCountArray[i]+' ';
+
+}
+els('flexiblesDataHolder').visibility='visible';
+da('flexiblesData','<center>Avg # Flexibles for '+(numFlexSamples-dupeSolves)+' Samples: <br><br>'+flexiblesCountAvg+' | '+flexiblesCountAvgPercent+'% of all verts<br><br>Flexibles Counts per Sample: <br>'+flexiblesCountString);
+centerDiv('flexiblesDataHolder');
+
+}//randSolveActions2
+
+
+
+function enterNumFlexSamplesActions(event){
+typing=true;
+}//enterNumFlexSamplesActions
+replaceDownEventById('enterNumFlexSamples',enterNumFlexSamplesActions);
+
+
+function randSolveButtonActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('randSolve');
+}
+el('enterNumFlexSamples').value=numFlexSamples;
+showHideV('flexiblesDataHolder');
+centerDiv('flexiblesDataHolder');
+}//randSolveButtonActions
+replaceDownEventById('randSolve',randSolveButtonActions);
+
+
+
+function numFlexSamplesApplyActions(event){
+typing=false;
+activeButton('numFlexSamplesApply');
+randSolveActions();
+}//numFlexSamplesApplyActions
+replaceDownEventById('numFlexSamplesApply',numFlexSamplesApplyActions);
+
+
+
+function numFlexSamplesCancelActions(event){
+typing=false;
+el('flexiblesDataHolder').style.visibility='hidden';
+}//numFlexSamplesCancelActions
+replaceDownEventById('numFlexSamplesCancel',numFlexSamplesCancelActions);
+
+
+
+
+
+
+function showFlexSampleSolvesActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('showFlexSampleSolves');
+}
+
+if(savedLastButton!='showFlexSampleSolves'){
+replaceDownEventById('canvas',showFlexSampleSolvesActions);
+}
+
+for(let i=0;i<vertices.length;i++){
+vertices[i].c=uniqueSolveStringArray[uniqueSolveIndex][i];
+}
+render();
+uniqueSolveIndex++;
+if(uniqueSolveIndex>=numFlexSamples){
+uniqueSolveIndex=0;
+}
+
+els('flexiblesCountDisplay').visibility='visible';
+da('flexiblesCountDisplay','flexibles: '+flexiblesCount+'<br>sample #: '+uniqueSolveIndex)
+}//showFlexSampleSolvesActions
+replaceDownEventById('showFlexSampleSolves',showFlexSampleSolvesActions);
+
+
+
 
 function clamp(a,min,max){
 if(a<min){a=min;}else if(a>max){a=max;}
@@ -4524,11 +5306,7 @@ diam=Math.sqrt(cW*cH/numPoints*randOnlySome);
 
 
 function buildAndRender(){
-da('graphDegree','');
-els('graphDegree').visibility='hidden';
-da('buildRendTime','');
-els('buildRendTime').visibility='hidden';
-buildStartTime=Date.now();
+resetGenVertsVars();
 vertices=[];
 triangles=[];
 pairArr=[];
@@ -4558,6 +5336,7 @@ let onlySome=0;
 let pointCounter=0;
 
 if(setRandomVerts){
+if(!eqTri){
 for(let y=radius*1.7;y<cH-radius;y+=diam){
 if(pointCounter>=numPoints){break;}
 for(let x=radius*1.5;x<cW-radius*1.5;x+=diam){
@@ -4568,14 +5347,17 @@ if(onlySome>20){
 vertices.push(new Vertex(x+randOffX,y+randOffY,4,pointCounter,0,[],false,false,false,pointCounter,true));
 //Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex,unLinked){
 pointCounter++;
-triangles=triangulate(vertices);
+
 
 if(pointCounter>=numPoints){break;}
 }//onlySome
 }//end x loop
 }//end y loop
 
-
+triangles=triangulate(vertices);
+}else{
+setEquilateralTriangle();
+}
 vertScaler();
 sortByNeighborCount();
 
@@ -4587,11 +5369,8 @@ if(!showSolving){
 
 if(!randomDropping){
 getDegree();
-getBuildRendTime();
-}else{
-render();
 }
-
+render();
 }//if(!showSolving){
 
 
@@ -4622,96 +5401,24 @@ hideMessage(messageTimer);
 
 
 
-function getDegree(){
-if(showDegree){
-els('graphDegree').visibility='visible';
-}else{
-els('graphDegree').visibility='hidden';
-}
-if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length);
-daa('graphDegree',graphDegree+' degree ');
-}
-}//getDegree
 
-
-
-function getBuildRendTime(){
-if(showBuildRendTime){
-els('buildRendTime').visibility='visible';
-}else{
-els('buildRendTime').visibility='hidden';
-}
-daa('buildRendTime',(Date.now()-buildStartTime)+' ms build ');
+function delauneateButtonActions(event){
+showMessage('Delauneating...',600000);
 setTimeout(`
-startRenderTime=Date.now();
+if(isThere(event)){event.preventDefault();}
+activeButton('delaun');
+delaunay=true;
+triangles=triangulate(vertices);
+vertScaler();
+sortByNeighborCount();
+delaunay=false;
 render();
-daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
-`,500);
-}//getBuildRendTime
+hideMessage();`,10);
 
 
+}//delauneateButtonActions
+replaceDownEventById('delaun',delauneateButtonActions);
 
-
-function showBuildRendTimeActions(event){
-if(isThere(event)){event.preventDefault();}
-showBuildRendTime=!showBuildRendTime;
-if(showBuildRendTime){
-els('buildRendTime').visibility='visible';
-}else{
-els('buildRendTime').visibility='hidden';
-}
-}//showBuildRendTimeActions
-replaceDownEventById('buildTime',showBuildRendTimeActions);
-
-
-function checkForDuplicateVertices(){
-let sama=[];
-for(let i=0;i<vertices.length;i++){
-for(let v=i+1;v<vertices.length;v++){
-if(vertices[i].x==vertices[v].x&&vertices[i].y==vertices[v].y){
-alert('same pos: '+vertices[i].i+'---'+vertices[v].i);
-sama.push(vertices[i].i);
-sama.push(vertices[v].i);
-}
-}//v loop
-}//i loop
-daar('consoleOutput',sama.length+'<br>'+JSON.stringify(sama)+'<br>');
-}//checkForDuplicateVertices
-
-
-function showDegreeActions(event){
-if(isThere(event)){event.preventDefault();}
-if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length);
-da('graphDegree',graphDegree+' degree ');
-}
-if(isThere(event)){
-showDegree=!showDegree;
-if(showDegree){
-els('graphDegree').visibility='visible';
-checkForDuplicateVertices();
-
-}else{
-els('graphDegree').visibility='hidden';
-}
-}//if(isThere(event)){
-}//showDegreeActions
-replaceDownEventById('showDegree',showDegreeActions);
-
-
-
-/*
-function graphDegreeActions(event){
-if(isThere(event)){event.preventDefault();}
-if(els('graphDegree').opacity==1){
-els('graphDegree').opacity=.3;
-}else{
-els('graphDegree').opacity=1;
-}
-}//graphDegreeActions
-replaceDownEventById('graphDegree',graphDegreeActions);
-*/
 
 
 
@@ -4761,11 +5468,9 @@ return array;
 function shuffleRandomVertices(){
 shuffledVertices=shuffle(vertices);
 vertices=[...shuffledVertices];
-//for(let i=0;i<vertices.length;i++){
 if(delaunay){
 triangles=triangulate(vertices);
 }
-//}//i loop
 updatePairArr(shuffledVertices);
 vertScaler();
 sortByNeighborCount();
@@ -4916,6 +5621,7 @@ ctx.strokeStyle='black';
 ctx.lineWidth=2*scaleFactor;
 
 if(delaunay){
+
 //draw triangles
 ctx.globalAlpha=1;
 let i=0;
@@ -5107,6 +5813,7 @@ ctx.stroke();
 
 fonter=parseInt(30*scaleFactor);
 
+
 if(showFlexibles&&flexibles[ci].avail&&!vertices[ci].unLinked){
 ctx.fillStyle='black';
 for(let c=0;c<flexibles[ci].colorsAvailable.length;c++){
@@ -5174,7 +5881,7 @@ if(loadDataFileNameAtStart&&streamSolving){
 setTimeout(`showSolvingActions();`,500);
 }
 
-showDegreeActions();
+getDegree();
 if(loadDataFileNameAtStart){
 loadDataFileNameAtStart=false;
 hideMessage();
@@ -5191,8 +5898,8 @@ hideMessage();
 //Vertex object constructor; //returns {x:x,y:y,c:c,i:i,n:n,nCount:nCount,searching:searching}
 
 function Vertex(x,y,c,i,n,nCount,searching,inSameColorPair,isFlexible,nativeIndex,unLinked){
-this.x=parseFloat(x.toFixed(1));
-this.y=parseFloat(y.toFixed(1));
+this.x=parseFloat(x.toFixed(7));//parseInt(x); 
+this.y=parseFloat(y.toFixed(7));//parseInt(y); 
 this.c=c;//color
 this.i=i;//index
 this.n=n;//array of neighbors
@@ -5253,6 +5960,7 @@ this.inverse=function(){return new Edge(this.v1, this.v0);};
 
 
 function triangulate(vertices){
+
 pairString='';
 let triangles=[];
 let minx, miny, maxx, maxy;
@@ -5321,8 +6029,9 @@ triangle.v1 == st.v0 || triangle.v1 == st.v1 || triangle.v1 == st.v2 ||
 triangle.v2 == st.v0 || triangle.v2 == st.v1 || triangle.v2 == st.v2);
 });
 
-
+hideMessage();
 return triangles;
+
 }//end triangulate
  
  
