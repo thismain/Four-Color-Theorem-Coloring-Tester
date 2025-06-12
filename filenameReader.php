@@ -4,12 +4,13 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 */
+$subDir='data';
+if(isset($_GET['subDir'])){$subDir=$_GET['subDir'];}
+
 $filenames=array();
 
 //the directory to scan for files
-//$dir="/storage/emulated/0/Venter/HopWeb/Projects/graph2/data/"; 
-$dir="../graph2/data/";
-//$dir="../graph2/data/";
+$dir="../graph2/".$subDir."/";
 
 //last modified shown at the top
 function mtimecmp($a, $b){

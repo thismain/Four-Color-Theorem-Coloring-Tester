@@ -1,18 +1,18 @@
 <?php
-/*
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-*/
-$dir="../graph2/data/";
-$dataFileName="pentagon.txt";
+
+$path='../graph2/';
+$dir='data';
+$fileName='default.txt';
 $numFileSizeChecks=0;
 $fileExists=false;
 $status='not_found';
 $fileSize=0;
 
-if(isset($_GET['dataFileName'])){$dataFileName=$_GET['dataFileName'];}
-else{$dataFileName='pentagon.txt';}
+if(isset($_GET['dir'])){$dir=$_GET['dir'];
+}else{$dir='data';}
+
+if(isset($_GET['fileName'])){$fileName=$_GET['fileName'];
+}else{$fileName='default.txt';}
 
 if(isset($_GET['lastFileSize'])){
 $lastFileSize=$_GET['lastFileSize'];
@@ -24,14 +24,15 @@ $numFileSizeChecks=$_GET['numFileSizeChecks'];
 
 
 if(!$fileExists){
-$fileExists=file_exists($dir.$dataFileName);
+$fileExists=file_exists($path.$dir.'/'.$fileName);
 }
 
 if($fileExists){
-$fileSize=filesize($dir.$dataFileName);
+$fileSize=filesize($path.$dir.'/'.$fileName);
 
-if($fileSize>0&&$fileSize==$lastFileSize&&$numFileSizeChecks>3){
+if($fileSize>0&&$fileSize==$lastFileSize){//&&$numFileSizeChecks>3){
 $status='done_saving';
+
 }else{
 $status='in_progress';
 }
