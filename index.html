@@ -20,6 +20,21 @@ font-size:100px;
 font-family:sans-serif;
 z-index:99999;
 }
+ 
+#disablerOverlay{ 
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background-color:'transparent';
+display:none;
+justify-content:center;
+align-items:center;
+font-size:100px;
+font-family:sans-serif;
+z-index:99999999999999;
+}
 
 .bm{
 font-size:40px;
@@ -139,8 +154,10 @@ scrollbar-width:none;
 </head>
 <body id="bodyer" style="background-color:#efefef;font-family:monospace;overflow:hidden;margin:0px;padding:0px;touch-action:none;visibility:visible;display:block;">
 <div id="loading-overlay">Loading...</div>
-
+<div id="disablerOverlay" style-"display:none;"></div>
 <script>
+var disablerOverlay=document.getElementById('disablerOverlay');
+
 window.addEventListener('load',function(){
 const loadingOverlay=document.getElementById('loading-overlay');
 loadingOverlay.style.display='none';
@@ -161,10 +178,24 @@ var serverAddress=origin+'/'+dir;
 //var serverAddress='http://48.52.212.109:45267/';
 //var serverAddress='http://localhost/graph2/';
 
-var plotFontSize=45;
+var randSolveNumVerts=0;
+var solves=null;
+var solvesFileName='';
+var solvesData='';
+var solvesFileExists=null;
+var waitIsFileThereInt=0;
+var statusResult=null;
+var solvesStatusResult=null;
+var statsStatusResult=null;
+var saveAttempts=1;
+var solvesSaveAttempts=1;
+var statsSaveAttempts=1;
+
+var plotFontSize=45; 
 var leftOfPlot=160;
 var xScale=36;
-var targetNumberVertices=400;
+var targetNumberVertices=100; 
+var targetNumberVerticesInit=targetNumberVertices;
 var graphDegree=0;
 var maxDegree=0;
 var partSize=100;
@@ -176,7 +207,7 @@ var gettingkLinkStartToDelete=false;
 var gettingkLinkEndToDelete=false;
 var linkStartToDelete=-1;
 var linkEndToDelete=false;
-var showDegree=true;
+var showDegree=false;
 var showBuildRendTime=false;
 var buildStartTime=0;
 var startRenderTime=0;
@@ -184,9 +215,14 @@ var genStartTime=0;
 
 var sampleSize=10;
 var dropType='randomBuild';
-var saveAttempts=1;
 var fileContent=null;
+var stats=null;
+var mergedStats=null;
+var savedMergedStats=null;
 var graphData='';
+var solveStats='';
+var currentSolveStats=null;
+var savedCurrentSolveStats=null;
 var showSolving=false;
 var stepping=false;
 var solved=false;
@@ -197,7 +233,8 @@ var loading=false;
 var setRandomVerts=false;
 var eqTri=false;
 var loadDataFileNameAtStart=!setRandomVerts;
-var dataFileName="max_7143_42.txt";
+var dataFileName='max_7143_42.txt'; //'eq6.txt'
+var statsFileName="stats.txt";
 var numPoints=0;
 var isLive=serverAddress.indexOf('moygen');
 if(isLive>=0){
@@ -237,7 +274,9 @@ var dragging=false;
 var vertexToEdit=-1;
 var backgroundColor='#f5f5f5';
 var numSavedGraphs=0;
+var numSavedStats=0;
 var graphFileNames=[];
+var statsFileNames=[];
 var dataSend='';
 var finishedSavingFile=false;
 var getDataInterval=0;
@@ -286,6 +325,7 @@ var lastButton='buildRandomGraph';
 var savedButtonId=lastButton;
 var savedLastButton=lastButton;
 var messageTimer=0;
+var messageTimer2=0;
 var building=false;
 var flexibles=[];
 var showFlexibles=true;
@@ -339,10 +379,21 @@ var selectedLineWidth=40;
 var modifiedGraph=false;
 
 var waitFilenamesInt=0;
+var waitStatsNamesInt=0;
 var waitFileLoad=0;
 var waitGraphDataInt=0;
 var waitFileSavedInt=null;
 var waitGraphFileNames=null;
+var waitLoadedFileInt=0;
+
+var buildingMax=false;
+var runningSamples=false;
+var savingStats=true;
+var mergingStats=false;
+var globali=0;
+var tvi=0;
+var numDeev=0;
+
 
 var listNeighsFontSize=25;
 var listNeighsLineHeight=30;
@@ -355,6 +406,17 @@ var fileSaving=false;
 var numFileSavedChecks=0;
 var pollingInterval=0;
 
+var solvesNumFileSizeChecks=0;
+var solvesLastFileSize=0;
+var solvesNumFileSavedChecks=0;
+var solvesPollingInterval=0;
+
+var statsNumFileSizeChecks=0;
+var statsLastFileSize=0;
+var statsNumFileSavedChecks=0;
+var statsPollingInterval=0;
+
+
 //green=#daf5e4
 var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 //bcf5da
@@ -363,7 +425,7 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 
 <div id="flexiblesCountDisplay" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;right:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px;text-align:right;"></div>
 
-<div id="graphDegree" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;left:0px;top:0px;display:block;visibility:visible;z-index:100000000000000;padding:4px;padding:20px"></div>
+<div id="graphDegree" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;left:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
 
 
 <div id="buildRendTime" style="opacity:1;font-family:monospace;font-size:50px;color:white;background-color:black;position:absolute;right:0px;top:0px;display:block;visibility:hidden;z-index:100000000000000;padding:4px;padding:20px"></div>
@@ -383,30 +445,53 @@ var B={blue:'#dbedff',red:'#ffd7d4',green:'#dff3e9',white:'#ffffff'};
 </div>
 
 
+<input id="saveStats" value=" Save Stats " type="button" style="display:none;font-size:50px;padding:10px;">
 
-<div id="flexiblesDataHolder" style="position:absolute;left:450px;top:300px;padding:60px;border:8px solid black;visibility:hidden;z-index:1000000;background-color:white;overflow-x:hidden;overflow-y:auto;height:500px;font-size:50px;text-align:center;"> 
+
+<div id="flexiblesDataHolder" style="position:absolute;left:10px;top:10px;padding:60px;border:8px solid black;visibility:hidden;z-index:1000000;background-color:white;overflow-x:auto;overflow-y:auto;width:1200px;height:500px;font-size:50px;text-align:left;word-wrap:break-word;">
  
-Number of Graphs to Sample:<br>
-<div style="text-align:center;padding:20px;">
+
+
+<div id="flexUI" style="padding:0px;padding-top:43px;top:18px;position:fixed;background-color:white;width:85%">
  
-<input id="enterNumFlexSamples" type="text" size="4" value="20" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:50px;padding:10px;">
+ 
+<input type="button" value=" X " id="flexiblesDataCloser" style="top:20px;right:0px;z-index:10000000000;font-size:50px;font-family:monospace;display:inline-block;position:absolute;padding:10px;margin:0px;">
+
+<center>
+Number of Solves to Sample:<br><br>
+
+<input id="enterNumFlexSamples" type="text" size="7" value="10" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:50px;padding:10px;"> 
 
 <input id="numFlexSamplesApply" value=" run " type="button" style="display:inline-block;font-size:50px;padding:10px;">
 
 <input id="numFlexSamplesCancel" value=" cancel " type="button" style="display:inline-block;font-size:50px;padding:10px;">
-</div>
-<hr>
-<br><br>
 
-<div id="flexiblesData" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:50px;overflow-y:auto;overflow-x:hidden;word-wrap:break-word;">
+<div id="flexNav" style="display:none;">
+<hr>
+<input id="currentStats" value="Current Stats" type="button" style="font-size:50px;padding:10px;display:inline-block;margin:0px;">
+
+<input id="displayMergedStats" value="Merged Stats" type="button" style="font-size:50px;padding:10px;display:inline-block;margin:0px;display:none;">
+
+<input id="displayAllMergedStats" value="All Stats" type="button" style="font-size:50px;padding:10px;display:inline-block;margin:0px;margin-left:-20px;">
+
+<input id="prevFlexSolve" value="Prev Solve" type="button" style="display:inline-block;font-size:50px;padding:10px;margin:0px;margin-left:-20px;">
+
+<input id="nextFlexSolve" value="Next Solve" type="button" style="display:inline-block;font-size:50px;padding:10px;margin:0px;margin-left:-20px;">
+
+<hr>
 </div>
+</div>
+</center>
 
 <center>
-<br><br>
-<input id="showFlexSampleSolves" value=" showFlexSampleSolves " type="button" style="display:inline-block;font-size:50px;padding:10px;">
- <br><br>
-<input type="button" value="[close]" id="flexiblesDataCloser" style="bottom:0px;right:0px:z-index:10000000000;font-size:50px;font-family:monospace;display:block;">
+
+<div id="flexiblesDataMessage" style="visibility:visible;display:inline-block;white-space:wrap;font-family:monospace;color:black;font-size:50px;overflow-y:auto;overflow-x:auto;word-wrap:break-word;top:500px;padding-top:400px;">
+</div>
+
+<div id="flexiblesData" style="visibility:visible;display:inline-block;white-space:wrap;font-family:monospace;color:black;font-size:50px;overflow-y:auto;overflow-x:auto;word-wrap:break-word;top:500px;padding-top:400px;">
+</div>
 </center>
+
 </div>
 
 
@@ -461,9 +546,19 @@ Number of Graphs to Sample:<br>
 </div>
 
 
+<div id="messageHolder2" style="position:absolute;left:450px;top:900px;padding:60px;border:8px solid black;display:none;z-index:1000000;background-color:white;">
+
+<div id="message2" style="display:block;white-space:nowrap;font-family:monospace;font-weight:bold;color:black;font-size:40px;">
+</div>
+</div>
+
+
 
 
 <iframe id="ifr" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
+</iframe>
+
+<iframe id="ifr2" src="" style="display:none;z-index:1000;position:absolute;top:2000px;left:10px;height:1800px;width:1200px;border:1px solid black;">
 </iframe>
 
 <canvas id="canvas" width="440" height="550" style="position:absolute;left:0px;top:0px;z-index:100;"></canvas>
@@ -638,6 +733,8 @@ Number of Graphs to Sample:<br>
 
 
 
+
+
 <div id="filenameInputDiv" style="z-index:1000000000;position:fixed;left:50px;bottom:0px;font-size:25px;font-family:monospace;background-color:#ffffff;padding:40px;padding-top:20px;border:4px solid black;display:none;height:80px;">
 
 
@@ -665,7 +762,7 @@ Enter Javascript:
 <textarea rows="14" cols="45" id="consoleInput" type="text" style="left:0px;font-family:Monospace;color:#00ff00;background-color:#000000;font-size:30px;word-wrap:break-word;width:100%">
 let s='';
 for(let i=0;i<uniqueSolveStringArray.length;i++){
-s+=i+') '+uniqueSolveStringArray[i]+'<br>';
+s+=uniqueSolveStringArray[i]+'<br>';
 }
 s
  </textarea>
@@ -776,7 +873,7 @@ Output:<br>
 
 <input type="button" value="Sorts" id="sortsButton" class="b" style="display:inline-block;">
 
-<input type="button" value="genVerts" id="gen2Button" class="b">
+<input type="button" value="genVerts" id="gen2Button" class="b" style="display:none;">
 
 <input id="clear" type="button" value="Clear" class="b" title="[U]">
 
@@ -793,13 +890,17 @@ Output:<br>
 
 <input id="showDegree" type="button" value="Degree" class="b">
 
-<input id="autoGen" type="button" value="autoGen" class="b" style="display:inline-block;">
-
 <input id="plotMaxDegree" type="button" value="plotMaxDegree" class="b">
 
 <input id="flexiblesCount" type="button" value="flexiblesCount" class="b">
 
 <input id="randSolve" type="button" value="randSolve" class="b">
+
+<input id="buildMax" type="button" value="buildMax" class="b">
+
+<input id="vertsAtTris" type="button" value="vertsAtTris" class="b">
+
+<input id="autoGen" type="button" value="autoGen" class="b" style="display:none;">
 </div><!--end buttonHolder Inner-->
 
 </div><!--end buttonHolder Outer-->
@@ -858,6 +959,22 @@ Number of Graphs to Sample:
 
 
 
+<div id="max_numVertsInputDiv" style="font-size:25px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;bottom:0px;background-color:#ffffff;padding:15px;border:6px solid #000000;height:180px;">
+ <center>
+<b>Build a Maximal Graph:</b>
+<br>
+Enter Number of Vertices:<br>
+<input id="max_enterNumVerts" type="text"  size="5" value="60" style="background-color:black;caret-color:white;font-family:monospace;color:white;font-size:25px;padding:5px;margin-top:10px;">
+ 
+<input id="max_numVertsApply" value="Apply" type="button" style="display:inline-block;font-size:25px;padding:5px;">
+
+<input id="max_numVertsCancel" value="cancel" type="button" style="display:inline-block;font-size:25px;padding:5px;">
+</center>
+</div>
+
+
+
+
 <div id="numVertsInputDiv" style="font-size:25px;font-family:monospace;visibility:hidden;z-index:1000000;position:fixed;bottom:0px;background-color:#ffffff;padding:15px;border:6px solid #000000;height:50px;">
 
 Number of Vertices:
@@ -868,10 +985,6 @@ Number of Vertices:
 <input id="numVertsCancel" value="cancel" type="button" style="display:inline-block;font-size:25px;padding:5px;">
 
 </div>
-
-<!--
-<div id="fpsInputDiv" style="white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:50px;visibility:hidden;"> 
--->
 
 
 <div id="fpsInputDiv" style="bottom:0px;white-space:nowrap;font-size:25px;font-family:monospace;z-index:1000000;position:absolute;left:100px;background-color:#ffffff;padding:20px;padding-right:40px;border:6px solid #000000;height:40px;visibility:hidden;"> 
@@ -1041,7 +1154,7 @@ function isThere(a){return(typeof a!=="undefined"&&typeof a!==null&&(a||a==0));}
 function els(a){return document.getElementById(a).style;}
 function elc(a){return document.getElementsByClassName(a);}
 function showHide(a){if(els(a).display=='block'){els(a).display='none'}else{els(a).display='block'}}
-
+function showHideInline(a){if(els(a).display=='inline-block'){els(a).display='none'}else{els(a).display='inline-block'}}
 function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden'}else{els(a).visibility='visible'}}
 
 
@@ -1050,7 +1163,7 @@ function showHideV(a){if(els(a).visibility=='visible'){els(a).visibility='hidden
 
 
 
-var savedStringVars='';
+
 //testVars("maxx",maxx,"cW",cW,"maxy",maxy,"cH",cH,"scaleFactorY",scaleFactorY,"scaleFactorX",scaleFactorX);
 function testVars(...args){
 let stringVars='';
@@ -1088,7 +1201,7 @@ el(id).onpointermove=function(event){func(event);}}
 replaceUpEventById=function(id,func,event){
 el(id).onpointerup=function(event){func(event);}}
 replaceDownEventById=function(id,func,event){
-if(!isThere(el(id))){alert(id);}
+if(!isThere(el(id))){alert(id+'<br>not there');}
 el(id).onpointerdown=function(event){func(event);}}
 
 }else if(isTouchDevice){
@@ -1097,7 +1210,7 @@ el(id).ontouchmove=function(event){func(event);}}
 replaceUpEventById=function(id,func,event){
 el(id).ontouchend=function(event){func(event);}}
 replaceDownEventById=function(id,func,event){
-if(!isThere(el(id))){alert(id);}
+if(!isThere(el(id))){alert(id+'<br>not there');}
 el(id).ontouchstart=function(event){func(event);}}
 
 }else{
@@ -1106,7 +1219,7 @@ el(id).onmousemove=function(event){func(event);}}
 replaceUpEventById=function(id,func,event){
 el(id).onmouseup=function(event){func(event);}}
 replaceDownEventById=function(id,func,event){
-if(!isThere(el(id))){alert(id);}
+if(!isThere(el(id))){alert(id+'<br>not there');}
 el(id).onmousedown=function(event){func(event);}}
 }
 
@@ -1254,6 +1367,9 @@ els(idA[i]).height=hh-parseInt(el('buttonHolder').getBoundingClientRect().height
 
 els('selectGraphHolder').bottom=parseInt(el('buttonHolder').getBoundingClientRect().height)+parseInt(els('selectGraphOption').fontSize)+'px';
 
+//els('selectStatsHolder').bottom=parseInt(el('buttonHolder').getBoundingClientRect().height)+parseInt(els('selectStatsOption').fontSize)+'px';
+
+
 //-(parseInt(els('selectGraphHolder').padding)*2)-(parseInt(els('selectGraphHolder').borderWidth)*2)-parseInt(els('selectGraphHolder').height)
 }//setDivHeightAboveButtons
 
@@ -1307,14 +1423,7 @@ els('screenshot').width=ww*.85+'px';
 els('shortcutKeysHeading').width=ww*.96+'px';
 els('shortcutKeys').width=ww*.96+'px';
 
-
-els('messageHolder').left=ww*.5-parseInt(el('messageHolder').getBoundingClientRect().width*.5)+'px';
-els('messageHolder').top=hh*.23+'px';
-els('messageHolder').border='8px solid black';
-els('message').fontSize='40px';
-
 if(isTouchDevice){
-//els('defaultTouchButton').display='inline-block';
 els('defaultTouchButton').display='none';
 }else{
 els('defaultTouchButton').display='none';
@@ -1322,14 +1431,27 @@ els('defaultTouchButton').display='none';
 
 
 if(isMobile){
-els('flexiblesData').fontSize='50px';
+
+
+els('messageHolder').left=ww*.5-parseInt(el('messageHolder').getBoundingClientRect().width*.5)+'px';
+els('messageHolder').top=hh*.23+'px';
+els('messageHolder').border='8px solid black';
+els('message').fontSize='40px';
+
+els('messageHolder2').left=ww*.5-parseInt(el('messageHolder2').getBoundingClientRect().width*.5)+'px';
+els('messageHolder2').top=hh*.43+'px';
+els('messageHolder2').border='8px solid black';
+els('message2').fontSize='60px';
+
+
+els('flexiblesData').fontSize='50px'; 
 els('flexiblesDataHolder').fontSize='50px';
 els('enterNumFlexSamples').fontSize='50px';
 els('numFlexSamplesApply').fontSize='50px';
 els('numFlexSamplesCancel').fontSize='50px';
-els('showFlexSampleSolves').fontSize='50px';
+els('nextFlexSolve').fontSize='50px';
+els('prevFlexSolve').fontSize='50px';
 els('flexiblesDataCloser').fontSize='50px';
-
 
 els('reloadGraphButton').fontSize='40px';
 els('reloadGraphButton').padding='30px';
@@ -1397,12 +1519,17 @@ els('selectGraphOption').fontSize='40px';
 els('closeSelect').fontSize='40px';
 els('closeSelect').borderWidth='6px';
 
+/*
+els('selectStats').borderWidth='6px';
+els('selectStats').fontSize='40px';
+els('selectStatsOption').fontSize='40px';
+els('closeSelectStats').fontSize='40px';
+els('closeSelectStats').borderWidth='6px';
+*/
+
 els('reloadGraphButton').borderWidth='6px';
 els('reloadGraphButton').fontSize='40px';
 els('reloadGraphButton').padding='30px';
-//els('selectGraphHolder').bottom=bhStyleHeight+60+'px';
-//centerDiv('selectGraphHolder');
-
 
 els('consoleInputDiv').width=ww*.96+'px';
 els('consoleInputDiv').fontSize='55px';
@@ -1410,8 +1537,7 @@ els('consoleEnterButton').fontSize='40px';
 els('consoleEnterButton').right='10px';
 els('consoleClearButton').fontSize='40px';
 els('consoleClearButton').right='200px';
-//els('consolePasteButton').fontSize='40px';
-//els('consolePasteButton').right='400px';
+
 els('consoleCloser').width='70px';
 els('consoleCloser').height='70px';
 els('consoleCloser').top='2px';
@@ -1433,6 +1559,8 @@ els('aboutCloser').padding='2px';
 
 els('fpsInputDiv').bottom=bhStyleHeight+160+'px';
 els('numVertsInputDiv').bottom=bhStyleHeight+160+'px';
+els('max_numVertsInputDiv').bottom=bhStyleHeight+240+'px';
+
 els('dropRandomInputDiv').bottom=bhStyleHeight+60+'px';
 els('dropRandomInputDiv').fontSize='55px';
 els('dropRandomInputDiv').lineHeight='65px';
@@ -1444,6 +1572,7 @@ els('filenameInputDiv').bottom=bhStyleHeight+260+'px';
 
 zoom(el('filenameInputDiv'),2,70,8);
 zoom(el('numVertsInputDiv'),2,80,4);
+zoom(el('max_numVertsInputDiv'),2,80,12);
 //zoom(el('dropRandomInputDiv'),2,80,40);
 //zoom(el('dropNumVerts'),4,1,1);
 //zoom(el('dropSampleSize'),4,1,1); 
@@ -1473,7 +1602,8 @@ els('flexiblesDataHolder').fontSize='25px';
 els('enterNumFlexSamples').fontSize='25px';
 els('numFlexSamplesApply').fontSize='25px';
 els('numFlexSamplesCancel').fontSize='25px';
-els('showFlexSampleSolves').fontSize='25px';
+els('nextFlexSolve').fontSize='25px';
+els('prevFlexSolve').fontSize='25px';
 els('flexiblesDataCloser').fontSize='25px';
 
 els('graphDegree').fontSize='25px';
@@ -1487,6 +1617,11 @@ els('messageHolder').top=hh*.05+'px';
 els('messageHolder').border='4px solid black';
 els('message').fontSize='30px';
 els('messageHolder').padding='30px';
+
+els('messageHolder2').top=hh*.05+'px';
+els('messageHolder2').border='4px solid black';
+els('message2').fontSize='30px';
+els('messageHolder2').padding='30px';
 
 els('buttonHolder').width=ww+'px';
 els('buttonHolderInner').width=ww*.95+'px';
@@ -1516,8 +1651,16 @@ els('closeSelect').borderWidth='3px';
 els('reloadGraphButton').borderWidth='3px';
 els('reloadGraphButton').fontSize='20px';
 els('reloadGraphButton').padding='11px';
-//els('selectGraphHolder').bottom=bhStyleHeight+'px';
-//centerDiv('selectGraphHolder');
+
+/*
+els('selectStats').borderWidth='3px';
+els('selectStats').fontSize='20px';
+els('selectStats').padding='10px';
+els('selectStatsOption').fontSize='20px';
+els('closeSelectStats').fontSize='20px';
+els('closeSelectStats').padding='11px';
+els('closeSelectStats').borderWidth='3px';
+*/
 
 els('consoleInputDiv').width=ww*.96+'px';
 els('consoleInputDiv').fontSize='30px';
@@ -1540,6 +1683,7 @@ els('consoleOutput').fontSize='24px';
 
 els('fpsInputDiv').bottom=bhStyleHeight+60+'px';
 els('numVertsInputDiv').bottom=bhStyleHeight+60+'px';
+els('max_numVertsInputDiv').bottom=bhStyleHeight+160+'px';
 els('dropRandomInputDiv').bottom=bhStyleHeight+460+'px';
 centerDiv('dropRandomInputDiv');
 el('filenameInputDiv').style.bottom=bhStyleHeight+40+'px';
@@ -1600,7 +1744,6 @@ setTimeout(`loadFile();`,100);
 
 
 
-
 function initSelectGraph(){
 for(let i=0;i<numSavedGraphs;i++){
 let op=document.createElement("option");
@@ -1621,28 +1764,47 @@ el('selectGraph').appendChild(op);
 
 
 
+/*
+function getStatsFilenames(){
+statsFileNames=null;
+if(usePHP){
+el('ifr2').src=serverAddress+'filenameReader.php?subDir=stats';
+waitStatsNamesInt=setInterval(function(){
+if(isThere(el('ifr2').contentWindow.filenames)){
+statsFileNames=JSON.parse(el('ifr2').contentWindow.filenames);
+clearInterval(waitStatsNamesInt);
+waitStatsNamesInt=0;
+numSavedStats=statsFileNames.length;
+initSelectStats();
+}//if(isThere(el('ifr').contentWindow.filenames)){
+},50);
+}//if usePHP
+}//end get stats filenames
 
 
 
-async function loadTextFile(filePath){
-resetGenVertsVars();
-try{
-const response=await fetch(filePath);
-if(!response.ok){
-showMessage('HTTP Error 2:<br>'+response.status,50000);
+
+function initSelectStats(){
+for(let i=0;i<numSavedStats;i++){
+let op=document.createElement("option");
+op.id='opStats'+i;
+op.value=i;
+op.text=statsFileNames[i];
+if(op.text==statsFileName){
+op.selected='selected';
 }
-const text=await response.text();
-return text;
-}catch(error){
-alert(error);
-showMessage('Loading Error 1:<br>'+error,50000);
-return null;
-}//catch
-}//async function loadTextFile(filePath){
+el('selectStats').appendChild(op);
+}//end i loop
+//el('op0').selected="selected";
+}//end init select stats
+
+*/
 
 
 
 
+
+var doneLoadingTextFile=false;
 
 async function processFile(fileName){
 
@@ -1714,10 +1876,11 @@ sortByNeighborCount();
 nativeVertOrder=[...vertices];
 nativePairArr=[...pairArr];
 autoRotate();
+render();
 modifiedGraph=true;
 hideMessage(messageTimer);
 getDegree();
-//getBuildRendTime();
+setTimeout(`doneLoadingTextFile=true;`,1);
 }//end isThere
 
 }//async function processFile(fileName){
@@ -1728,21 +1891,28 @@ getDegree();
 
 
 
-function loadFile(){
+function loadFile(filename){
+doneLoadingTextFile=false;
 hideMessage(messageTimer);
 showMessage('Loading Graph...',60000000);
 setRandomVerts=false;
+if(filename){
+dataFileName=filename;
+}else if(!filename){
 dataFileName=graphFileNames[parseInt(el('selectGraph').options[el('selectGraph').selectedIndex].value)];
+}//}else if(!filename
 buildAndRender();
 }//onChangeLoadFile
 
 
 
-function sanitizeFilename(){
+
+
+function sanitizeFilename(id){
 let forbiddenChars = /[\\/:*?"<>|#%&{}$!@'+`=]/;
-let isValidFilename=!forbiddenChars.test(el('enterGraphName').value);
+let isValidFilename=!forbiddenChars.test(el(id).value);
 if(!isValidFilename){
-el('enterGraphName').value=el('enterGraphName').value.replace(/[\\/:*?"<>|#%&{}$!@'+`=]/g, "");
+el(id).value=el(id).value.replace(/[\\/:*?"<>|#%&{}$!@'+`=]/g, "");
 }
 }//sanitizeFilename
 
@@ -1750,15 +1920,20 @@ el('enterGraphName').value=el('enterGraphName').value.replace(/[\\/:*?"<>|#%&{}$
 
 var filenameMaxLength=20;
 
-el('enterGraphName').addEventListener('input', function(){
+function filenameLengthLimiter(id){
+el(id).addEventListener('input', function(){
 typing=true;
-if(el('enterGraphName').value.length>filenameMaxLength){
+if(el(id).value.length>filenameMaxLength){
 alert('Filename cannot exceed '+filenameMaxLength+' characters.');
-el('enterGraphName').value=el('enterGraphName').value.slice(0,filenameMaxLength);
+el(id).value=el(id).value.slice(0,filenameMaxLength);
 }
 });
+}//filenameLengthLimiter
 
- 
+filenameLengthLimiter('enterGraphName');
+
+
+
 
 function enterGraphNameAction(event){
 typing=true;
@@ -1772,12 +1947,12 @@ if(isThere(event)){event.preventDefault();
 typing=true;
 }
 el('filenameInputDiv').style.display='none';
-sanitizeFilename();
+sanitizeFilename('enterGraphName');
 
 let filenameUsed=false;
 let options=el('selectGraph').options;
 for(let i=0;i<options.length;i++){
-if(options[i].text==el('enterGraphName').value+'.txt'){
+if(options[i].text==el('enterGraphName').value+'.txt'&&options[i].text!='mergedStats.txt'){
 filenameUsed=true;
 showMessage('<center>'+el('enterGraphName').value+'.txt<br><br>already exists.<br>Not saved. <br><br> [close]</center>',10000);
 }
@@ -1791,22 +1966,26 @@ setTimeout(`
 typing=false;
 dataFileName=el('enterGraphName').value+'.txt';
 saveGraphData();
-`,10);
+`,1);
 }//if(!filenameUsed){
 }//saveFileButtonActions
 replaceDownEventById('saveFile',saveFileButtonActions);
 
 
 
-
-function removeDuplicatesFromSelect(){
+function removeDuplicatesFromSelect(id){
 const seenValues=new Set();
-const options=el('selectGraph').options;
-
+const options=el(id).options;
 for(let i=options.length-1;i>=0;i--){
-if(seenValues.has(options[i].text)){alert('fish');
-el('selectGraph').remove(i);
+if(seenValues.has(options[i].text)){
+//alert('dupe found');
+el(id).remove(i);
+if(id=='selectGraph'){
 numSavedGraphs--;
+}else 
+if(id=='selectStats'){
+numSavedStats--;
+}
 }else{
 seenValues.add(options[i].text);
 }
@@ -1816,14 +1995,11 @@ seenValues.add(options[i].text);
 
 
 
-
-
 function saveGraphData(){
 if(usePHP){
 graphData='';
 for(let i=0;i<vertices.length;i++){
 graphData+=vertices[i].x+' '+vertices[i].y+' '+vertices[i].c+' '+vertices[i].i;
-//graphData+=parseInt(vertices[i].x)+' '+parseInt(vertices[i].y)+' '+vertices[i].c+' '+vertices[i].i;
 if(i<vertices.length-1){graphData+=' ';}
 }//end i loop
 
@@ -1844,10 +2020,7 @@ segPointsCopy.splice(i,1);
 for(let i=0;i<segPointsCopy.length;i++){
 if(isThere(segPointsCopy[i])){
 for(let s=0;s<segPointsCopy[i].length;s++){
-/*
-segPointsCopy[i][s].x=parseInt(segPointsCopy[i][s].x);
-segPointsCopy[i][s].y=parseInt(segPointsCopy[i][s].y);
-*/
+
 segPointsCopy[i][s].x=segPointsCopy[i][s].x;
 segPointsCopy[i][s].y=segPointsCopy[i][s].y;
 }//s loop
@@ -1865,142 +2038,6 @@ postTextFile();
 }//end saveGraphData
 
 
-var statusResult=null;
-
-
-async function postTextFile(){
-clearInterval(pollingInterval);
-pollingInterval=null;
-statusResult=null;
-
-fileDoneSaving=false;
-showMessage('Saving Graph...',60000000);
-
-let response=await fetch(serverAddress+"saver.php?saving=1&dataFileName="+dataFileName,
-{
-method:'POST',
-headers:{'Content-Type':'application/octet-stream'},
-body:graphData
-})
-.then(response=>{
-if(response.ok){
-fileSaving=true;
-let showSaveAttemps='';
-if(saveAttempts>1){
-showSaveAttemps='<br>Try '+saveAttempts;
-}
-showMessage('<center>Graph Saving as:<br><br>'+dataFileName+showSaveAttemps+'</center>',2000000,saveFileButtonActions);
-canv.focus();
-}else if(!response.ok){
-showMessage('HTTP Error:<br>'+response.status,2000);
-}
-
-return response.text(); 
-})
-.then(data=>{
-
-fileSaving=true;
-const timeoutDuration=60000;
-let elapsedTime=0;
-let numTries=0;
-statusResponse=null;
-
-//start of interval function
-const checkFileStatus=async()=>{
-
-
-if(numTries>0&&numTries%3==0){
-showMessage('Save Attempts: '+numTries,60000);
-clearInterval(pollingInterval);
-pollingInterval=0;
-saveAttempts++;
-//postTextFile();
-saveFileButtonActions();
-}
-
-const statusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+lastFileSize+'&numFileSizeChecks='+numFileSizeChecks+'&dataFileName='+dataFileName);
-
-numFileSizeChecks++;
-
-statusResult=await statusResponse.json();
-
-lastFileSize=statusResult.lastFileSize;
-
-if(statusResult.status==='done_saving'){
-
-clearInterval(pollingInterval);
-showMessage('File saved successfully!',2000);
-
-
-if(!el('op'+numSavedGraphs)){
-graphFileNames.push(dataFileName);
-let op=document.createElement("option");
-op.id='op'+numSavedGraphs;
-op.value=numSavedGraphs;
-op.text=dataFileName;
-el('selectGraph').appendChild(op);
-numSavedGraphs++;
-setTimeout(`removeDuplicatesFromSelect();`,1000);
-}//end if(!el
-
-
-fileSaving=false;
-statusResult=null;
-
-}else if(statusResult.status==='save_error'){
-showMessage('Save error, retrying...<br>'+numTries+' of 60 tries.',60000);
-clearInterval(pollingInterval);
-pollingInterval=0;
-//postTextFile();
-saveFileButtonActions();
-saveAttempts++;
-return;
-}else if(statusResult.status==='in_progress'){
-showMessage('File save in progress...',60000);
-}else{
-clearInterval(pollingInterval);
-pollingInterval=0.
-alert('Unexpected file status.');
-
-}
-
-elapsedTime+=1000;
-numTries++;
-
-if(elapsedTime>=timeoutDuration){
-clearInterval(pollingInterval);
-showMessage('Save failed.<br>'+(timeoutDuration/1000)+' seconds timeout.')
-//throw new Error((timeoutDuration/1000)+' seconds timeout waiting for save.');
-}
-};//const checkFileStatus=async()=>{
-
-pollingInterval=setInterval(checkFileStatus, 1000); 
-
-})
-.catch(error=>{
-showMessage('Error saving file:<br>Retrying...'+ error,60000);
-clearInterval(pollingInterval);
-pollingInterval=0.
-saveAttempts++;
-//postTextFile();
-saveFileButtonActions();
-//alert('Error saving file:', error);
-});//fetch
-}//postTextFile(url,file){
-
-
-/*
-
-window.addEventListener('blur',function(){
-if(fileSaving){
-//showMessage('<center>File Save Interupted<br>Not Saved<br></center>',6000000);
-clearInterval(pollingInterval);
-pollingInterval=0;
-}
-});
-
-*/
-
 
 
 
@@ -2013,11 +2050,6 @@ var graphMargin=vertSize*2;
 function calcMargin(){
 graphMargin=vertSize*2;
 }
-
-
-
-
-
 
 
 
@@ -2504,9 +2536,13 @@ if(!solving){
 if(streamSolving){streamSolvingActions();}
 
 if(!stepping&&!solving){
+clearActions();
+shuffleRandomVertices();
+/*
 reSolverReset();
 for(let v=0;v<vertices.length;v++){
 vertices[v].c=4;}
+*/
 }
 
 render();
@@ -2564,6 +2600,7 @@ recursiveNeighborSolver();
 }//if(solving&&!pauser
 
 solveButton();
+
 }//end solveActions
 replaceDownEventById('solve',solveActions);
 
@@ -2571,6 +2608,7 @@ replaceDownEventById('solve',solveActions);
 
 
 function updateSolveData(){
+
 if((solving||showSolving)&&!pauser&&!solved){
 
 totalSolveTime=0;
@@ -2586,6 +2624,7 @@ let vertsPerMs=(vertices.length/(totalSolveTime)).toFixed(2);
 if(vertsPerMs=='Infinity'){vertsPerMs=0;}
 let solvedOrNot='';
 if(solved){solvedOrNot=`<center><span style="background-color:MediumSeaGreen;color:white;display:block;font-family:Monospace;width:250px;padding:15px">Solved</span></center><br>`;}
+if(showSolvingTime){
 showMessage(solvedOrNot+
 `Solve Data:<br> `+totalSolveTime+` ms<br>`
 +(totalSolveTime/1000).toFixed(2)+' sec<br>'
@@ -2594,7 +2633,7 @@ showMessage(solvedOrNot+
 +(vertices.length)+` Vertices<br>`
 //+(totalSolveTime/(vertices.length)).toFixed(2)+` ms/numVerts<br>`
 +vertsPerMs+` verts/ms<br><br><center>[close]</center>`,2000000);
-
+}//if(showSolvingTime){
 }//updateSolveData
 
 
@@ -2713,7 +2752,10 @@ replaceDownEventById('sortByNeighborCountButton',sortByNeighborCountActions);
 
  
 function shuffleRandomTimedActions(event){
-event.preventDefault();
+if(isThere(event)){event.preventDefault();}
+if(savedLastButton!='shuffleRandomTimed'){
+replaceDownEventById('canvas',shuffleRandomTimedActions);
+}
 activeShuffleButton('shuffleRandomTimed');
 b_shuffleRandomTimed=true;
 solveActions(event);
@@ -3510,7 +3552,9 @@ replaceDownEventById('testerCloser',testerCloserActions);
 
 function flexiblesDataCloserActions(event){
 if(isThere(event)){event.preventDefault();}
+controlPanelOpenClose();
 showHideV('flexiblesDataHolder');
+showHideV('flexiblesData');
 }//flexiblesDataCloserActions
 replaceDownEventById('flexiblesDataCloser',flexiblesDataCloserActions);
 
@@ -3527,16 +3571,38 @@ replaceDownEventById('messageHolder',messageCancelActions);
 
 
 
+
+function messageCancelActions2(event){
+if(event){event.preventDefault();}
+el('messageHolder2').style.display='none';
+showSolvingTime=false;
+listNeighs=false;
+el('solveData').style.backgroundColor=B.white;
+}//messageCancelActions
+replaceDownEventById('messageHolder2',messageCancelActions2);
+
+
+
+
 function genVertsButtonActions(event){
 if(isThere(event)){event.preventDefault();}
 activeButton('gen2Button');
-
 if(savedLastButton!='gen2Button'){
 replaceDownEventById('canvas',genVertsButtonActions);
 }
 
+loadFile('eq6.txt');
+
+waitLoadedFileInt=setInterval(`
+if(doneLoadingTextFile){
 showMessage('Generating Vertices',10000000);
-setTimeout(`addVertsAtTriangleCenters2();`,1);
+doneLoadingTextFile=false;
+clearInterval(waitLoadedFileInt);
+setTimeout('addVertsAtTriangleCenters2();',1);
+}
+`,50);
+
+//addVertsAtTriangleCenters2();
 }//genVertsButtonActions
 replaceDownEventById('gen2Button',genVertsButtonActions);
 
@@ -3663,8 +3729,11 @@ event.preventDefault();
 activeButton('flexiblesCount');
 }//if(isThere(event)){
 
-
 showHideV('flexiblesCountDisplay');
+if(els('flexiblesCountDisplay').visibility=='visible'){
+getFlexibles();
+da('flexiblesCountDisplay','flexibles: '+flexiblesCount+'<br>'+((flexiblesCount/vertices.length)*100).toFixed(1)+'% verts');
+}
 /*
 showFlexiblesCount=!showFlexiblesCount;
 if(showFlexiblesCount){
@@ -3676,6 +3745,60 @@ getFlexibles();
 */
 }//flexiblesCountActions
 replaceDownEventById('flexiblesCount',flexiblesCountActions);
+
+
+
+function vertsAtTrisButtonActions(event){
+if(isThere(event)){event.preventDefault();}
+addVertsAtTriangleCenterSimple();
+}//vertsAtTrisButtonActions
+replaceDownEventById('vertsAtTris',vertsAtTrisButtonActions);
+
+
+function addVertsAtTriangleCenterSimple(){
+
+triangles=[];
+delaunay=true;
+triangles=triangulate(vertices);
+vertScaler();
+sortByNeighborCount();
+delaunay=false;
+
+
+for(i=0;i<triangles.length;i++){
+let triCenterX=(
+triangles[i].v0.x+
+triangles[i].v1.x+
+triangles[i].v2.x)/3;
+
+let triCenterY=(
+triangles[i].v0.y+
+triangles[i].v1.y+
+triangles[i].v2.y)/3;
+
+vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1,true));
+
+pairArr.push([vertices.length-1,triangles[i].v0.i]);
+pairArr.push([vertices.length-1,triangles[i].v1.i]);
+pairArr.push([vertices.length-1,triangles[i].v2.i]);
+
+segPoints.push(null);
+segPoints.push(null);
+segPoints.push(null);
+}//i loop
+
+vertScaler();
+sortByNeighborCount();
+getDegree();
+render();
+delaunay=false;
+modified=true;
+hideMessage(messageTimer);
+
+}//addVertsAtTriangleCenterSimple
+
+
+
 
 
 
@@ -3705,7 +3828,7 @@ render();
 
 
 function resetGenVertsVars(){
-targetNumberVertices=400;
+targetNumberVertices=targetNumberVerticesInit;
 tvi=0;
 partSize=savedPartSize;
 startPart=0;
@@ -3716,10 +3839,55 @@ numDeev=0;
 }//resetGenVertsVars
 
 
-var globali=0;
-var tvi=0;
-var targNumVertsArray=['40','60','90','120','240','360','480','600','720','840','960','1080','1200'];
-var numDeev=0;
+
+
+function buildMaxButtonActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('buildMax');
+}
+resetGenVertsVars();
+el('max_enterNumVerts').value=targetNumberVertices;
+showHideV('max_numVertsInputDiv');
+centerDiv('max_numVertsInputDiv');
+}//buildMaxButtonActions
+replaceDownEventById('buildMax',buildMaxButtonActions);
+
+
+function max_enterNumVertsButtonActions(event){
+typing=true;
+}//max_enterNumVertsButtonActions
+replaceDownEventById('max_enterNumVerts',max_enterNumVertsButtonActions);
+
+
+
+function max_numVertsApplyButtonActions(event){
+if(isThere(event)){event.preventDefault();
+typing=false;
+//activeButton('max_numVertsApply');
+}
+buildingMax=true;
+runningSamples=true;
+savingStats=true;
+mergingStats=true;
+
+el('max_numVertsInputDiv').style.visibility='hidden';
+targetNumberVerticesInit=parseInt(el('max_enterNumVerts').value);
+targetNumberVertices=targetNumberVerticesInit;
+setTimeout(`genVertsButtonActions();`,1);
+}//max_numVertsApplyButtonActions
+replaceDownEventById('max_numVertsApply',max_numVertsApplyButtonActions);
+
+
+
+function max_numVertsCancelActions(event){
+typing=false;
+el('max_numVertsInputDiv').style.visibility='hidden';
+}//max_numVertsCancelActions
+replaceDownEventById('max_numVertsCancel',max_numVertsCancelActions);
+
+
+
 
 function addVertsAtTriangleCenters2(){
 
@@ -3731,7 +3899,6 @@ vertScaler();
 sortByNeighborCount();
 delaunay=false;
 }//if(b_Triangulate){
-
 
 for(i=startPart;i<triangles.length;i++){
 globali=i; 
@@ -3748,7 +3915,6 @@ triangles[i].v2.y)/3;
 
 vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length+1,[],0,false,false,false,vertices.length+1,true));
 
-
 pairArr.push([vertices.length-1,triangles[i].v0.i]);
 pairArr.push([vertices.length-1,triangles[i].v1.i]);
 pairArr.push([vertices.length-1,triangles[i].v2.i]);
@@ -3759,66 +3925,31 @@ segPoints.push(null);
 
 getDegree();
 
-
 if((graphDegree!=maxDegree)&&!setRandomVerts){
 numDeev++;
 autoGenActions();
-/*
-vertices[vertices.length-1].c=0;
-setTimeout(`
-showMessage('vert.i: '+vertices[vertices.length-1].i+'<br>numDeev: '+numDeev+'<br>graphDegree: '+graphDegree.toFixed(7)+'<br>maxDegree: '+maxDegree.toFixed(7)+'<br>numVerts: '+vertices.length,600000);
-`,500)
-break;
-pairArr.push([0,1]);
-pairArr.push([1,2]);
-pairArr.push([2,0]);
-segPoints.push(null);
-segPoints.push(null);
-segPoints.push(null);
-removeDuplicatePairs();
-checkForDuplicateVertices();
-sortByNeighborCount();
-getDegree();
-*/
 }//if(graphDegree!=maxDegree){
 
-/*
-targetNumberVertices=1200;
-if(vertices.length==targetNumberVertices){
-showMessage('targetNumberVertices: '+targetNumberVertices+' reached.',2000);
-break;
-}
-*/
-//targetNumberVertices=targNumVertsArray[tvi];
-
-
-if(vertices.length%targetNumberVertices==0){
+if(vertices.length%(parseInt(targetNumberVertices)+1)==0){
 b_Triangulate=false;
 setTimeout(`
 showMessage('targetNumberVertices: '+targetNumberVertices+' reached.',2000);
-targetNumberVertices+=400;
+targetNumberVertices+=targetNumberVerticesInit;
 `,1)
 startPart=i+1;
 testVars("triangles.length",triangles.length,"vertices.length",vertices.length,"startPart",startPart,"globali",globali,"b_Triangulate",b_Triangulate);
 break;
 }
 
-
 if(i==triangles.length-1){
 b_Triangulate=true;
 startPart=0;
-
 break;
 }else{
 b_Triangulate=false;
 }
 
-
-/*
-testVars("triangles.length",triangles.length,"vertices.length",vertices.length,"startPart",startPart,"globali",globali);
-*/
 }//i loop
-
 
 vertScaler();
 sortByNeighborCount();
@@ -3827,7 +3958,14 @@ render();
 delaunay=false;
 modified=true;
 hideMessage(messageTimer);
-el('enterGraphName').value='tmax_'+graphDegree.toFixed(4)+'_'+targetNumberVertices;
+el('enterGraphName').value='max'+(targetNumberVertices);
+
+if(vertices.length<targetNumberVertices){
+addVertsAtTriangleCenters2();
+}else{
+autoGenActions();
+}
+
 }//addVertsAtTriangleCenters2
 
 
@@ -3861,6 +3999,11 @@ vertScaler();
 sortByNeighborCount();
 delaunay=false;
 render();
+
+if(buildingMax){
+buildingMax=false;
+setTimeout(`saveFileButtonActions();`,1);
+}
 }//pullTriangleCornersOut2
 
 
@@ -3947,149 +4090,6 @@ daar('consoleOutput',sama.length+'<br>'+JSON.stringify(sama)+'<br>');
 
 
 
-
-/*
-function removeDuplicateTriangles(triangles){
-let uniqueTriangles=[];
-let triangleSet=new Set();
-for(let triangle of triangles){
-let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
-let triangleKey=sortedIndices.join(',');
-if(!triangleSet.has(triangleKey)){
-triangleSet.add(triangleKey);
-uniqueTriangles.push(triangle);
-}//if
-}//for
-return uniqueTriangles;
-}//removeDuplicateTriangles
-
-// Example usage:
-const triangles = [
-  { i0: 0, i1: 1, i2: 2 },
-  { i0: 2, i1: 1, i2: 0 }, // Duplicate
-  { i0: 3, i1: 4, i2: 5 },
-  { i0: 5, i1: 4, i2: 3 } // Duplicate
-];
-
-const uniqueTriangles = removeDuplicateTriangles(triangles);
-console.log(uniqueTriangles);
-
-var foundTriangles=[];
-var nonUniqueTriangles=[];
-
-function addVertsAtTriangleCenters(){
-delaunay=true;
-for(i=0;i<vertices.length;i++){
-triangles=triangulate(vertices);
-sortByNeighborCount();
-}//i loop
-
-delaunay=false;
-foundTriangles=[];
-
-for(i=0;i<vertices.length;i++){
-for(let j=0;j<vertices[i].n.length;j++){
-let n1=vertices[i].n[j];
-
-for(let k=0;k<vertices[n1].n.length;k++){
-let n2=vertices[n1].n[k];
-
-for(let m=0;m<vertices[n2].n.length;m++){
-let n3=vertices[n2].n[m];
-
-if(n3==vertices[i].nativeIndex){
-
-foundTriangles.push({
-x0:parseInt(vertices[i].x),
-y0:parseInt(vertices[i].y),
-i0:vertices[i].nativeIndex,
-x1:parseInt(vertices[n1].x),
-y1:parseInt(vertices[n1].y),
-i1:vertices[n1].nativeIndex,
-x2:parseInt(vertices[n2].x),
-y2:parseInt(vertices[n2].y),
-i2:vertices[n2].nativeIndex
-});
-}//if(n3==vertices[i].nativeIndex){
-}//m loop
-}//k loop
-}//j loop
-}//i loop
-
-
-//let uniqueTriangles=removeDuplicateTriangles(foundTriangles);
-//foundTriangles=[...uniqueTriangles];
-
-
-nonUniqueTriangles=[...foundTriangles];
-let uniqueTriangles=[];
-let triangleSet=new Set();
-for(let triangle of foundTriangles){
-let sortedIndices=[triangle.i0, triangle.i1, triangle.i2].sort();
-let triangleKey=sortedIndices.join(',');
-if(!triangleSet.has(triangleKey)){
-triangleSet.add(triangleKey);
-uniqueTriangles.push(triangle);
-}//if
-}//for
-foundTriangles=[...uniqueTriangles];
-
-
-for(i=0;i<foundTriangles.length;i++){
- 
-let triCenterX=(
-foundTriangles[i].x0+
-foundTriangles[i].x1+
-foundTriangles[i].x2)/3;
-
-let triCenterY=(
-foundTriangles[i].y0+
-foundTriangles[i].y1+
-foundTriangles[i].y2)/3;
-
-
-vertices.push(new Vertex(triCenterX,triCenterY,4,vertices.length,[],0,false,false,false,vertices.length));
-
-if(!delaunay){
-pairArr.push([vertices.length-1,foundTriangles[i].i0]);
-pairArr.push([vertices.length-1,foundTriangles[i].i1]);
-pairArr.push([vertices.length-1,foundTriangles[i].i2]);
-
-segPoints.push(null);
-segPoints.push(null);
-segPoints.push(null);
-}//if(!delaunay){
-
-}//i loop
-
-
-
-for(let i=vertices.length-1;i>=1;i--){
-for(let j=i-1;j>=0;j--){
-if(isThere(vertices[i])&&isThere(vertices[j])){
-if(vertices[i].x==vertices[j].x
-&&vertices[i].y==vertices[j].y){
-vertices.splice(i,1);
-}
-}//end isThere
-}//end j loop
-}//end i loop
-
-
-vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
-updatePairArr(vertices);
-vertScaler();
-sortByNeighborCount(); 
-render();
-modifiedGraph=true;
-}//addVertsAtTriangleCenters
-
-*/
-
-
-
-
-
 function showDegreeActions(event){
 if(isThere(event)){
 event.preventDefault();
@@ -4116,64 +4116,12 @@ graphDegree=(2*pairArr.length/vertices.length);
 maxDegree=(6*vertices.length-12)/vertices.length;
 da('graphDegree',graphDegree.toFixed(7)+' degree, verts: '+vertices.length+'<br>'+maxDegree.toFixed(7)+' maxDegree');
 }
-}//getDegree
-
-
-
-
-/*
-function getGenVertsDegree(){
-if(isThere(pairArr)&&isThere(vertices)){
-graphDegree=(2*pairArr.length/vertices.length);
 if(showDegree){
-daa('graphDegree',graphDegree.toFixed(7)+' degree ');
-}
-}//if(isThere(pairArr)&&isThere(vertices)){
-*/
-/*
-daa('buildRendTime',(Date.now()-genStartTime)+' ms build ');
-setTimeout(`
-startRenderTime=Date.now();
-render();
-daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
-`,500);
-*/
-//}//genVertsDegree
-
-
-/*
-function showBuildRendTimeActions(event){
-if(isThere(event)){event.preventDefault();}
-activeButton('buildTime');
-showBuildRendTime=!showBuildRendTime;
-if(showBuildRendTime){
-els('buildRendTime').visibility='visible';
+els('graphDegree').visibility='visible';
 }else{
-els('buildRendTime').visibility='hidden';
+els('graphDegree').visibility='hidden';
 }
-}//showBuildRendTimeActions
-replaceDownEventById('buildTime',showBuildRendTimeActions);
-
-*/
-
-
-/*
-function getBuildRendTime(){
-if(showBuildRendTime){
-els('buildRendTime').visibility='visible';
-}else{
-els('buildRendTime').visibility='hidden';
-}
-daa('buildRendTime',(Date.now()-buildStartTime)+' ms build ');
-setTimeout(`
-startRenderTime=Date.now();
-render();
-daa('buildRendTime','<br>'+(Date.now()-startRenderTime)+' ms render');
-`,500);
-}//getBuildRendTime
-*/
-
-
+}//getDegree
 
 
 
@@ -4593,6 +4541,18 @@ for(let v=0;v<vertices.length;v++){
 sortedVerts[v]={nCount:vertices[v].nCount,i:vertices[v].i,n:vertices[v].n};
 }
 sortedVerts.sort((a,b)=>b.nCount-a.nCount);
+
+
+for(let v=0;v<vertices.length;v++){
+vertices[v].i=v;
+vertices[v].unLinked=true;
+}
+for(let i=0;i<pairArr.length;i++){
+for(let v=0;v<vertices.length;v++){
+if(vertices[v].i==pairArr[i][0]||vertices[v].i==pairArr[i][1]){vertices[v].unLinked=false;}
+}//v loop
+}//i loop
+
 }//end sortByNeighborCount
 
 
@@ -4658,6 +4618,7 @@ if(loadDataFileNameAtStart){
 showMessage('Loading Graph...',60000000);
 }
 getGraphFilenames();
+//getStatsFilenames(); 
 graphRenderScaleFactors();
 buildAndRender();
 animInit();
@@ -4686,6 +4647,17 @@ function animate(){
 clearTimeout(animateTimer);
 animateTimer=setTimeout(function(){
 animId=requestAnimationFrame(animate);
+
+if(randSolveNumVerts!=vertices.length){
+
+els('flexNav').display='none';
+if(els('flexiblesDataHolder').visibility=='visible'){
+randSolveNumVerts=vertices.length;
+da('flexiblesData','');
+els('flexiblesDataMessage').display='block';
+da(`flexiblesDataMessage`,`<b>Graph of `+randSolveNumVerts+` vertices loaded.<br>Press 'Run' to Sample.</b>`);
+}
+}//if(randSolveNumVerts!=vertices.length){
 
 if(streamSolving&&loading){
 solved=false;
@@ -4960,7 +4932,10 @@ updateSolveData();
 solved=true;
 solveButtonStatus();
 if(!showSolvingTime){
+setTimeout(`
+if(!randSolving){
 showMessage('Solved in: '+totalSolveTime+' ms',2000);
+}`,50);
 }else{
 updateSolveData();
 }
@@ -4994,6 +4969,8 @@ solveRemainingPass=0;
 tripleCheck=false;
 
 render();
+
+if(randSolving){randSolveProcess();}
 
 return;
 }else if(stillSearching==true){
@@ -5058,16 +5035,44 @@ centerDiv('messageHolder');
 if(!saverFunc){
 messageTimer=setTimeout("el('messageHolder').style.display='none';",time);
 }else{
-messageTimer=setTimeout("el('messageHolder').style.display='none';saveFileButtonActions();",6000);
+messageTimer=setTimeout(`el('messageHolder').style.display='none';`+saverFunc,6000); 
+}
+}//end show message
+
+
+function hideMessage(timerId){
+clearTimeout(timerId);
+clearTimeout(messageTimer);
+el('messageHolder').style.display='none';
+}//hide message
+
+
+
+function showMessage2(messageString,time,saverFunc){
+//hideMessage(messageTimer2);
+el('messageHolder2').style.display='block';
+da('message2',messageString);
+centerDiv('messageHolder2');
+
+if(!saverFunc){
+messageTimer2=setTimeout("el('messageHolder2').style.display='none';hideMessage(messageTimer2);",time);
+
+}else{
+messageTimer2=setTimeout(`el('messageHolder2').style.display='none';hideMessage(messageTimer2);`+saverFunc,time);
+
 }
 }//end show message
 
 
 
-function hideMessage(timerId){
+function hideMessage2(timerId){
 clearTimeout(timerId);
-el('messageHolder').style.display='none';
+clearTimeout(messageTimer2);
+timerId=0;
+messageTimer2=0;
+el('messageHolder2').style.display='none';
 }//hide message
+
 
 
 
@@ -5117,66 +5122,165 @@ flexibles.filter((obj)=>obj.avail==true).length;
 
 
 
-
+var flexiblesCountSum=0;
 var flexiblesCountAvg=0;
 var flexiblesCountArray=[];
-var numFlexSamples=20;
+var numFlexSamples=10;
 var flexiblesCountString='';
 var flexiblesCountAvgPercent=0;
 var dupeSolves=0;
-var uniqueSolveStringArray=null;
+var uniqueSolveStringArray=[];
 var vertColorString='';
 var isUniqueSolve=true;
 var uniqueSolveIndex=0;
+var waitLoadSolvesInt=0;
+var solveFileUrl='';
+var solvesExistencePollingInterval=0;
+var solvesResult=null;
+var numSolvesTries=0;
+
+
+
+
+
+var solvesExists=async()=>{
+
+solveFileUrl='../graph2/solves/solves'+vertices.length+'.txt';
+
+let solvesResponse=await fetch(serverAddress+'isSolvesFileThere.php?solveFileUrl='+solveFileUrl);
+
+solvesResult=await solvesResponse.json();
+
+if(solvesResult.fileExists){
+clearInterval(solvesExistencePollingInterval);
+solvesExistencePollingInterval=0;
+//alert('Solves File Exists!');
+//showMessage('Solves File Exists!',2000);
+solvesResult=null;
+numSolvesTries=0;
+loadSolves();
+return;
+}else{
+numSolvesTries++;
+if(numSolvesTries>5){
+//alert('Solves File NOT THERE!');
+//showMessage('Solves File Not There.',2000);
+clearInterval(solvesExistencePollingInterval);
+solvesExistencePollingInterval=0;
+solvesResult=null;
+numSolvesTries=0;
+uniqueSolveStringArray=[];
+randSolveStart();
+return;
+}//if(numSolvesTries>5){
+}
+
+}//solvesExists
+
+
+
 
 
 function randSolveActions(event){
-if(isThere(event)){
-event.preventDefault();
-}//if(isThere(event)){
-uniqueSolveStringArray=null;
+if(isThere(event)){event.preventDefault();}
+flexiblesCountSum=0;
+flexiblesCountAvg=0;
+flexiblesCountArray=[];
+minFlexibles=0;
+maxFlexibles=0;
+dupeSolves=0;
+uniqueSolveIndex=0;
 vertColorString='';
-numFlexSamples=el('enterNumFlexSamples').value;
+numFlexSamples=parseInt(el('enterNumFlexSamples').value);
+uniqueSolveStringArray=null;
+randSolveCounter=0;
+randSolving=true;
+solveFileUrl='';
+clearInterval(solvesExistencePollingInterval);
+solvesExistencePollingInterval=0;
+solvesResult=null;
+numSolvesTries=0; 
+disablerOverlay.style.display='flex';
 showMessage("Running "+numFlexSamples+" Samples...",600000);
-setTimeout(`randSolveActions2();`,1); 
+solvesExistencePollingInterval=setInterval(solvesExists,1000);
+randSolveNumVerts=vertices.length;
+da('flexiblesDataMessage','');
+els('flexiblesDataMessage').display='none';
 }//randSolveActions
 
 
-function randSolveActions2(){
-flexiblesCountAvg=0;
-flexiblesCountArray=[];
-dupeSolves=0;
-isUniqueSolve=true;
-uniqueSolveIndex=0;
 
-for(let n=0;n<numFlexSamples;n++){
-clearActions();
+
+
+
+function loadSolves(){
+solvesFileName='solves'+vertices.length+'.txt';
+//moygen or localhost
+if(isLive>=0||serverAddress.indexOf('localhost')>=0){
+processSolvesFile('../graph2/solves/'+solvesFileName);
+//hopweb
+}else if(
+serverAddress.indexOf('172.18.11.218')>=0
+||serverAddress.indexOf('48.52.212.109')>=0
+||serverAddress.indexOf('0.0.0.0')>=0
+){
+processSolvesFile('/solves/'+solvesFileName);
+}
+}//loadSolves
+
+
+
+var uniqueSolveIndexStartPos=0;
+
+async function processSolvesFile(fileName){
+showMessage('Loading Solves...',60000000);
+solves=null;
+solves=await loadTextFile(fileName);
+if(isThere(solves)){
+showMessage('Solving...',60000000);
+uniqueSolveStringArray=JSON.parse(solves);
+uniqueSolveIndexStartPos=uniqueSolveStringArray.length;
+els('flexiblesDataHolder').visibility='visible';
+els('flexiblesData').visibility='visible';
+randSolveStart();
+return;
+}
+}//async function processSolvesFile(fileName){
+
+
+
+
+var randSolving=false;
+var randSolveCounter=0;
+
+function randSolveStart(){
+nativeVertOrder=[...vertices];
 shuffleRandomVertices(); 
 solveActions();
+}//randSolveStart
+
+
+
+function randSolveProcess(){
 vertices=[...nativeVertOrder];
 vertices.sort((a,b)=>a.nativeIndex-b.nativeIndex);
-if(delaunay){
-triangles=triangulate(vertices);
-}//if(delaunay){
+if(delaunay){triangles=triangulate(vertices);}
 updatePairArr(vertices);
 vertScaler();
 sortByNeighborCount();
-render();
+getFlexibles();
 
 vertColorString='';
 for(let i=0;i<vertices.length;i++){
 vertColorString+=JSON.stringify(vertices[i].c);
 }
 
-//daar('testerContent',vertColorString+'<hr>');
-
 if(!isThere(uniqueSolveStringArray)){
-uniqueSolveStringArray=[];
 uniqueSolveStringArray.push(vertColorString);
-getFlexibles();
-
-
+flexiblesCountArray.push(flexiblesCount);
 }else{
+
+isUniqueSolve=true;
 for(let i=0;i<uniqueSolveStringArray.length;i++){
 if(uniqueSolveStringArray[i]==vertColorString){
 isUniqueSolve=false;
@@ -5186,33 +5290,883 @@ break;
 
 if(isUniqueSolve){
 uniqueSolveStringArray.push(vertColorString);
-getFlexibles();
-}
-
-}//if(isThere(uniqueSolveStringArray)){
-
-
-if(isUniqueSolve){
-flexiblesCountAvg+=flexiblesCount;
+flexiblesCountSum+=flexiblesCount;
 flexiblesCountArray.push(flexiblesCount);
 }else{
 dupeSolves++;
 }
-}//n loop
+}//isThere(uniqueSolveStringArray)
 
-flexiblesCountAvg=(flexiblesCountAvg/(numFlexSamples-dupeSolves)).toFixed(3);
+randSolveCounter++;
+if(randSolveCounter<=numFlexSamples-1){
+randSolveStart();
+}else{
+randSolveDisplayStats();
+postSolvesFile();
+}
+}//randSolveProcess
+
+
+
+
+
+function randSolveDisplayStats(){
+render();
+minFlexibles=1000000;
+maxFlexibles=-1;
+for(let i=0;i<flexiblesCountArray.length;i++){
+if(flexiblesCountArray[i]<minFlexibles){
+minFlexibles=flexiblesCountArray[i];
+}
+if(flexiblesCountArray[i]>maxFlexibles){
+maxFlexibles=flexiblesCountArray[i];
+}
+}//i loop
+
+flexiblesCountAvg=(flexiblesCountSum/(numFlexSamples-dupeSolves)).toFixed(2);
 flexiblesCountAvgPercent=(flexiblesCountAvg/vertices.length*100).toFixed(2);
 flexiblesCountString='';
 for(let i=0;i<flexiblesCountArray.length;i++){
 if(i%12==0){flexiblesCountString+='<br>';}
-flexiblesCountString+=flexiblesCountArray[i]+' ';
+flexiblesCountString+='<span id="flexCount_'+(uniqueSolveIndexStartPos+i)+'" style="color:black;">'+flexiblesCountArray[i]+'</span> ';
+}//i loop 
 
-}
+currentSolveStats={
+"numVerts":vertices.length,
+"graphDegree":graphDegree.toFixed(7),
+"maximal":(maxDegree==graphDegree),
+"numSolves":(numFlexSamples-dupeSolves),
+"dupeSolves":dupeSolves,
+"minFlexibles":minFlexibles,
+"maxFlexibles":maxFlexibles,
+"flexiblesCountAvg":flexiblesCountAvg,
+"flexiblesCountAvgPercent":flexiblesCountAvgPercent
+};
+
+
+savedCurrentSolveStats=JSON.parse(JSON.stringify(currentSolveStats));
+
 els('flexiblesDataHolder').visibility='visible';
-da('flexiblesData','<center>Avg # Flexibles for '+(numFlexSamples-dupeSolves)+' Samples: <br><br>'+flexiblesCountAvg+' | '+flexiblesCountAvgPercent+'% of all verts<br><br>Flexibles Counts per Sample: <br>'+flexiblesCountString);
-centerDiv('flexiblesDataHolder');
+els('flexiblesData').visibility='visible';
 
-}//randSolveActions2
+da('flexiblesData','<b>For '+currentSolveStats.numSolves+' Solves of Current Graph</b><br><br>');
+let string='';
+let d1='<div style="display:inline-block;text-align:right;width:50%;white-space:nowrap;">';
+let d2='</div><div style="display:inline-block;text-align:left;width:50%;">&nbsp;&nbsp;';
+let d3='</div><br>';
+
+string+='<div style="display:inline-block;text-align:right;width:50%;" id="bm_'+currentSolveStats.numVerts+'"># Vertices: '+d2+currentSolveStats.numVerts+d3;
+string+=d1+'Degree: '+d2+parseFloat(currentSolveStats.graphDegree).toFixed(7)+d3;
+string+=d1+'Maximal: '+d2+(maxDegree==graphDegree)+d3;
+string+=d1+'Sample Size: '+d2+currentSolveStats.numSolves+d3;
+string+=d1+'Dupes Removed: '+d2+currentSolveStats.dupeSolves+d3;
+string+=d1+'Min # Flexibles: '+d2+currentSolveStats.minFlexibles+d3;
+string+=d1+'Max # Flexibles: '+d2+currentSolveStats.maxFlexibles+d3;
+string+=d1+'Avg # Flexibles: '+d2+currentSolveStats.flexiblesCountAvg+d3;
+string+=d1+'Avg % Flexibles: '+d2+'<b><span style="color:MediumSeaGreen;">'+currentSolveStats.flexiblesCountAvgPercent+'</span></b>'+d3;
+
+string+='<br>Flexibles Count per Solve:'+flexiblesCountString;
+
+daa('flexiblesData',string);
+
+uniqueSolveIndex=uniqueSolveIndexStartPos;
+if(isThere(el('flexCount_'+uniqueSolveIndex))){
+els('flexCount_'+uniqueSolveIndex).color='DeepSkyBlue';
+}
+centerDiv('flexiblesDataHolder'); 
+}//randSolveDisplayStats
+
+
+
+
+
+async function postSolvesFile(){
+solvesSaveAttempts=1;
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=null;
+solvesStatusResult=null;
+showMessage('Saving Solves...',60000000);
+solvesFileName='solves'+vertices.length+'.txt';
+//uniqueSolveStringArray.sort();
+
+solvesData=JSON.stringify(uniqueSolveStringArray);
+let solvesResponse=await fetch(serverAddress+"saver.php?dir=solves&fileName="+solvesFileName,
+{
+method:'POST',
+headers:{'Content-Type':'application/octet-stream'},
+body:solvesData
+})
+.then(solvesResponse=>{
+if(solvesResponse.ok){
+let showSaveAttemps='';
+
+if(solvesSaveAttempts>1){
+showSaveAttemps='<br>Try '+solvesSaveAttempts;
+}
+
+showMessage('<center>Solves Saving as:<br><br>'+solvesFileName+showSaveAttemps+'</center>',2000000);//,postSolvesFile
+canv.focus();
+}else if(!solvesResponse.ok){
+showMessage('HTTP Error:<br>'+solvesResponse.status,2000);
+}
+return solvesResponse.text(); 
+
+}).then(data=>{
+let solvesTimeoutDuration=60000;
+let solvesElapsedTime=0;
+let solvesNumTries=0;
+solvesStatusResponse=null;
+
+//start of interval function
+let checkFileStatus=async()=>{
+
+if(solvesNumTries>0&&solvesNumTries%3==0){
+showMessage('Save Attempts: '+solvesNumTries,60000);
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0;
+solvesSaveAttempts++;
+//postSolvesFile();
+}
+
+let solvesStatusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+solvesLastFileSize+'&numFileSizeChecks='+solvesNumFileSizeChecks+'&dir=solves&fileName='+solvesFileName);
+
+solvesNumFileSizeChecks++;
+solvesStatusResult=await solvesStatusResponse.json();
+solvesLastFileSize=solvesStatusResult.lastFileSize;
+
+if(solvesStatusResult.status==='done_saving'){
+
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0;
+showMessage('Solves saved successfully!',2000);
+solvesStatusResult=null;
+
+if(randSolving){setTimeout(`getMergedStats();`,50);}
+return;
+
+}else if(solvesStatusResult.status==='save_error'){
+showMessage('Save error, retrying...<br>'+solvesNumTries+' of 60 tries.',60000);
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0;
+//postSolvesFile();
+solvesSaveAttempts++;
+return;
+}else if(solvesStatusResult.status==='in_progress'){
+showMessage('Solves save in progress...',60000);
+}else{
+
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0.
+alert('Unexpected file status.');
+}
+
+solvesElapsedTime+=1000;
+solvesNumTries++;
+
+if(solvesElapsedTime>=solvesTimeoutDuration){
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0;
+showMessage('Save failed.<br>'+(timeoutDuration/1000)+' seconds timeout.')
+}
+
+};//let checkFileStatus=async()=>{
+
+solvesPollingInterval=setInterval(checkFileStatus, 1000); 
+
+}).catch(error=>{
+
+showMessage('Error saving file:<br>Retrying...'+ error,60000);
+clearInterval(solvesPollingInterval);
+solvesPollingInterval=0.
+solvesSaveAttempts++;
+//postSolvesFile();
+
+});//fetch
+}//postSolvesFile(url,file){
+
+
+
+
+
+
+function saveStatsButtonActions(event){
+if(isThere(event)){event.preventDefault();
+typing=true;
+}
+statsSaveAttempts=1;
+showMessage('Saving Stats...',60000000);
+setTimeout(`
+typing=false;
+postStatsTextFile();
+`,100);
+}//saveStatsButtonActions
+replaceDownEventById('saveStats',saveStatsButtonActions);
+
+
+
+
+
+async function postStatsTextFile(){
+statsFileName='mergedStats.txt';
+clearInterval(statsPollingInterval);
+statsPollingInterval=null;
+statsStatusResult=null;
+showMessage2('Saving Stats...',60000000);
+let statsResponse=await fetch(serverAddress+"saver.php?dir=stats&fileName="+statsFileName,
+{
+method:'POST',
+//headers:{'Content-Type':'text/plain'},
+//headers:{'Content-Type':'application/json'},
+headers:{'Content-Type':'application/octet-stream'},
+body:JSON.stringify(currentSolveStats)
+
+}).then(statsResponse=>{
+if(statsResponse.ok){
+let showSaveAttemps='';
+if(statsSaveAttempts>1){
+showSaveAttemps='<br>Try '+statsSaveAttempts;
+}
+showMessage2('<center>Stats Saving as:<br><br>'+statsFileName+showSaveAttemps+'</center>',2000000);//,saveStatsButtonActions
+canv.focus();
+
+}else if(!statsResponse.ok){
+showMessage2('HTTP Error:<br>'+statsResponse.status,2000);
+}
+return statsResponse.text();
+
+}).then(data=>{
+let statsTimeoutDuration=60000;
+let statsElapsedTime=0;
+let statsNumTries=0;
+statusResponse=null;
+
+
+//start of interval function
+let checkFileStatus=async()=>{
+if(statsNumTries>0&&statsNumTries%3==0){
+showMessage2('Save Attempts: '+statsNumTries,60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+statsSaveAttempts++;
+//saveStatsButtonActions();
+}
+
+let statsStatusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+statsLastFileSize+'&numFileSizeChecks='+statsNumFileSizeChecks+'&dir=stats&fileName='+statsFileName);
+
+statsNumFileSizeChecks++;
+
+statsStatusResult=await statsStatusResponse.json();
+statsLastFileSize=statsStatusResult.lastFileSize;
+
+if(statsStatusResult.status==='done_saving'){
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+showMessage2('Stats saved successfully!',2000);
+statsStatusResult=null;
+//alert('mergedStats.txt Saved');
+randSolving=false;
+displayMergedStatsButtonActions();
+return;
+
+}else if(statsStatusResult.status==='save_error'){
+
+showMessage2('Save error, retrying...<br>'+statsNumTries+' of 60 tries.',60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+//saveStatsButtonActions();
+statsSaveAttempts++;
+return;
+
+}else if(statsStatusResult.status==='in_progress'){
+showMessage2('Stats save in progress...',60000);
+}else{
+clearInterval(statsPollingInterval);
+statsPollingInterval=0.
+alert('Unexpected file status.');
+}
+
+statsElapsedTime+=1000;
+statsNumTries++;
+
+if(statsElapsedTime>=statsTimeoutDuration){
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+showMessage2('Save failed.<br>'+(statsTimeoutDuration/1000)+' seconds timeout.')
+}
+
+};//const checkFileStatus=async()=>{
+
+statsPollingInterval=setInterval(checkFileStatus, 1000); 
+
+//end }).then(data=>{
+}).catch(error=>{
+
+showMessage2('Error saving file:<br>Retrying...'+ error,60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0.
+statsSaveAttempts++;
+//saveStatsButtonActions();
+
+});//fetch
+}//postStatsTextFile(url,file){
+
+
+
+
+
+
+function currentStatsButtonActions(event){
+if(isThere(event)){event.preventDefault();}
+randSolveDisplayStats();
+displayCurrentMergedStats();
+}//currentStatsButtonActions
+replaceDownEventById('currentStats',currentStatsButtonActions);
+
+
+
+
+var waitMergedStatsInt=0;
+
+
+function displayMergedStatsButtonActions(event){
+if(isThere(event)){event.preventDefault();}
+
+mergedStats=null;
+statsFileName='mergedStats.txt';
+showMessage('Loading Merged Stats...',60000000);
+//moygen or localhost
+if(isLive>=0||serverAddress.indexOf('localhost')>=0){
+processStatsFile('../graph2/stats/mergedStats.txt?i='+new Date.now());
+
+//hopweb
+}else if(
+serverAddress.indexOf('172.18.11.218')>=0
+||serverAddress.indexOf('48.52.212.109')>=0
+||serverAddress.indexOf('0.0.0.0')>=0
+){
+processStatsFile('/stats/mergedStats.txt?i='+new Date.now());
+}
+
+waitMergedStatsInt=setInterval(`
+displayCurrentMergedStats(event);
+`,50);
+
+}//mergeStatsButtonActions
+replaceDownEventById('displayMergedStats',displayMergedStatsButtonActions);
+
+
+
+function getMergedStats(){
+mergedStats=null;
+statsFileName='mergedStats.txt';
+showMessage('Loading Merged Stats...',60000000);
+//moygen or localhost
+if(isLive>=0||serverAddress.indexOf('localhost')>=0){
+processStatsFile('../graph2/stats/mergedStats.txt?i='+Date.now());
+
+//hopweb
+}else if(
+serverAddress.indexOf('172.18.11.218')>=0
+||serverAddress.indexOf('48.52.212.109')>=0
+||serverAddress.indexOf('0.0.0.0')>=0
+){
+processStatsFile('/stats/mergedStats.txt?i='+Date.now());
+}
+
+waitMergedStatsInt=setInterval(`
+addCurrentStatsToMerged();
+`,200);
+}//getMergedStats
+
+
+
+
+async function processStatsFile(fileName){
+showMessage('Loading Stats...',60000000);
+mergedStats=await loadTextFile(fileName);
+if(isThere(mergedStats)){
+hideMessage();
+mergedStats=JSON.parse(mergedStats);
+savedMergedStats=[...mergedStats];
+}//end isThere
+}//async function processStatsFile(fileName){
+
+
+
+
+async function loadTextFile(filePath){
+resetGenVertsVars();
+try{
+const response=await fetch(filePath);
+if(!response.ok){
+showMessage('HTTP Error 2: '+response.status,50000);
+}else if(response.ok){
+const text=await response.text();
+return text;
+}
+}catch(error){
+alert(error);
+showMessage('Loading Error 1: <br>'+filePath+'<br> '+error,2000,loadTextFile(filePath));
+
+//setTimeout(`loadTextFile(filePath);`,1000);
+return null;
+}//catch
+}//async function loadTextFile(filePath){
+
+
+
+
+
+
+function addCurrentStatsToMerged(){
+if(isThere(mergedStats)){
+//alert(JSON.stringify(mergedStats));
+clearInterval(waitMergedStatsInt);
+waitMergedStatsInt=0;
+mergedStats.sort((a,b)=>a.numVerts-b.numVerts);
+
+let alreadyThere=false;
+
+for(let i=0;i<mergedStats.length;i++){
+if(currentSolveStats.numVerts==mergedStats[i].numVerts){
+alreadyThere=true;
+//alert('record already there');
+
+let combinedAvgFlex=
+(currentSolveStats.flexiblesCountAvg*
+currentSolveStats.numSolves+
+mergedStats[i].flexiblesCountAvg*
+mergedStats[i].numSolves)/
+(currentSolveStats.numSolves+mergedStats[i].numSolves);
+combinedAvgFlex=parseFloat(combinedAvgFlex).toFixed(2);
+
+let combinedAvgPctFlex=
+(currentSolveStats.flexiblesCountAvgPercent*
+currentSolveStats.numSolves+
+mergedStats[i].flexiblesCountAvgPercent*
+mergedStats[i].numSolves)/
+(currentSolveStats.numSolves+mergedStats[i].numSolves);
+combinedAvgPctFlex=parseFloat(combinedAvgPctFlex).toFixed(2);
+
+let combinedNumSolves=
+currentSolveStats.numSolves+mergedStats[i].numSolves;
+
+let combinedDupes=
+currentSolveStats.dupeSolves+mergedStats[i].dupeSolves;
+
+
+if(currentSolveStats.maxFlexibles>mergedStats[i].maxFlexibles){
+mergedStats[i].maxFlexibles=currentSolveStats.maxFlexibles;
+}
+
+if(currentSolveStats.minFlexibles<mergedStats[i].minFlexibles){
+mergedStats[i].minFlexibles=currentSolveStats.minFlexibles;
+}
+
+mergedStats[i].flexiblesCountAvg=combinedAvgFlex;
+mergedStats[i].flexiblesCountAvgPercent=combinedAvgPctFlex;
+mergedStats[i].numSolves=combinedNumSolves;
+mergedStats[i].dupeSolves=combinedDupes;
+
+da('consoleOutput',JSON.stringify(currentSolveStats));
+daa('consoleOutput','\n\n'+JSON.stringify(mergedStats[i]));
+
+
+}//.numVerts==
+}//i loop
+
+if(!alreadyThere){
+//alert('record not already there');
+mergedStats.push(currentSolveStats);
+}
+
+
+displayCurrentMergedStats();
+saveMergedStats();
+
+}//if(isThere(mergedStats)){
+}//addCurrentStatsToMerged
+
+
+
+
+async function saveMergedStats(){
+ 
+statsFileName='mergedStats.txt';
+clearInterval(statsPollingInterval);
+statsPollingInterval=null;
+statsStatusResult=null;
+showMessage2('Saving Stats...',60000000);
+let statsResponse=await fetch(serverAddress+"saveMerged.php",
+{
+method:'POST',
+//headers:{'Content-Type':'text/plain'},
+headers:{'Content-Type':'application/json'},
+//headers:{'Content-Type':'application/octet-stream'},
+body:JSON.stringify(mergedStats)
+
+}).then(statsResponse=>{
+if(statsResponse.ok){
+let showSaveAttemps='';
+if(statsSaveAttempts>1){
+showSaveAttemps='<br>Try '+statsSaveAttempts;
+}
+showMessage2('<center>Stats Saving as:<br><br>'+statsFileName+showSaveAttemps+'</center>',2000000);//,saveStatsButtonActions
+canv.focus();
+
+}else if(!statsResponse.ok){
+showMessage2('HTTP Error:<br>'+statsResponse.status,2000);
+}
+return statsResponse.text();
+
+//end }).then(statsResponse=>{
+}).then(data=>{
+let statsTimeoutDuration=60000;
+let statsElapsedTime=0;
+let statsNumTries=0;
+statusResponse=null;
+
+//start of interval function
+let checkFileStatus=async()=>{
+if(statsNumTries>0&&statsNumTries%3==0){
+showMessage2('Save Attempts: '+statsNumTries,60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+statsSaveAttempts++;
+//saveStatsButtonActions();
+}
+
+let statsStatusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+statsLastFileSize+'&numFileSizeChecks='+statsNumFileSizeChecks+'&dir=stats&fileName='+statsFileName);
+
+statsNumFileSizeChecks++;
+
+statsStatusResult=await statsStatusResponse.json();
+statsLastFileSize=statsStatusResult.lastFileSize;
+
+if(statsStatusResult.status==='done_saving'){
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+showMessage2('Stats saved successfully!',2000);
+statsStatusResult=null;
+randSolving=false;
+
+let savedRecord='';
+for(let i=0;i<savedMergedStats.length;i++){
+if(savedMergedStats[i].numVerts==vertices.length){
+savedRecord=JSON.stringify(savedMergedStats[i]);
+}
+}//i loop
+
+let record='';
+for(let i=0;i<mergedStats.length;i++){
+if(mergedStats[i].numVerts==vertices.length){
+record=JSON.stringify(mergedStats[i]);
+}
+}//i loop
+
+da(`consoleOutput`,
+`savedCurrentSolveStats: `+JSON.stringify(savedCurrentSolveStats)+`<br><br>`+
+`currentSolveStats: `+JSON.stringify(currentSolveStats)+`<br><br>`+
+`savedMergedStats: `+savedRecord+`<br><br>`+
+`mergedStats: `+record);
+
+return;
+
+}else if(statsStatusResult.status==='save_error'){
+showMessage2('Save error, retrying...<br>'+statsNumTries+' of 60 tries.',60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+//saveStatsButtonActions();
+statsSaveAttempts++;
+return;
+ 
+}else if(statsStatusResult.status==='in_progress'){
+showMessage2('Stats save in progress...',60000);
+}else{
+clearInterval(statsPollingInterval);
+statsPollingInterval=0.
+alert('Unexpected file status.');
+}
+
+statsElapsedTime+=1000;
+statsNumTries++;
+
+if(statsElapsedTime>=statsTimeoutDuration){
+clearInterval(statsPollingInterval);
+statsPollingInterval=0;
+showMessage2('Save failed.<br>'+(statsTimeoutDuration/1000)+' seconds timeout.')
+}
+};//const checkFileStatus=async()=>{
+
+statsPollingInterval=setInterval(checkFileStatus, 1000); 
+
+}).catch(error=>{
+showMessage2('Error saving file:<br>Retrying...'+ error,60000);
+clearInterval(statsPollingInterval);
+statsPollingInterval=0.
+statsSaveAttempts++;
+//saveStatsButtonActions();
+
+});//fetch
+}//saveMergedStats
+
+
+
+
+function displayCurrentMergedStats(event){
+if(isThere(mergedStats)){
+clearInterval(waitMergedStatsInt);
+waitMergedStatsInt=0;
+mergedStats.sort((a,b)=>a.numVerts-b.numVerts);
+daa('flexiblesData','<br><hr><br><b>Merged Averages for All Sample Solves of Current Graph:<br><br>');
+let string='';
+let d1='<div style="display:inline-block;text-align:right;width:50%;white-space:nowrap;">';
+let d2='</div><div style="display:inline-block;text-align:left;width:50%;">&nbsp;&nbsp;';
+let d3='</div><br>';
+for(let i=0;i<mergedStats.length;i++){
+if(mergedStats[i].numVerts==vertices.length){
+string+='<div style="display:inline-block;text-align:right;width:50%;" id="bm_'+mergedStats[i].numVerts+'"># Vertices: '+d2+mergedStats[i].numVerts+d3;
+string+=d1+'Degree: '+d2+parseFloat(mergedStats[i].graphDegree).toFixed(7)+d3;
+string+=d1+'Maximal: '+d2+(maxDegree==graphDegree)+d3;
+string+=d1+'Total Sample Size: '+d2+mergedStats[i].numSolves+d3;
+string+=d1+'Dupes Removed: '+d2+mergedStats[i].dupeSolves+d3;
+string+=d1+'Min # Flexibles: '+d2+mergedStats[i].minFlexibles+d3;
+string+=d1+'Max # Flexibles: '+d2+mergedStats[i].maxFlexibles+d3;
+string+=d1+'Avg # Flexibles: '+d2+mergedStats[i].flexiblesCountAvg+d3;
+string+=d1+'Avg % Flexibles: '+d2+'<b><span style="color:MediumSeaGreen;">'+mergedStats[i].flexiblesCountAvgPercent+'</span></b>'+d3;
+
+string+='<br>';
+}//if(stats[i].numVerts==vertices.length){
+}//i loop
+daa('flexiblesData',string);
+}//if(isThere(mergedStats)){
+
+
+//saveMergedStats();
+
+
+setTimeout(`
+disablerOverlay.style.display='none';
+els('flexNav').display='block';
+`,1000);
+}//displayCurrentMergedStats 
+
+
+
+
+function displayAllMergedStatsButtonActions(event){
+if(isThere(mergedStats)){
+clearInterval(waitMergedStatsInt);
+waitMergedStatsInt=0;
+mergedStats.sort((a,b)=>a.numVerts-b.numVerts);
+//daa('flexiblesData','<br><br>');
+da('flexiblesData','<b>Merged Averages for All Sample Solves:<br><br>');
+let string='';
+let d1='<div style="display:inline-block;text-align:right;width:50%;white-space:nowrap;">';
+let d2='</div><div style="display:inline-block;text-align:left;width:50%;">&nbsp;&nbsp;';
+let d3='</div><br>';
+for(let i=0;i<mergedStats.length;i++){
+string+='<div style="display:inline-block;text-align:right;width:50%;" id="bm_'+mergedStats[i].numVerts+'"># Vertices: '+d2+mergedStats[i].numVerts+d3;
+string+=d1+'Degree: '+d2+parseFloat(mergedStats[i].graphDegree).toFixed(7)+d3;
+string+=d1+'Maximal: '+d2+(maxDegree==graphDegree)+d3;
+string+=d1+'Total Sample Size: '+d2+mergedStats[i].numSolves+d3;
+string+=d1+'Dupes Removed: '+d2+mergedStats[i].dupeSolves+d3;
+string+=d1+'Min # Flexibles: '+d2+mergedStats[i].minFlexibles+d3;
+string+=d1+'Max # Flexibles: '+d2+mergedStats[i].maxFlexibles+d3;
+string+=d1+'Avg # Flexibles: '+d2+mergedStats[i].flexiblesCountAvg+d3;
+string+=d1+'Avg % Flexibles: '+d2+'<b><span style="color:MediumSeaGreen;">'+mergedStats[i].flexiblesCountAvgPercent+'</span></b>'+d3;
+
+string+='<br>';
+}//i loop
+daa('flexiblesData',string);
+}//if(isThere(mergedStats)){
+}//displayAllMergedStatsButtonActions
+replaceDownEventById('displayAllMergedStats',displayAllMergedStatsButtonActions);
+
+
+
+ 
+async function postTextFile(){
+clearInterval(pollingInterval);
+pollingInterval=null;
+statusResult=null;
+fileDoneSaving=false;
+showMessage('Saving Graph...',60000000);
+
+let response=await fetch(serverAddress+"saver.php?dir=data&fileName="+dataFileName,
+{
+method:'POST',
+headers:{'Content-Type':'application/octet-stream'},
+body:graphData
+})
+.then(response=>{
+if(response.ok){
+fileSaving=true;
+let showSaveAttemps='';
+if(saveAttempts>1){
+showSaveAttemps='<br>Try '+saveAttempts;
+}
+showMessage('<center>Graph Saving as:<br><br>'+dataFileName+showSaveAttemps+'</center>',2000000,saveFileButtonActions);
+canv.focus();
+}else if(!response.ok){
+showMessage('HTTP Error:<br>'+response.status,2000);
+}
+
+return response.text(); 
+})
+.then(data=>{
+
+fileSaving=true;
+const timeoutDuration=60000;
+let elapsedTime=0;
+let numTries=0;
+statusResponse=null;
+
+//start of interval function
+const checkFileStatus=async()=>{
+
+if(numTries>0&&numTries%3==0){
+showMessage('Save Attempts: '+numTries,60000);
+clearInterval(pollingInterval);
+pollingInterval=0;
+saveAttempts++;
+saveFileButtonActions();
+}
+
+const statusResponse=await fetch(serverAddress+'doneSaving.php?lastFileSize='+lastFileSize+'&numFileSizeChecks='+numFileSizeChecks+'&dir=data&fileName='+dataFileName);
+
+numFileSizeChecks++;
+statusResult=await statusResponse.json();
+lastFileSize=statusResult.lastFileSize;
+
+if(statusResult.status==='done_saving'){
+clearInterval(pollingInterval);
+pollingInterval=0;
+showMessage('File saved successfully!',2000);
+
+if(!el('op'+numSavedGraphs)){
+graphFileNames.push(dataFileName);
+let op=document.createElement("option");
+op.id='op'+numSavedGraphs;
+op.value=numSavedGraphs;
+op.text=dataFileName;
+el('selectGraph').appendChild(op);
+numSavedGraphs++;
+setTimeout(`removeDuplicatesFromSelect('selectGraph');`,1000);
+
+fileDoneSaving=true;
+if(runningSamples){
+numFlexSamples=parseInt(el('enterNumFlexSamples').value);
+showMessage("Running "+numFlexSamples+" Samples...",600000);
+runningSamples=false;
+setTimeout(`randSolveActions();`,1);
+}
+return;
+}//end if(!el
+
+fileSaving=false;
+statusResult=null;
+return;
+
+}else if(statusResult.status==='save_error'){
+showMessage('Save error, retrying...<br>'+numTries+' of 60 tries.',60000);
+clearInterval(pollingInterval);
+pollingInterval=0;
+saveFileButtonActions();
+saveAttempts++;
+return;
+}else if(statusResult.status==='in_progress'){
+showMessage('File save in progress...',60000);
+}else{
+clearInterval(pollingInterval);
+pollingInterval=0.
+//alert('Unexpected file status.');
+}
+
+elapsedTime+=1000;
+numTries++;
+
+if(elapsedTime>=timeoutDuration){
+clearInterval(pollingInterval);
+showMessage('Save failed.<br>'+(timeoutDuration/1000)+' seconds timeout.')
+}
+};//const checkFileStatus=async()=>{
+
+pollingInterval=setInterval(checkFileStatus, 1000); 
+
+})
+.catch(error=>{
+showMessage('Error saving file:<br>Retrying...'+ error,60000);
+clearInterval(pollingInterval);
+pollingInterval=0.
+saveAttempts++;
+saveFileButtonActions();
+});//fetch
+}//postTextFile(url,file){
+
+
+
+/*
+var combinedAvgPctFlex=
+(stats[i].flexiblesCountAvgPercent*
+stats[i].numSolves+
+flexiblesCountAvgPercent*
+(numFlexSamples-dupeSolves))/
+(stats[i].numSolves+(numFlexSamples-dupeSolves));
+
+var combinedNumSolves=
+(stats[i].numSolves+(numFlexSamples-dupeSolves);
+*/
+/*
+Combined Average = ( (Average of Sample 1 * Sample Size 1) + (Average of Sample 2 * Sample Size 2) ) / (Sample Size 1 + Sample Size 2). 
+5,10,7
+20,5,10
+
+5*20=100;
+10*5=50;
+150/25=6;
+6*25=150;
+7*10=70;
+220/50=4.4;
+
+example:
+agAvg=((5.83*1000)+(6.00*1000))/(1000+1000);
+agAvg=5.83*6.00/2;
+
+Example:
+Suppose you have two samples: 
+Sample 1: Average = 82, Sample Size = 57
+Sample 2: Average = 63, Sample Size = 23
+Using the formula:
+Combined Average = ((82 * 57) + (63 * 23)) / (57 + 23) = (4674 + 1449) / 80 = 6123 / 80 = 76.5375. 
+
+for a maximal planar graph of 3000 vertices, given two sufficiently large samples of unique solves for that graph, does the percentage of solved vertices which are swappable, or which can be changed to another color without conflict, approach a constant average value for the entire sample
+*/
+
+/*
+function loadStats(){
+hideMessage(messageTimer);
+showMessage('Loading Stats...',60000000);
+statsFileName=statsFileNames[parseInt(el('selectStats').options[el('selectStats').selectedIndex].value)];
+//moygen or localhost
+if(isLive>=0||serverAddress.indexOf('localhost')>=0){
+processStatsFile('../graph2/stats/'+statsFileName);
+
+//hopweb
+}else if(
+serverAddress.indexOf('172.18.11.218')>=0
+||serverAddress.indexOf('48.52.212.109')>=0
+||serverAddress.indexOf('0.0.0.0')>=0
+){
+processStatsFile('/stats/'+statsFileName);
+}
+
+}//loadStats
+*/
+
+
+
+
 
 
 
@@ -5227,9 +6181,11 @@ if(isThere(event)){
 event.preventDefault();
 activeButton('randSolve');
 }
+controlPanelOpenClose();
 el('enterNumFlexSamples').value=numFlexSamples;
-showHideV('flexiblesDataHolder');
 centerDiv('flexiblesDataHolder');
+showHideV('flexiblesDataHolder');
+showHideV('flexiblesData');
 }//randSolveButtonActions
 replaceDownEventById('randSolve',randSolveButtonActions);
 
@@ -5238,6 +6194,7 @@ replaceDownEventById('randSolve',randSolveButtonActions);
 function numFlexSamplesApplyActions(event){
 typing=false;
 activeButton('numFlexSamplesApply');
+els('flexNav').display='block';
 randSolveActions();
 }//numFlexSamplesApplyActions
 replaceDownEventById('numFlexSamplesApply',numFlexSamplesApplyActions);
@@ -5247,6 +6204,7 @@ replaceDownEventById('numFlexSamplesApply',numFlexSamplesApplyActions);
 function numFlexSamplesCancelActions(event){
 typing=false;
 el('flexiblesDataHolder').style.visibility='hidden';
+el('flexiblesData').style.visibility='hidden';
 }//numFlexSamplesCancelActions
 replaceDownEventById('numFlexSamplesCancel',numFlexSamplesCancelActions);
 
@@ -5254,30 +6212,77 @@ replaceDownEventById('numFlexSamplesCancel',numFlexSamplesCancelActions);
 
 
 
-
-function showFlexSampleSolvesActions(event){
+function showPrevFlexSolveActions(event){
 if(isThere(event)){
 event.preventDefault();
-activeButton('showFlexSampleSolves');
+activeButton('prevFlexSolve');
 }
 
-if(savedLastButton!='showFlexSampleSolves'){
-replaceDownEventById('canvas',showFlexSampleSolvesActions);
+if(savedLastButton!='prevFlexSolve'){
+replaceDownEventById('canvas',showPrevFlexSolveActions);
+}
+
+uniqueSolveIndex--;
+if(uniqueSolveIndex<uniqueSolveIndexStartPos){
+uniqueSolveIndex=uniqueSolveStringArray.length-1;
+}
+
+for(let i=uniqueSolveIndexStartPos;i<uniqueSolveStringArray.length;i++){
+ if(i==uniqueSolveIndex){
+els('flexCount_'+i).color='DeepSkyBlue';
+}else{
+els('flexCount_'+i).color='black';
+}
 }
 
 for(let i=0;i<vertices.length;i++){
 vertices[i].c=uniqueSolveStringArray[uniqueSolveIndex][i];
 }
+
 render();
-uniqueSolveIndex++;
-if(uniqueSolveIndex>=numFlexSamples){
-uniqueSolveIndex=0;
-}
 
 els('flexiblesCountDisplay').visibility='visible';
 da('flexiblesCountDisplay','flexibles: '+flexiblesCount+'<br>sample #: '+uniqueSolveIndex)
-}//showFlexSampleSolvesActions
-replaceDownEventById('showFlexSampleSolves',showFlexSampleSolvesActions);
+}//showPrevFlexSolveActions
+replaceDownEventById('prevFlexSolve',showPrevFlexSolveActions);
+
+
+
+
+
+function showNextFlexSolveActions(event){
+if(isThere(event)){
+event.preventDefault();
+activeButton('nextFlexSolve');
+}
+
+if(savedLastButton!='nextFlexSolve'){
+replaceDownEventById('canvas',showNextFlexSolveActions);
+}
+
+uniqueSolveIndex++;
+if(uniqueSolveIndex>uniqueSolveStringArray.length-1){
+uniqueSolveIndex=uniqueSolveIndexStartPos;
+}
+
+for(let i=uniqueSolveIndexStartPos;i<uniqueSolveStringArray.length;i++){
+ if(i==uniqueSolveIndex){
+els('flexCount_'+i).color='DeepSkyBlue';
+}else{
+els('flexCount_'+i).color='black';
+}
+}
+
+for(let i=0;i<vertices.length;i++){
+vertices[i].c=uniqueSolveStringArray[uniqueSolveIndex][i];
+}
+
+render();
+
+els('flexiblesCountDisplay').visibility='visible';
+da('flexiblesCountDisplay','flexibles: '+flexiblesCount+'<br>sample #: '+uniqueSolveIndex)
+}//showNextFlexSolveActions
+replaceDownEventById('nextFlexSolve',showNextFlexSolveActions);
 
 
 
@@ -5594,7 +6599,7 @@ sorterByNeigh();
 
 
 function render(){
-
+/*
 for(let v=0;v<vertices.length;v++){
 vertices[v].i=v;
 vertices[v].unLinked=true;
@@ -5605,7 +6610,7 @@ for(let v=0;v<vertices.length;v++){
 if(vertices[v].i==pairArr[i][0]||vertices[v].i==pairArr[i][1]){vertices[v].unLinked=false;}
 }//v loop
 }//i loop
-
+*/
 
 if(showFlexibles){getFlexibles();}
 
